@@ -1,9 +1,10 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import Button from "../../core/ui/Button.astro";
 import { LANGS, type Lang, isLang, t } from "../../content/languages";
 import { getSettings, getRooms, getOffers, getExperiences } from "../../cms/sheets";
 import { pickLang, splitPipe } from "../../cms/types";
-
+import Button from "../../core/ui/Button.astro";
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
 }
@@ -74,22 +75,23 @@ const gallery = [
       </p>
 
       <div class="mt-6 flex flex-wrap gap-3">
-        <a
-          class="rounded-full px-5 py-2 bg-white text-black active:scale-[0.98] transition"
-          href={s.booking_url}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t(lang, "Book now", "Reservar")}
-        </a>
+  <Button
+  href={s.booking_url}
+  target="_blank"
+  rel="noreferrer"
+  variant="light"
+>
+  {t(lang, "Book now", "Reservar")}
+</Button>
 
-        <a
-          class="rounded-full px-5 py-2 border border-white/35 bg-white/0 text-white active:scale-[0.98] transition"
-          href={`/${lang}/rooms/`}
-        >
-          {t(lang, "Explore rooms", "Ver habitaciones")}
-        </a>
-      </div>
+  <Button
+  href={`/${lang}/rooms/`}
+  variant="ghost"
+  class="border-white/35 bg-white/0 text-white"
+>
+  {t(lang, "Explore rooms", "Ver habitaciones")}
+</Button>
+</div>
     </div>
   </section>
 
