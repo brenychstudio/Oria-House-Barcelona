@@ -1,0 +1,45 @@
+---
+import { getSettings } from "../../cms/sheets";
+import type { Lang } from "../../content/languages";
+const { lang } = Astro.props as { lang: Lang };
+
+const s = await getSettings();
+
+const hotelName = lang === "es" ? s.hotel_name_es : s.hotel_name_en;
+const bookLabel = lang === "es" ? "Reservar" : "Book";
+const roomsLabel = lang === "es" ? "Habitaciones" : "Rooms";
+const offersLabel = lang === "es" ? "Ofertas" : "Offers";
+const expLabel = lang === "es" ? "Experiencias" : "Experiences";
+const contactLabel = lang === "es" ? "Contacto" : "Contact";
+
+const pathname = Astro.url.pathname || `/${lang}/`;
+const enHref = pathname.replace(/^\/(en|es)(?=\/|$)/, "/en");
+const esHref = pathname.replace(/^\/(en|es)(?=\/|$)/, "/es");
+---
+
+<header class="sticky top-0 z-50 backdrop-blur bg-white/70 border-b border-black/10">
+  <div class="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+    <a href={`/${lang}/`} class="text-sm tracking-wide uppercase">{hotelName}</a>
+
+    <nav class="flex items-center gap-4 text-sm">
+      <a class="opacity-80 hover:opacity-100" href={`/${lang}/rooms/`}>{roomsLabel}</a>
+      <a class="opacity-80 hover:opacity-100" href={`/${lang}/offers/`}>{offersLabel}</a>
+      <a class="opacity-80 hover:opacity-100" href={`/${lang}/experiences/`}>{expLabel}</a>
+      <a class="opacity-80 hover:opacity-100" href={`/${lang}/contact/`}>{contactLabel}</a>
+
+      <div class="ml-2 inline-flex items-center rounded-full border border-black/15 p-1 text-xs">
+        <a class={lang === "en" ? "px-2 py-1 rounded-full bg-black text-white" : "px-2 py-1 rounded-full opacity-70 hover:opacity-100"} href={enHref}>EN</a>
+        <a class={lang === "es" ? "px-2 py-1 rounded-full bg-black text-white" : "px-2 py-1 rounded-full opacity-70 hover:opacity-100"} href={esHref}>ES</a>
+      </div>
+
+      <a
+        class="ml-2 inline-flex items-center rounded-full px-4 py-2 bg-black text-white active:scale-[0.98] transition"
+        href={s.booking_url}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {bookLabel}
+      </a>
+    </nav>
+  </div>
+</header>

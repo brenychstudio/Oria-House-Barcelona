@@ -1,0 +1,43 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { LANGS, type Lang, isLang, t } from "../../content/languages";
+import { getSettings } from "../../cms/sheets";
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const langParam = Astro.params.lang ?? "en";
+if (!isLang(langParam)) throw new Error("Invalid lang");
+const lang = langParam as Lang;
+
+const s = await getSettings();
+const title = t(lang, "Contact", "Contacto");
+const waLink = `https://wa.me/${s.whatsapp.replace(/[^\d]/g, "")}`;
+---
+
+<BaseLayout lang={lang} title={title}>
+  <h1 class="text-2xl tracking-tight">{title}</h1>
+  <div class="mt-6 grid gap-6 sm:grid-cols-2">
+    <div class="rounded-2xl border border-black/10 p-5">
+      <div class="text-sm opacity-70">{t(lang, "Address", "Dirección")}</div>
+      <div class="mt-2">{lang === "es" ? s.address_es : s.address_en}</div>
+
+      <div class="mt-5 text-sm opacity-70">WhatsApp</div>
+      <a class="mt-2 inline-block underline" href={waLink} target="_blank" rel="noreferrer">{s.whatsapp}</a>
+
+      <div class="mt-5 text-sm opacity-70">{t(lang, "Email", "Email")}</div>
+      <a class="mt-2 inline-block underline" href={`mailto:${s.email}`}>{s.email}</a>
+    </div>
+
+    <div class="rounded-2xl border border-black/10 overflow-hidden bg-black/5 min-h-[260px]">
+      <iframe
+        title="map"
+        class="w-full h-full"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        src={`https://www.google.com/maps?q=${s.coords_lat},${s.coords_lng}&z=14&output=embed`}
+      />
+    </div>
+  </div>
+</BaseLayout>
