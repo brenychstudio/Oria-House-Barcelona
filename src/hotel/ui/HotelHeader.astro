@@ -1,0 +1,38 @@
+---
+import CoreHeader from "../../core/ui/CoreHeader.astro";
+import { LANGS, type Lang, isLang, t } from "../../content/languages";
+import { getSettings } from "../../cms/sheets";
+
+const { lang, pathname = "/" } = Astro.props as { lang: string; pathname?: string };
+
+const langParam = lang ?? "en";
+if (!isLang(langParam)) throw new Error("Invalid lang");
+const L = langParam as Lang;
+
+const s = await getSettings();
+const siteName = t(L, s.hotel_name_en, s.hotel_name_es);
+
+const nav = [
+  { href: `/${L}/rooms/`, label: t(L, "Rooms", "Habitaciones") },
+  { href: `/${L}/offers/`, label: t(L, "Offers", "Ofertas") },
+  { href: `/${L}/experiences/`, label: t(L, "Experiences", "Experiencias") },
+  { href: `/${L}/contact/`, label: t(L, "Contact", "Contacto") },
+  { href: `/${L}/location/`, label: t(L, "Location", "Ubicación") },
+];
+
+const cta = {
+  href: s.booking_url,
+  label: t(L, "Book", "Reservar"),
+  target: "_blank",
+  rel: "noreferrer",
+};
+---
+
+<CoreHeader
+  siteName={siteName}
+  nav={nav}
+  cta={cta}
+  lang={L}
+  langs={LANGS}
+  pathname={pathname}
+/>
