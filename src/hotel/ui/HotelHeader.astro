@@ -2,6 +2,7 @@
 import CoreHeader from "../../core/ui/CoreHeader.astro";
 import { LANGS, type Lang, isLang, t } from "../../content/languages";
 import { getSettings } from "../../cms/sheets";
+import { getHotelNav, getHotelCtaLabel } from "../content/nav";
 
 const { lang, pathname = "/" } = Astro.props as { lang: string; pathname?: string };
 
@@ -12,17 +13,12 @@ const L = langParam as Lang;
 const s = await getSettings();
 const siteName = t(L, s.hotel_name_en, s.hotel_name_es);
 
-const nav = [
-  { href: `/${L}/rooms/`, label: t(L, "Rooms", "Habitaciones") },
-  { href: `/${L}/offers/`, label: t(L, "Offers", "Ofertas") },
-  { href: `/${L}/experiences/`, label: t(L, "Experiences", "Experiencias") },
-  { href: `/${L}/contact/`, label: t(L, "Contact", "Contacto") },
-  { href: `/${L}/location/`, label: t(L, "Location", "Ubicación") },
-];
+// ✅ nav і CTA label тепер беруться з одного джерела (src/hotel/content/nav.ts)
+const nav = getHotelNav(L);
 
 const cta = {
   href: s.booking_url,
-  label: t(L, "Book", "Reservar"),
+  label: getHotelCtaLabel(L),
   target: "_blank",
   rel: "noreferrer",
 };
