@@ -3,6 +3,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { LANGS, type Lang, isLang, t } from "../../../content/languages";
 import { getOffers } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
+import Card from "../../../core/ui/Card.astro";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -21,20 +22,35 @@ const title = t(lang, "Offers", "Ofertas");
 
   <div class="mt-6 grid gap-6 sm:grid-cols-2">
     {offers.map((o) => (
-      <a class="block rounded-2xl border border-black/10 overflow-hidden active:scale-[0.99] transition" href={`/${lang}/offers/${o.slug}/`}>
+      <Card
+        href={`/${lang}/offers/${o.slug}/`}
+        class="active:scale-[0.99] transition"
+      >
         <div class="aspect-[4/3] bg-black/5">
-          {o.cover_image ? <img src={o.cover_image} alt="" class="h-full w-full object-cover" /> : null}
+          {o.cover_image ? (
+            <img
+              src={o.cover_image}
+              alt=""
+              class="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : null}
         </div>
+
         <div class="p-4">
           <h2 class="text-lg">{pickLang(lang, o, "title")}</h2>
           <p class="mt-2 text-sm opacity-80">{pickLang(lang, o, "period")}</p>
+
           <div class="mt-3 flex flex-wrap gap-2">
-            {splitPipe(pickLang(lang, o, "included")).slice(0, 2).map((x) => (
-              <span class="text-xs rounded-full px-3 py-1 bg-black/5">{x}</span>
-            ))}
+            {splitPipe(pickLang(lang, o, "included"))
+              .slice(0, 2)
+              .map((x) => (
+                <span class="text-xs rounded-full px-3 py-1 bg-black/5">{x}</span>
+              ))}
           </div>
         </div>
-      </a>
+      </Card>
     ))}
   </div>
 </BaseLayout>
