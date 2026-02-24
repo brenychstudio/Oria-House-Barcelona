@@ -1,1 +1,1 @@
-export * from "../hotel/cms/sheets";
+export * from "../vertical/cms/sheets";

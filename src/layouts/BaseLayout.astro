@@ -1,23 +1,8 @@
 ---
-import "../styles/global.css";
-
-import type { Lang } from "../content/languages";
-import HotelHeader from "../hotel/ui/HotelHeader.astro";
-
-const { lang, title } = Astro.props as { lang: Lang; title: string };
+import HotelLayout from "../vertical/layouts/HotelLayout.astro";
+const props = Astro.props;
 ---
 
-<!doctype html>
-<html lang={lang}>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-  </head>
-  <body class="bg-white text-black">
-    <HotelHeader lang={lang} pathname={Astro.url.pathname} />
-    <main class="mx-auto max-w-6xl px-4 py-10">
-      <slot />
-    </main>
-  </body>
-</html>
+<HotelLayout {...props}>
+  <slot />
+</HotelLayout>

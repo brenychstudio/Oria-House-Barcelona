@@ -1,2 +1,2 @@
 // src/cms/sheetsFetch.ts
-export * from "../hotel/cms/sheetsFetch";
+export * from "../vertical/cms/sheetsFetch";

@@ -4,8 +4,8 @@ import Button from "../../core/ui/Button.astro";
 import { LANGS, type Lang, isLang, t } from "../../content/languages";
 import { getSettings, getRooms, getOffers, getExperiences, getReviews } from "../../cms/sheets";
 import { pickLang, splitPipe } from "../../cms/types";
-import { getHomeCopy } from "../../hotel/content/home";
-import { getHotelLabels } from "../../hotel/content/labels";
+import { getHomeCopy } from "../../vertical/content/home";
+import { getHotelLabels } from "../../vertical/content/labels";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));

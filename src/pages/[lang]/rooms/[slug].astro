@@ -3,7 +3,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { LANGS, type Lang, isLang } from "../../../content/languages";
 import { getRooms, getRoomBySlug, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
-import { getHotelLabels } from "../../../hotel/content/labels";
+import { getHotelLabels } from "../../../vertical/content/labels";
 
 export async function getStaticPaths() {
   const rooms = await getRooms();

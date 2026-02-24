@@ -1,17 +1,29 @@
-import "dotenv/config";
-
-function stripQuotes(v: string) {
-  return String(v).replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
-}
-
-export function getEnv(name: string): string | undefined {
+// src/core/cms/env.ts
+function readEnv(key: string): string | undefined {
   const v =
-    (process.env[name] ?? (import.meta as any)?.env?.[name]) as string | undefined;
-  return v ? stripQuotes(v) : undefined;
+    // Astro/Vite server-side
+    (import.meta as any)?.env?.[key] ??
+    // Node runtime
+    (process as any)?.env?.[key];
+
+  if (typeof v !== "string") return undefined;
+  const s = v.trim();
+  return s.length ? s : undefined;
 }
 
-export function requireEnv(name: string): string {
-  const v = getEnv(name);
-  if (!v) throw new Error(`Missing env var: ${name}`);
-  return v;
+export function getEnv(key: string): string | undefined {
+  return readEnv(key);
+}
+
+export function isStrictEnv(): boolean {
+  const mode = readEnv("ENGINE_MODE");
+  const strict = readEnv("ENGINE_STRICT_ENV");
+  return mode === "strict" || strict === "1" || strict === "true";
+}
+
+// Лишаємо "жорсткий" requireEnv для тих місць, де це справді must-have.
+export function requireEnv(key: string): string {
+  const v = readEnv(key);
+  if (v) return v;
+  throw new Error(`Missing env var: ${key}`);
 }

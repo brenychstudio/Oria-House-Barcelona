@@ -4,7 +4,7 @@ import { LANGS, type Lang, isLang } from "../../../content/languages";
 import { getRooms } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
 import Card from "../../../core/ui/Card.astro";
-import { getHotelLabels } from "../../../hotel/content/labels";
+import { getHotelLabels } from "../../../vertical/content/labels";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));

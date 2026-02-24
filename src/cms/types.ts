@@ -1,1 +1,1 @@
-export * from "../hotel/cms/types";
+export * from "../vertical/cms/types";
