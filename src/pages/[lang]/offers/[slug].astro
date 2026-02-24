@@ -1,8 +1,9 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { LANGS, type Lang, isLang, t } from "../../../content/languages";
-import { getOffers, getSettings } from "../../../cms/sheets";
+import { getOffers, getOfferBySlug, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
+import { getHotelLabels } from "../../../hotel/content/labels";
 
 export async function getStaticPaths() {
   const offers = await getOffers();
@@ -17,9 +18,10 @@ const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
+const L = getHotelLabels(lang);
+
 const slug = Astro.params.slug!;
-const offers = await getOffers();
-const offer = offers.find((o) => o.slug === slug);
+const offer = await getOfferBySlug(slug);
 if (!offer) throw new Error(`Offer not found: ${slug}`);
 
 const s = await getSettings();
@@ -31,6 +33,7 @@ const terms = pickLang(lang, offer, "terms");
 
 const cover = (offer.cover_image ?? "").trim();
 const gallery = splitPipe(offer.gallery_images);
+
 const images = [
   ...(cover ? [cover] : []),
   ...gallery.filter((x) => x && x !== cover),
@@ -48,7 +51,7 @@ const ctaHref = isContact
 <BaseLayout lang={lang} title={title}>
   <div class="flex items-center justify-between gap-4">
     <a class="text-sm opacity-70 hover:opacity-100 underline" href={`/${lang}/offers/`}>
-      {t(lang, "Back to offers", "Volver a ofertas")}
+      {L.backToOffers}
     </a>
 
     <a
@@ -88,7 +91,7 @@ const ctaHref = isContact
 
     {included.length ? (
       <div class="mt-8">
-        <h2 class="text-lg tracking-tight">{t(lang, "Included", "Incluye")}</h2>
+        <h2 class="text-lg tracking-tight">{L.included}</h2>
         <ul class="mt-4 space-y-2">
           {included.map((x) => (
             <li class="text-sm opacity-85">• {x}</li>
@@ -99,7 +102,7 @@ const ctaHref = isContact
 
     {terms ? (
       <div class="mt-8">
-        <h2 class="text-lg tracking-tight">{t(lang, "Terms", "Términos")}</h2>
+        <h2 class="text-lg tracking-tight">{L.terms}</h2>
         <p class="mt-3 text-sm opacity-80 whitespace-pre-line">{terms}</p>
       </div>
     ) : null}
@@ -108,8 +111,8 @@ const ctaHref = isContact
   {images.length > 1 ? (
     <section class="mt-10 mb-16">
       <div class="flex items-end justify-between">
-        <h2 class="text-lg tracking-tight">{t(lang, "Gallery", "Galería")}</h2>
-        <div class="text-xs opacity-60">{t(lang, "Tap to view full size", "Toca para ver en grande")}</div>
+        <h2 class="text-lg tracking-tight">{L.gallery}</h2>
+        <div class="text-xs opacity-60">{L.tapFull}</div>
       </div>
 
       <div class="mt-5 grid gap-4 sm:grid-cols-2">
@@ -135,7 +138,7 @@ const ctaHref = isContact
           target={!isContact ? "_blank" : undefined}
           rel="noreferrer"
         >
-          {t(lang, "Book", "Reservar")}
+          {L.book}
         </a>
       </div>
     </div>

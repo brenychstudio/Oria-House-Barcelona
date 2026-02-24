@@ -1,8 +1,9 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { LANGS, type Lang, isLang, t } from "../../../content/languages";
-import { getExperiences, getSettings } from "../../../cms/sheets";
+import { getExperiences, getExperienceBySlug, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
+import { getHotelLabels } from "../../../hotel/content/labels";
 
 export async function getStaticPaths() {
   const xs = await getExperiences();
@@ -17,9 +18,10 @@ const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
+const L = getHotelLabels(lang);
+
 const slug = Astro.params.slug!;
-const xs = await getExperiences();
-const x = xs.find((it) => it.slug === slug);
+const x = await getExperienceBySlug(slug);
 if (!x) throw new Error(`Experience not found: ${slug}`);
 
 const s = await getSettings();
@@ -29,13 +31,14 @@ const desc = pickLang(lang, x, "description");
 
 const cover = (x.cover_image ?? "").trim();
 const gallery = splitPipe(x.gallery_images);
+
 const images = [
   ...(cover ? [cover] : []),
   ...gallery.filter((p) => p && p !== cover),
 ].filter(Boolean);
 
 const isContact = String((x as any).cta_type ?? "").toLowerCase() === "contact";
-const ctaLabel = isContact ? t(lang, "Contact us", "Contacto") : t(lang, "Book", "Reservar");
+const ctaLabel = isContact ? t(lang, "Contact us", "Contacto") : L.book;
 const ctaHref = isContact
   ? `/${lang}/contact/`
   : ((x as any).cta_url && String((x as any).cta_url).trim())
@@ -48,7 +51,7 @@ const cat = String((x as any).category ?? "").trim();
 <BaseLayout lang={lang} title={title}>
   <div class="flex items-center justify-between gap-4">
     <a class="text-sm opacity-70 hover:opacity-100 underline" href={`/${lang}/experiences/`}>
-      {t(lang, "Back to experiences", "Volver a experiencias")}
+      {L.backToExperiences}
     </a>
 
     <a
@@ -91,8 +94,8 @@ const cat = String((x as any).category ?? "").trim();
   {images.length > 1 ? (
     <section class="mt-10 mb-16">
       <div class="flex items-end justify-between">
-        <h2 class="text-lg tracking-tight">{t(lang, "Gallery", "Galería")}</h2>
-        <div class="text-xs opacity-60">{t(lang, "Tap to view full size", "Toca para ver en grande")}</div>
+        <h2 class="text-lg tracking-tight">{L.gallery}</h2>
+        <div class="text-xs opacity-60">{L.tapFull}</div>
       </div>
 
       <div class="mt-5 grid gap-4 sm:grid-cols-2">
@@ -118,7 +121,7 @@ const cat = String((x as any).category ?? "").trim();
           target={!isContact ? "_blank" : undefined}
           rel="noreferrer"
         >
-          {t(lang, "Book", "Reservar")}
+          {L.book}
         </a>
       </div>
     </div>

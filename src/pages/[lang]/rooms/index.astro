@@ -1,9 +1,10 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { LANGS, type Lang, isLang } from "../../../content/languages";
 import { getRooms } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
 import Card from "../../../core/ui/Card.astro";
+import { getHotelLabels } from "../../../hotel/content/labels";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -13,8 +14,10 @@ const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
+const L = getHotelLabels(lang);
+
 const rooms = await getRooms();
-const title = t(lang, "Rooms", "Habitaciones");
+const title = L.rooms;
 ---
 
 <BaseLayout lang={lang} title={title}>
@@ -22,10 +25,7 @@ const title = t(lang, "Rooms", "Habitaciones");
 
   <div class="mt-6 grid gap-6 sm:grid-cols-2">
     {rooms.map((r) => (
-      <Card
-        href={`/${lang}/rooms/${r.slug}/`}
-        class="active:scale-[0.99] transition"
-      >
+      <Card href={`/${lang}/rooms/${r.slug}/`} class="active:scale-[0.99] transition">
         <div class="aspect-[4/3] bg-black/5">
           {r.cover_image ? (
             <img
@@ -41,9 +41,7 @@ const title = t(lang, "Rooms", "Habitaciones");
         <div class="p-4">
           <div class="flex items-baseline justify-between gap-3">
             <h2 class="text-lg">{pickLang(lang, r, "name")}</h2>
-            {r.price_from ? (
-              <span class="text-sm opacity-70">€{r.price_from}</span>
-            ) : null}
+            {r.price_from ? <span class="text-sm opacity-70">€{r.price_from}</span> : null}
           </div>
 
           <p class="mt-2 text-sm opacity-80">{pickLang(lang, r, "short")}</p>

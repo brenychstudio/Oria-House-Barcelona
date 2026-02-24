@@ -1,8 +1,9 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { LANGS, type Lang, isLang, t } from "../../../content/languages";
-import { getRooms, getSettings } from "../../../cms/sheets";
+import { getRooms, getRoomBySlug, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
+import { getHotelLabels } from "../../../hotel/content/labels";
 
 export async function getStaticPaths() {
   const rooms = await getRooms();
@@ -17,9 +18,10 @@ const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
+const L = getHotelLabels(lang);
+
 const slug = Astro.params.slug!;
-const rooms = await getRooms();
-const room = rooms.find((r) => r.slug === slug);
+const room = await getRoomBySlug(slug);
 if (!room) throw new Error(`Room not found: ${slug}`);
 
 const s = await getSettings();
@@ -54,7 +56,7 @@ const images = [
 <BaseLayout lang={lang} title={title}>
   <div class="flex items-center justify-between gap-4">
     <a class="text-sm opacity-70 hover:opacity-100 underline" href={`/${lang}/rooms/`}>
-      {t(lang, "Back to rooms", "Volver a habitaciones")}
+      {L.backToRooms}
     </a>
 
     <a
@@ -63,14 +65,20 @@ const images = [
       target="_blank"
       rel="noreferrer"
     >
-      {t(lang, "Book this room", "Reservar")}
+      {L.book}
     </a>
   </div>
 
   <section class="mt-6 overflow-hidden rounded-3xl border border-black/10">
     <div class="aspect-[16/9] bg-black/5">
       {cover ? (
-        <img src={cover} alt="" class="h-full w-full object-cover" loading="eager" decoding="async" />
+        <img
+          src={cover}
+          alt=""
+          class="h-full w-full object-cover"
+          loading="eager"
+          decoding="async"
+        />
       ) : null}
     </div>
   </section>
@@ -90,7 +98,7 @@ const images = [
         target="_blank"
         rel="noreferrer"
       >
-        {t(lang, "Book", "Reservar")}
+        {L.book}
       </a>
     </div>
 
@@ -128,17 +136,47 @@ const images = [
   {images.length ? (
     <section class="mt-10 mb-16">
       <div class="flex items-end justify-between">
-        <h2 class="text-lg tracking-tight">{t(lang, "Gallery", "Galería")}</h2>
-        <div class="text-xs opacity-60">{t(lang, "Tap to view full size", "Toca para ver en grande")}</div>
+        <h2 class="text-lg tracking-tight">{L.gallery}</h2>
+        <div class="text-xs opacity-60">{L.tapFull}</div>
       </div>
 
       <div class="mt-5 grid gap-4 sm:grid-cols-2">
         {images.map((src) => (
-          <a href={src} target="_blank" rel="noreferrer" class="block rounded-2xl overflow-hidden bg-black/5 active:scale-[0.995] transition">
-            <img src={src} alt="" class="h-full w-full object-cover" loading="lazy" decoding="async" />
+          <a
+            href={src}
+            target="_blank"
+            rel="noreferrer"
+            class="block rounded-2xl overflow-hidden bg-black/5 active:scale-[0.995] transition"
+          >
+            <img
+              src={src}
+              alt=""
+              class="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
           </a>
         ))}
       </div>
     </section>
   ) : null}
+
+  <div class="fixed inset-x-0 bottom-0 z-50 sm:hidden">
+    <div class="mx-auto max-w-6xl px-4 pb-4">
+      <div class="rounded-2xl border border-black/10 bg-white/80 backdrop-blur p-3 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="text-xs opacity-60">{t(lang, "Book direct", "Reserva directa")}</div>
+          <div class="text-sm truncate">{roomName}</div>
+        </div>
+        <a
+          class="shrink-0 rounded-full px-4 py-2 bg-black text-white active:scale-[0.98] transition"
+          href={bookUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {L.book}
+        </a>
+      </div>
+    </div>
+  </div>
 </BaseLayout>

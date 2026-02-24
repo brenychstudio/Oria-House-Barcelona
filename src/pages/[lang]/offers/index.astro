@@ -1,9 +1,10 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { LANGS, type Lang, isLang } from "../../../content/languages";
 import { getOffers } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
 import Card from "../../../core/ui/Card.astro";
+import { getHotelLabels } from "../../../hotel/content/labels";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -13,8 +14,10 @@ const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
+const L = getHotelLabels(lang);
+
 const offers = await getOffers();
-const title = t(lang, "Offers", "Ofertas");
+const title = L.offers;
 ---
 
 <BaseLayout lang={lang} title={title}>
@@ -22,10 +25,7 @@ const title = t(lang, "Offers", "Ofertas");
 
   <div class="mt-6 grid gap-6 sm:grid-cols-2">
     {offers.map((o) => (
-      <Card
-        href={`/${lang}/offers/${o.slug}/`}
-        class="active:scale-[0.99] transition"
-      >
+      <Card href={`/${lang}/offers/${o.slug}/`} class="active:scale-[0.99] transition">
         <div class="aspect-[4/3] bg-black/5">
           {o.cover_image ? (
             <img
