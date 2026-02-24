@@ -5,6 +5,7 @@ import { LANGS, type Lang, isLang, t } from "../../content/languages";
 import { getSettings, getRooms, getOffers, getExperiences } from "../../cms/sheets";
 import { pickLang, splitPipe } from "../../cms/types";
 import Button from "../../core/ui/Button.astro";
+import { getHomeCopy } from "../../hotel/content/home";
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
 }
@@ -16,12 +17,7 @@ const lang = langParam as Lang;
 const s = await getSettings();
 const title = t(lang, s.hotel_name_en, s.hotel_name_es);
 
-const headline = t(lang, "A quiet boutique hotel in Barcelona.", "Un hotel boutique tranquilo en Barcelona.");
-const sub = t(
-  lang,
-  "Direct booking focus. Editorial design. Performance-first.",
-  "Enfoque en reservas directas. Diseño editorial. Rendimiento primero."
-);
+const { headline, sub } = getHomeCopy(lang);
 
 const heroSrc =
   (s.hero_image && s.hero_image.trim()) ||
