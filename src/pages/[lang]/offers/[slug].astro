@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { LANGS, type Lang, isLang } from "../../../content/languages";
 import { getOffers, getOfferBySlug, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
 import { getHotelLabels } from "../../../hotel/content/labels";
@@ -40,7 +40,8 @@ const images = [
 ].filter(Boolean);
 
 const isContact = String((offer as any).cta_type ?? "").toLowerCase() === "contact";
-const ctaLabel = isContact ? t(lang, "Contact us", "Contacto") : t(lang, "Book this offer", "Reservar");
+const ctaLabel = isContact ? L.contactUs : L.bookThisOffer;
+
 const ctaHref = isContact
   ? `/${lang}/contact/`
   : ((offer as any).cta_url && String((offer as any).cta_url).trim())
@@ -117,7 +118,12 @@ const ctaHref = isContact
 
       <div class="mt-5 grid gap-4 sm:grid-cols-2">
         {images.map((src) => (
-          <a href={src} target="_blank" rel="noreferrer" class="block rounded-2xl overflow-hidden bg-black/5 active:scale-[0.995] transition">
+          <a
+            href={src}
+            target="_blank"
+            rel="noreferrer"
+            class="block rounded-2xl overflow-hidden bg-black/5 active:scale-[0.995] transition"
+          >
             <img src={src} alt="" class="h-full w-full object-cover" loading="lazy" decoding="async" />
           </a>
         ))}
@@ -129,7 +135,7 @@ const ctaHref = isContact
     <div class="mx-auto max-w-6xl px-4 pb-4">
       <div class="rounded-2xl border border-black/10 bg-white/80 backdrop-blur p-3 flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <div class="text-xs opacity-60">{t(lang, "Direct booking", "Reserva directa")}</div>
+          <div class="text-xs opacity-60">{L.directBooking}</div>
           <div class="text-sm truncate">{title}</div>
         </div>
         <a

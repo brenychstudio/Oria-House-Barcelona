@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { LANGS, type Lang, isLang } from "../../../content/languages";
 import { getRooms, getRoomBySlug, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
 import { getHotelLabels } from "../../../hotel/content/labels";
@@ -35,10 +35,10 @@ const bookUrl =
     : s.booking_url;
 
 const facts = [
-  room.guests ? { label: t(lang, "Guests", "Huéspedes"), value: room.guests } : null,
-  room.size_sqm ? { label: t(lang, "Size", "Tamaño"), value: `${room.size_sqm} m²` } : null,
-  pickLang(lang, room, "beds") ? { label: t(lang, "Beds", "Camas"), value: pickLang(lang, room, "beds") } : null,
-  room.price_from ? { label: t(lang, "From", "Desde"), value: `€${room.price_from}` } : null,
+  room.guests ? { label: L.guests, value: room.guests } : null,
+  room.size_sqm ? { label: L.size, value: `${room.size_sqm} m²` } : null,
+  pickLang(lang, room, "beds") ? { label: L.beds, value: pickLang(lang, room, "beds") } : null,
+  room.price_from ? { label: L.from, value: `€${room.price_from}` } : null,
 ].filter(Boolean);
 
 const amenities = splitPipe(pickLang(lang, room, "amenities"));
@@ -124,7 +124,7 @@ const images = [
 
   {amenities.length ? (
     <section class="mt-10">
-      <h2 class="text-lg tracking-tight">{t(lang, "Amenities", "Comodidades")}</h2>
+      <h2 class="text-lg tracking-tight">{L.amenities}</h2>
       <div class="mt-4 flex flex-wrap gap-2">
         {amenities.slice(0, 18).map((x) => (
           <span class="text-xs rounded-full px-3 py-1 border border-black/10">{x}</span>
@@ -165,7 +165,7 @@ const images = [
     <div class="mx-auto max-w-6xl px-4 pb-4">
       <div class="rounded-2xl border border-black/10 bg-white/80 backdrop-blur p-3 flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <div class="text-xs opacity-60">{t(lang, "Book direct", "Reserva directa")}</div>
+          <div class="text-xs opacity-60">{L.bookDirect}</div>
           <div class="text-sm truncate">{roomName}</div>
         </div>
         <a
