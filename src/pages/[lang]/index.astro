@@ -1,11 +1,16 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Button from "../../core/ui/Button.astro";
 import { LANGS, type Lang, isLang, t } from "../../content/languages";
-import { getSettings, getRooms, getOffers, getExperiences, getReviews } from "../../cms/sheets";
-import { pickLang, splitPipe } from "../../cms/types";
-import { getHomeCopy } from "../../vertical/content/home";
-import { getHotelLabels } from "../../vertical/content/labels";
+import { getExperiences, getOffers, getReviews, getRooms, getSettings } from "../../cms/sheets";
+import { pickLang } from "../../cms/types";
+import {
+  EXPERIENCE_COVER_BY_SLUG,
+  GALLERY_ARCHIVE_IMAGES,
+  HOTEL_DEMO_ASSETS,
+  OFFER_COVER_BY_SLUG,
+  ROOM_COVER_BY_SLUG,
+} from "../../hotel/data/demoAssets";
+import CinematicGalleryPreview from "../../hotel/ui/CinematicGalleryPreview.astro";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -15,241 +20,3155 @@ const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
-const L = getHotelLabels(lang);
-
 const s = await getSettings();
-const title = t(lang, s.hotel_name_en, s.hotel_name_es);
 
-const { headline, sub } = getHomeCopy(lang);
-
-const heroSrc =
-  (s.hero_image && s.hero_image.trim()) ||
-  "/hotels/barcelona-boutique-demo/hero/hero-16x9.png";
-
-const rooms = (await getRooms()).slice(0, 3);
-const offers = (await getOffers()).slice(0, 3);
-const exps = (await getExperiences()).slice(0, 4);
-
+const rooms = (await getRooms()).filter((room) =>
+  Boolean(ROOM_COVER_BY_SLUG[room.slug] ?? (room.cover_image ?? "").trim())
+);
+const offers = (await getOffers()).filter((offer) =>
+  Boolean(OFFER_COVER_BY_SLUG[offer.slug] ?? (offer.cover_image ?? "").trim())
+);
+const experiences = (await getExperiences()).filter((experience) =>
+  Boolean(EXPERIENCE_COVER_BY_SLUG[experience.slug] ?? (experience.cover_image ?? "").trim())
+);
 const reviews = (await getReviews()).slice(0, 2);
 
-const gallery = [
-  "/hotels/barcelona-boutique-demo/gallery/courtyard-16x9.png",
-  "/hotels/barcelona-boutique-demo/gallery/gallery-staircase-4x5.png",
-  "/hotels/barcelona-boutique-demo/gallery/gallery-courtyard-reflection-1x1.png",
-  "/hotels/barcelona-boutique-demo/restaurant/restaurant-corner-16x9.png",
-];
+const siteName = t(lang, s.hotel_name_en, s.hotel_name_es);
+const title = `${siteName} - ${t(
+  lang,
+  "Boutique hotel in Barcelona",
+  "Hotel boutique en Barcelona"
+)}`;
+
+const compact = (value: unknown) => String(value ?? "").trim();
+
+const bookingUrl = compact((s as any).booking_url);
+
+const heroFrame = HOTEL_DEMO_ASSETS.homeHero;
+
+const featuredRoom = rooms[0];
+const secondaryRoom = rooms[1];
+const featuredOffer = offers[0];
+const featuredExperience = experiences[0];
+const secondaryExperience = experiences[1];
+
+const heroEyebrow = t(lang, "Barcelona / Boutique stay", "Barcelona / Estancia boutique");
+const heroTitleLineA = t(lang, "Stay inside", "Entre en");
+const heroTitleLineB = t(
+  lang,
+  "Barcelona's quieter rhythm.",
+  "el ritmo más tranquilo de Barcelona."
+);
+const heroTitle = `${heroTitleLineA} ${heroTitleLineB}`;
+
+const heroText = t(
+  lang,
+  "Wake into soft rooms, quiet materials, terrace hours and a direct path to the stay before the city gets loud.",
+  "Despiértese entre habitaciones suaves, materiales tranquilos, horas de terraza y una ruta directa hacia la estancia antes de que la ciudad despierte."
+);
+
+const heroMicroNote = t(
+  lang,
+  "A calm Barcelona base",
+  "Una base tranquila en Barcelona"
+);
+
+const heroSceneA = t(lang, "Morning light", "Luz de mañana");
+const heroSceneB = t(lang, "Private return", "Regreso privado");
+
+const heroScrollCue = t(lang, "Scroll to enter", "Scroll para entrar");
+
+const bookLabel = t(lang, "Book direct", "Reservar directo");
+const exploreLabel = t(lang, "Explore the stay", "Explorar la estancia");
+const roomsLabel = t(lang, "Rooms", "Habitaciones");
+const offersLabel = t(lang, "Offers", "Ofertas");
+const experiencesLabel = t(lang, "Experiences", "Experiencias");
+const galleryLabel = t(lang, "Gallery", "Galería");
+
+const roomsHref = `/${lang}/rooms/`;
+const offersHref = `/${lang}/offers/`;
+const experiencesHref = `/${lang}/experiences/`;
+const galleryHref = `/${lang}/gallery/`;
+const contactHref = `/${lang}/contact/`;
+
+/**
+ * R2 rule:
+ * For the Home prototype we use stable demo media fallbacks.
+ * This protects Home from broken visual blocks while Sheets/assets are still settling.
+ */
+const roomPathImage =
+  (featuredRoom ? ROOM_COVER_BY_SLUG[featuredRoom.slug] : "") ||
+  compact(featuredRoom?.cover_image) ||
+  HOTEL_DEMO_ASSETS.roomStudioCourtyard;
+const offerPathImage =
+  (featuredOffer ? OFFER_COVER_BY_SLUG[featuredOffer.slug] : "") ||
+  compact(featuredOffer?.cover_image) ||
+  HOTEL_DEMO_ASSETS.offerStay3Pay2;
+const experiencePathImage =
+  (featuredExperience ? EXPERIENCE_COVER_BY_SLUG[featuredExperience.slug] : "") ||
+  compact(featuredExperience?.cover_image) ||
+  HOTEL_DEMO_ASSETS.experienceRooftopSunset;
+
+const archiveHero = GALLERY_ARCHIVE_IMAGES[0] ?? HOTEL_DEMO_ASSETS.galleryCourtyardArrival;
+
+const homeArchiveItems = [
+  {
+    id: "courtyard-arrival",
+    title: t(lang, "Courtyard arrival", "Llegada al patio"),
+    section: t(lang, "Courtyard", "Patio"),
+    mood: t(lang, "Quiet arrival", "Llegada tranquila"),
+    signal: t(lang, "stone / water / olive light", "piedra / agua / luz de olivo"),
+    src: GALLERY_ARCHIVE_IMAGES[0] ?? archiveHero,
+    alt: t(lang, "Quiet hotel courtyard with pool and olive tree.", "Patio tranquilo del hotel con piscina y olivo."),
+  },
+  {
+    id: "staircase-light",
+    title: t(lang, "Staircase light", "Luz de escalera"),
+    section: t(lang, "Architecture", "Arquitectura"),
+    mood: t(lang, "Soft vertical movement", "Movimiento vertical suave"),
+    signal: t(lang, "curve / plaster / silence", "curva / estuco / silencio"),
+    src: GALLERY_ARCHIVE_IMAGES[1] ?? HOTEL_DEMO_ASSETS.galleryArchitectureStaircase,
+    alt: t(lang, "Warm sculptural staircase in a boutique hotel.", "Escalera escultórica cálida en un hotel boutique."),
+  },
+  {
+    id: "dining-evening",
+    title: t(lang, "Dining evening", "Cena de noche"),
+    section: t(lang, "Dining", "Gastronomía"),
+    mood: t(lang, "Warm evening", "Noche cálida"),
+    signal: t(lang, "table / glow / return", "mesa / brillo / regreso"),
+    src: GALLERY_ARCHIVE_IMAGES[2] ?? HOTEL_DEMO_ASSETS.galleryDiningEvening,
+    alt: t(lang, "Warm dining corner with table and soft light.", "Rincón de comedor cálido con mesa y luz suave."),
+  },
+  {
+    id: "water-reflection",
+    title: t(lang, "Water reflection", "Reflejo de agua"),
+    section: t(lang, "Pool", "Piscina"),
+    mood: t(lang, "Still afternoon", "Tarde quieta"),
+    signal: t(lang, "reflection / shade / pause", "reflejo / sombra / pausa"),
+    src: GALLERY_ARCHIVE_IMAGES[3] ?? HOTEL_DEMO_ASSETS.galleryPoolReflection,
+    alt: t(lang, "Pool reflection and courtyard texture.", "Reflejo de piscina y textura del patio."),
+  },
+  {
+    id: "room-calm",
+    title: t(lang, "Room calm", "Calma de habitación"),
+    section: t(lang, "Room", "Habitación"),
+    mood: t(lang, "Morning room", "Habitación de mañana"),
+    signal: t(lang, "linen / wood / soft light", "lino / madera / luz suave"),
+    src: GALLERY_ARCHIVE_IMAGES[7] ?? roomPathImage,
+    alt: t(lang, "Quiet room with bed, wood and soft morning light.", "Habitación tranquila con cama, madera y luz suave de mañana."),
+  },
+].filter((item) => Boolean(item.src));
+
+const stayStatement = t(
+  lang,
+  "Not a hotel catalogue. A staged way to understand the stay before arrival.",
+  "No es un catálogo de hotel. Es una forma escenificada de entender la estancia antes de llegar."
+);
+
+const stayText = t(
+  lang,
+  "Rooms, offers, experiences and location are treated as connected states of one stay: morning light, city routes, terrace hours and the private return.",
+  "Habitaciones, ofertas, experiencias y ubicación se presentan como estados conectados de una misma estancia: luz de mañana, rutas urbanas, horas de terraza y regreso privado."
+);
+
+const roomTitle = featuredRoom ? pickLang(lang, featuredRoom, "name") : roomsLabel;
+const roomText = featuredRoom
+  ? pickLang(lang, featuredRoom, "short")
+  : t(lang, "Quiet rooms shaped by light and material.", "Habitaciones tranquilas definidas por luz y material.");
+
+const offerTitle = featuredOffer ? pickLang(lang, featuredOffer, "title") : offersLabel;
+const offerText = featuredOffer
+  ? pickLang(lang, featuredOffer, "period")
+  : t(lang, "Seasonal packages for a slower stay.", "Paquetes de temporada para una estancia más pausada.");
+
+const experienceTitle = featuredExperience ? pickLang(lang, featuredExperience, "title") : experiencesLabel;
+const experienceText = featuredExperience
+  ? pickLang(lang, featuredExperience, "description")
+  : t(lang, "Rituals, views and local moments beyond the room.", "Rituales, vistas y momentos locales más allá de la habitación.");
+
+type StayPath = {
+  id: string;
+  label: string;
+  title: string;
+  text: string;
+  href: string;
+  image: string;
+};
+
+const stayPaths: StayPath[] = [
+  featuredRoom
+    ? {
+        id: "room",
+        label: roomsLabel,
+        title: roomTitle,
+        text: roomText,
+        href: `/${lang}/rooms/${featuredRoom.slug}/`,
+        image: roomPathImage,
+      }
+    : null,
+  featuredOffer
+    ? {
+        id: "offer",
+        label: offersLabel,
+        title: offerTitle,
+        text: offerText,
+        href: `/${lang}/offers/${featuredOffer.slug}/`,
+        image: offerPathImage,
+      }
+    : null,
+  featuredExperience
+    ? {
+        id: "experience",
+        label: experiencesLabel,
+        title: experienceTitle,
+        text: experienceText,
+        href: `/${lang}/experiences/${featuredExperience.slug}/`,
+        image: experiencePathImage,
+      }
+    : null,
+].filter((item): item is StayPath => Boolean(item && item.image));
+
+const initialStayPath = stayPaths[0];
+const stayPathCount = stayPaths.length;
+
+const stayObjectEyebrow = t(
+  lang,
+  "Stay path selector",
+  "Selector de estancia"
+);
+
+const stayObjectTitle = t(
+  lang,
+  "Choose the rhythm before choosing the room.",
+  "Elija el ritmo antes de elegir la habitación."
+);
+
+const stayObjectText = t(
+  lang,
+  "Move between room, package and experience as connected states of the same stay.",
+  "Muévase entre habitación, paquete y experiencia como estados conectados de la misma estancia."
+);
+
+const openStayPathLabel = t(lang, "Open path", "Abrir recorrido");
+const previousStayLabel = t(lang, "Previous path", "Recorrido anterior");
+const nextStayLabel = t(lang, "Next path", "Siguiente recorrido");
+
+const dockAriaLabel = t(lang, "Home stay navigation", "Navegación de estancia");
+const dockPrevSectionLabel = t(lang, "Previous section", "Sección anterior");
+const dockNextSectionLabel = t(lang, "Next section", "Siguiente sección");
+const dockPrevPageLabel = t(lang, "Previous page", "Página anterior");
+const dockNextPageLabel = t(lang, "Next page", "Página siguiente");
+
+const dockHeroTitle = t(lang, "Arrival", "Llegada");
+const dockStayTitle = t(lang, "Stay paths", "Recorridos");
+const dockGalleryTitle = t(lang, "Gallery field", "Campo galería");
+const dockClosingTitle = t(lang, "Direct stay", "Estancia directa");
+
+const dockSectionMode = t(lang, "Section", "Sección");
+const dockStayMode = t(lang, "Stay selector", "Selector de estancia");
+const dockGalleryMode = t(lang, "Gallery frames", "Frames de galería");
+
+const archiveTitle = t(
+  lang,
+  "A visual field of rooms, rituals and quiet returns.",
+  "Un campo visual de habitaciones, rituales y regresos tranquilos."
+);
+
+const archiveText = t(
+  lang,
+  "The gallery is treated as a cinematic memory of the hotel, not a static grid.",
+  "La galería se trata como una memoria cinematográfica del hotel, no como una cuadrícula estática."
+);
+
+const closingEyebrow = t(lang, "Before arrival", "Antes de llegar");
+
+const closingTitle = t(
+  lang,
+  "Let the hotel shape the stay before you arrive.",
+  "Deje que el hotel dé forma a la estancia antes de llegar."
+);
+
+const closingText = t(
+  lang,
+  "Use direct booking for the clearest route, or contact the team for room advice, arrival details and a more personal Barcelona stay.",
+  "Use la reserva directa para la ruta más clara, o contacte con el equipo para asesoramiento de habitación, detalles de llegada y una estancia más personal en Barcelona."
+);
+
+const closingImage = HOTEL_DEMO_ASSETS.galleryDiningEvening || archiveHero || heroFrame;
+
+const guestSignalTitle = t(
+  lang,
+  "Quiet proof from slower stays.",
+  "Prueba tranquila de estancias más pausadas."
+);
+
+const guestSignalText = t(
+  lang,
+  "Short notes are treated as atmosphere, not marketing noise.",
+  "Las notas breves se tratan como atmósfera, no como ruido de marketing."
+);
 ---
 
-<BaseLayout lang={lang} title={title}>
-  <!-- HERO (hotel-style) -->
-  <section class="relative overflow-hidden rounded-3xl border border-black/10">
-    <div class="aspect-[16/10] sm:aspect-[21/9] bg-black/5">
-      <img
-        src={heroSrc}
-        alt=""
-        class="h-full w-full object-cover"
-        loading="eager"
-        decoding="async"
-      />
-    </div>
+<BaseLayout lang={lang} title={title} fullBleed>
+  <section
+    id="home-hero"
+    class="hotel-home-stage"
+    aria-label={heroTitle}
+    data-home-section
+    data-dock-title={dockHeroTitle}
+    data-dock-mode={dockSectionMode}
+  >
+    <img
+      src={heroFrame}
+      alt=""
+      class="hotel-home-stage__image"
+      loading="eager"
+      decoding="async"
+    />
 
-    <div class="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent"></div>
+    <div class="hotel-home-stage__veil"></div>
+    <div class="hotel-home-stage__grain" aria-hidden="true"></div>
 
-    <div class="absolute bottom-0 left-0 right-0 p-6 sm:p-10 text-white">
-      <div class="text-xs uppercase tracking-widest opacity-80">
-        {t(lang, "Barcelona · Boutique", "Barcelona · Boutique")}
+    <div class="hotel-home-stage__inner">
+      <div class="hotel-home-stage__top hc-home-rise">
+        <div class="hotel-home-kicker">{heroEyebrow}</div>
+
+        <div class="hotel-home-presence" aria-hidden="true">
+          <span>{heroSceneA}</span>
+          <span>{heroSceneB}</span>
+        </div>
       </div>
 
-      <h1 class="mt-3 text-3xl sm:text-5xl tracking-tight">{headline}</h1>
+      <div class="hotel-home-stage__content">
+        <div class="hotel-home-stage__copy hc-home-rise hc-home-rise--delay-1">
+          <p class="hotel-home-small">
+            {t(lang, "Oria House Barcelona", "Oria House Barcelona")}
+          </p>
 
-      <p class="mt-3 max-w-2xl text-sm sm:text-base opacity-85">{sub}</p>
+          <h1 class="hotel-home-display" aria-label={heroTitle}>
+            <span>{heroTitleLineA}</span>
+            <span>{heroTitleLineB}</span>
+          </h1>
+        </div>
 
-      <div class="mt-6 flex flex-wrap gap-3">
-        <Button href={s.booking_url} target="_blank" rel="noreferrer" variant="light">
-          {L.bookNow}
-        </Button>
+        <aside class="hotel-home-stage__panel hc-home-rise hc-home-rise--delay-2">
+          <div class="hotel-home-stage__panel-label">{heroMicroNote}</div>
+          <p>{heroText}</p>
 
-        <Button
-          href={`/${lang}/rooms/`}
-          variant="ghost"
-          class="border-white/35 bg-white/0 text-white"
-        >
-          {L.exploreRooms}
-        </Button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ROOMS -->
-  <section class="mt-14">
-    <div class="flex items-end justify-between">
-      <h2 class="text-xl tracking-tight">{L.rooms}</h2>
-      <a class="text-sm opacity-70 hover:opacity-100 underline" href={`/${lang}/rooms/`}>
-        {L.viewAll}
-      </a>
-    </div>
-
-    <div class="mt-6 grid gap-6 sm:grid-cols-3">
-      {rooms.map((r) => (
-        <a
-          class="block rounded-2xl border border-black/10 overflow-hidden active:scale-[0.99] transition"
-          href={`/${lang}/rooms/${r.slug}/`}
-        >
-          <div class="aspect-[4/3] bg-black/5">
-            {r.cover_image ? (
-              <img
-                src={r.cover_image}
-                alt=""
-                class="h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
+          <div class="mt-6 flex flex-wrap gap-3">
+            {bookingUrl ? (
+              <a
+                href={bookingUrl}
+                target="_blank"
+                rel="noreferrer"
+                class="hotel-home-button hotel-home-button--light"
+              >
+                {bookLabel}
+              </a>
             ) : null}
+
+            <a href="#stay-field" class="hotel-home-button hotel-home-button--ghost">
+              {exploreLabel}
+            </a>
           </div>
+        </aside>
+      </div>
 
-          <div class="p-4">
-            <div class="flex items-baseline justify-between gap-3">
-              <h3 class="text-base">{pickLang(lang, r, "name")}</h3>
-              {r.price_from ? <span class="text-sm opacity-70">€{r.price_from}</span> : null}
-            </div>
+      <a
+        href="#stay-field"
+        class="hotel-home-scroll-cue hc-home-rise hc-home-rise--delay-3"
+        aria-label={heroScrollCue}
+      >
+        <span>{heroScrollCue}</span>
+        <i aria-hidden="true"></i>
+      </a>
 
-            <p class="mt-2 text-sm opacity-80">{pickLang(lang, r, "short")}</p>
-
-            <div class="mt-3 flex flex-wrap gap-2">
-              {splitPipe(pickLang(lang, r, "highlights"))
-                .slice(0, 2)
-                .map((x) => (
-                  <span class="text-xs rounded-full px-3 py-1 bg-black/5">{x}</span>
-                ))}
-            </div>
-          </div>
+      <div class="hotel-home-stage__bottom hc-home-rise hc-home-rise--delay-3">
+        <a href={roomsHref} class="hotel-home-route">
+          <span>{roomsLabel}</span>
+          <span>{rooms.length}</span>
         </a>
-      ))}
+
+        <a href={offersHref} class="hotel-home-route">
+          <span>{offersLabel}</span>
+          <span>{offers.length}</span>
+        </a>
+
+        <a href={experiencesHref} class="hotel-home-route">
+          <span>{experiencesLabel}</span>
+          <span>{experiences.length}</span>
+        </a>
+      </div>
     </div>
   </section>
 
-  <!-- OFFERS -->
-  {offers.length ? (
-    <section class="mt-14">
-      <div class="flex items-end justify-between">
-        <h2 class="text-xl tracking-tight">{L.offers}</h2>
-        <a class="text-sm opacity-70 hover:opacity-100 underline" href={`/${lang}/offers/`}>
-          {L.viewAll}
-        </a>
-      </div>
+  <section
+    id="stay-field"
+    class="hotel-living-section"
+    data-living-stay-field
+    data-home-section
+    data-dock-title={dockStayTitle}
+    data-dock-mode={dockStayMode}
+  >
+    <div class="hotel-section-label">
+      {t(lang, "Living stay field", "Campo vivo de estancia")}
+    </div>
 
-      <div class="mt-6 grid gap-6 sm:grid-cols-3">
-        {offers.map((o) => (
-          <a
-            class="block rounded-2xl border border-black/10 overflow-hidden active:scale-[0.99] transition"
-            href={`/${lang}/offers/${o.slug}/`}
-          >
-            <div class="aspect-[16/10] bg-black/5">
-              {o.cover_image ? (
-                <img
-                  src={o.cover_image}
-                  alt=""
-                  class="h-full w-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : null}
+    <div class="hotel-living-intro">
+      <h2 class="hotel-living-intro__title" aria-label={stayStatement}>
+        <span>{t(lang, "Not a hotel catalogue.", "No es un catálogo de hotel.")}</span>
+        <span>{t(lang, "A staged way to understand the stay before arrival.", "Una forma escenificada de entender la estancia antes de llegar.")}</span>
+      </h2>
+
+      <div class="hotel-living-intro__side">
+        <p>{stayText}</p>
+
+        <div class="hotel-living-intro__signal" aria-hidden="true">
+          <span>{roomsLabel}</span>
+          <span>{offersLabel}</span>
+          <span>{experiencesLabel}</span>
+        </div>
+      </div>
+    </div>
+
+    {initialStayPath ? (
+      <div class="hotel-stay-object-field" data-stay-object-field>
+        <div
+          class="hotel-stay-object-field__stage"
+          data-stay-object-stage
+          tabindex="0"
+          role="group"
+          aria-label={stayObjectTitle}
+        >
+          {stayPaths.map((path, index) => (
+            <a
+              href={path.href}
+              class:list={[
+                "hotel-stay-object",
+                `hotel-stay-object--${index + 1}`,
+                index === 0 && "is-active",
+                index === 1 && "is-next",
+                index === 2 && "is-prev",
+                index > 2 && "is-quiet",
+              ]}
+              data-stay-object
+              data-stay-index={index}
+              data-stay-label={path.label}
+              data-stay-title={path.title}
+              data-stay-text={path.text}
+              data-stay-href={path.href}
+            >
+              <img src={path.image} alt="" loading="lazy" decoding="async" />
+
+              <div class="hotel-stay-object__shade" aria-hidden="true"></div>
+
+              <div class="hotel-stay-object__readout">
+                <small>{String(index + 1).padStart(2, "0")}</small>
+                <span>{path.label}</span>
+                <strong>{path.title}</strong>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        <aside class="hotel-stay-object-field__panel">
+          <div>
+            <div class="hotel-section-label">{stayObjectEyebrow}</div>
+            <h3>{stayObjectTitle}</h3>
+            <p>{stayObjectText}</p>
+          </div>
+
+          <div class="hotel-stay-object-field__active">
+            <div class="hotel-stay-object-field__count" data-stay-active-count>
+              {`01 / ${String(stayPathCount).padStart(2, "0")}`}
             </div>
 
-            <div class="p-4">
-              <h3 class="text-base">{pickLang(lang, o, "title")}</h3>
-              <p class="mt-2 text-sm opacity-80">{pickLang(lang, o, "period")}</p>
-            </div>
-          </a>
-        ))}
-      </div>
-    </section>
-  ) : null}
-
-  <!-- EXPERIENCES -->
-  {exps.length ? (
-    <section class="mt-14">
-      <div class="flex items-end justify-between">
-        <h2 class="text-xl tracking-tight">{L.experiences}</h2>
-        <a class="text-sm opacity-70 hover:opacity-100 underline" href={`/${lang}/experiences/`}>
-          {L.viewAll}
-        </a>
-      </div>
-
-      <div class="mt-6 grid gap-6 sm:grid-cols-2">
-        {exps.map((x) => (
-          <a
-            class="block rounded-2xl border border-black/10 overflow-hidden active:scale-[0.99] transition"
-            href={`/${lang}/experiences/${x.slug}/`}
-          >
-            <div class="aspect-[16/10] bg-black/5">
-              {x.cover_image ? (
-                <img
-                  src={x.cover_image}
-                  alt=""
-                  class="h-full w-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : null}
+            <div class="hotel-stay-object-field__label" data-stay-active-label>
+              {initialStayPath.label}
             </div>
 
-            <div class="p-4">
-              <div class="text-xs opacity-60">{x.category}</div>
-              <h3 class="mt-1 text-base">{pickLang(lang, x, "title")}</h3>
-              <p class="mt-2 text-sm opacity-80 line-clamp-2">{pickLang(lang, x, "description")}</p>
-            </div>
-          </a>
-        ))}
-      </div>
-    </section>
-  ) : null}
+            <h4 data-stay-active-title>{initialStayPath.title}</h4>
+            <p data-stay-active-text>{initialStayPath.text}</p>
 
- <!-- GALLERY STRIP -->
-<section class="mt-14">
-  <div class="flex items-end justify-between">
-    <h2 class="text-xl tracking-tight">{L.gallery}</h2>
-    <a class="text-sm opacity-70 hover:opacity-100 underline" href="#">
-      {L.cinematicPreview}
-    </a>
+            <div class="hotel-stay-object-field__actions">
+              <a href={initialStayPath.href} data-stay-active-link>
+                {openStayPathLabel}
+              </a>
+
+              <div class="hotel-stay-object-field__nav">
+                <button type="button" data-stay-prev aria-label={previousStayLabel}>←</button>
+                <button type="button" data-stay-next aria-label={nextStayLabel}>→</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    ) : null}
+  </section>
+
+  <div
+    id="home-gallery"
+    data-home-section
+    data-dock-title={dockGalleryTitle}
+    data-dock-mode={dockGalleryMode}
+  >
+    <CinematicGalleryPreview
+      id={`home-gallery-preview-${lang}`}
+      eyebrow={t(lang, "Cinematic memory", "Memoria cinematografica")}
+      title={archiveTitle}
+      intro={archiveText}
+      href={galleryHref}
+      hrefLabel={t(lang, "Open full gallery", "Abrir galeria completa")}
+      secondaryHref={experiencesHref}
+      secondaryLabel={t(lang, "View experiences", "Ver experiencias")}
+      items={homeArchiveItems}
+    />
   </div>
 
-    <div class="mt-6 grid gap-4 sm:grid-cols-12">
-      <div class="sm:col-span-7 rounded-2xl overflow-hidden bg-black/5">
-        <img src={gallery[0]} alt="" class="h-full w-full object-cover" loading="lazy" decoding="async" />
-      </div>
-
-      <div class="sm:col-span-5 grid gap-4">
-        <div class="rounded-2xl overflow-hidden bg-black/5">
-          <img src={gallery[1]} alt="" class="h-full w-full object-cover" loading="lazy" decoding="async" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div class="rounded-2xl overflow-hidden bg-black/5">
-            <img src={gallery[2]} alt="" class="h-full w-full object-cover" loading="lazy" decoding="async" />
-          </div>
-          <div class="rounded-2xl overflow-hidden bg-black/5">
-            <img src={gallery[3]} alt="" class="h-full w-full object-cover" loading="lazy" decoding="async" />
-          </div>
-        </div>
+  <section
+    id="home-closing"
+    class="hotel-closing-section"
+    data-home-section
+    data-dock-title={dockClosingTitle}
+    data-dock-mode={dockSectionMode}
+  >
+    <div class="hotel-closing__visual" aria-hidden="true">
+      <img src={closingImage} alt="" loading="lazy" decoding="async" />
+      <div class="hotel-closing__visual-readout">
+        <span>{t(lang, "Final frame", "Frame final")}</span>
+        <strong>{t(lang, "Direct stay", "Estancia directa")}</strong>
       </div>
     </div>
-  </section>
 
-  <!-- REVIEWS -->
-  {reviews.length ? (
-    <section class="mt-14 mb-10">
-      <h2 class="text-xl tracking-tight">{L.guestNotes}</h2>
+    <div class="hotel-closing__content">
+      <div class="hotel-closing__main">
+        <div class="hotel-section-label">{closingEyebrow}</div>
 
-      <div class="mt-6 grid gap-6 sm:grid-cols-2">
-        {reviews.map((r) => (
-          <div class="rounded-2xl border border-black/10 p-5">
-            <div class="text-xs opacity-60">{r.source} · {r.rating}</div>
-            <p class="mt-3 text-sm opacity-90">“{pickLang(lang, r, "quote")}”</p>
-            <div class="mt-3 text-sm opacity-70">— {r.author}</div>
-          </div>
-        ))}
+        <h2>{closingTitle}</h2>
+
+        <p>{closingText}</p>
+
+        <div class="hotel-closing__actions">
+          {bookingUrl ? (
+            <a
+              href={bookingUrl}
+              target="_blank"
+              rel="noreferrer"
+              class="hotel-home-button hotel-home-button--black"
+            >
+              {bookLabel}
+            </a>
+          ) : null}
+
+          <a href={contactHref} class="hotel-home-button hotel-home-button--outline">
+            {t(lang, "Contact hotel", "Contactar hotel")}
+          </a>
+        </div>
       </div>
-    </section>
-  ) : null}
+
+      {reviews.length ? (
+        <aside class="hotel-closing__notes">
+          <div>
+            <div class="hotel-section-label">
+              {t(lang, "Guest signal", "Señal de huéspedes")}
+            </div>
+
+            <h3>{guestSignalTitle}</h3>
+            <p>{guestSignalText}</p>
+          </div>
+
+          <div class="hotel-closing__note-list">
+            {reviews.map((r, index) => (
+              <article>
+                <small>{String(index + 1).padStart(2, "0")}</small>
+                <p>&ldquo;{pickLang(lang, r, "quote")}&rdquo;</p>
+                <span>- {pickLang(lang, r, "author")}</span>
+              </article>
+            ))}
+          </div>
+        </aside>
+      ) : null}
+  </div>
+</section>
+
+<nav class="hotel-stay-dock hotel-stay-dock--compact" data-home-stay-dock aria-label={dockAriaLabel}>
+  <button type="button" class="hotel-stay-dock__button" data-dock-left aria-label={dockPrevPageLabel}>
+    ←
+  </button>
+
+  <button type="button" class="hotel-stay-dock__button" data-dock-up aria-label={dockPrevSectionLabel}>
+    ↑
+  </button>
+
+  <button type="button" class="hotel-stay-dock__button" data-dock-down aria-label={dockNextSectionLabel}>
+    ↓
+  </button>
+
+  <button type="button" class="hotel-stay-dock__button" data-dock-right aria-label={dockNextPageLabel}>
+    →
+  </button>
+</nav>
+
+  <style>
+    .hotel-home-stage {
+      position: relative;
+      width: 100%;
+      min-height: 100svh;
+      margin-top: -5.2rem;
+      overflow: hidden;
+      background: #080705;
+      color: #fffaf2;
+    }
+
+    .hotel-home-stage__image {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      object-position: center center;
+      transform: scale(1.012);
+      filter: saturate(1.01) contrast(1.05) brightness(1.1);
+    }
+
+    .hotel-home-stage__veil {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(5, 5, 4, 0.56), rgba(5, 5, 4, 0.1) 48%, rgba(5, 5, 4, 0.5)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.16), rgba(5, 5, 4, 0.08) 42%, rgba(5, 5, 4, 0.72));
+    }
+
+    .hotel-home-stage__grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.1;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.016) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: linear-gradient(to bottom, transparent, black 20%, black 88%, transparent);
+    }
+
+    .hotel-home-stage__inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      min-height: 100svh;
+      width: min(100% - clamp(1.25rem, 4vw, 4rem), 1680px);
+      margin-inline: auto;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(7.8rem, 13vh, 10.5rem) 0 clamp(1.4rem, 4vh, 2.8rem);
+    }
+
+    .hotel-home-stage__top,
+    .hotel-home-stage__bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .hotel-home-kicker,
+    .hotel-home-presence {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      max-width: min(100%, 36rem);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.62rem 0.86rem;
+      border-radius: 999px;
+      backdrop-filter: blur(18px);
+      font-size: 0.64rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.72);
+      white-space: nowrap;
+    }
+
+    .hotel-home-presence span:not(:last-child)::after {
+      content: "/";
+      margin-left: 0.55rem;
+      opacity: 0.35;
+    }
+
+    .hotel-home-stage__content {
+      display: grid;
+      grid-template-columns: minmax(0, 0.94fr) minmax(18rem, 28rem);
+      align-items: center;
+      gap: clamp(2rem, 5vw, 5rem);
+    }
+
+    .hotel-home-stage__copy {
+      min-width: 0;
+    }
+
+    .hotel-home-display {
+      max-width: 12ch;
+      font-size: 4rem;
+      line-height: 0.9;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .hotel-home-display span {
+      display: block;
+    }
+
+    .hotel-home-display span + span {
+      text-indent: 1.4rem;
+    }
+
+    .hotel-home-small {
+      margin-bottom: 1.2rem;
+      max-width: 34rem;
+      font-size: 0.72rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.54);
+    }
+
+    .hotel-home-stage__panel {
+      max-width: 29rem;
+      justify-self: end;
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+      padding-block: 1.05rem 1.2rem;
+    }
+
+    .hotel-home-stage__panel-label {
+      margin-bottom: 0.8rem;
+      font-size: 0.62rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(255, 250, 242, 0.44);
+    }
+
+    .hotel-home-stage__panel p {
+      max-width: 27rem;
+      font-size: 0.98rem;
+      line-height: 1.75;
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .hotel-home-scroll-cue {
+      align-self: center;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: clamp(1rem, 2vh, 1.6rem);
+      color: rgba(255, 250, 242, 0.58);
+      font-size: 0.62rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .hotel-home-scroll-cue i {
+      display: block;
+      width: 1px;
+      height: 2.4rem;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 250, 242, 0.58),
+        rgba(255, 250, 242, 0)
+      );
+    }
+
+    .hotel-home-scroll-cue:hover {
+      color: #fffaf2;
+      transform: translateY(2px);
+    }
+
+    .hotel-home-stage__bottom {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .hotel-home-route {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.22);
+      padding-top: 0.82rem;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.7rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .hotel-home-route:hover {
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .hotel-home-button {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.1rem;
+      font-size: 0.88rem;
+      line-height: 1;
+      text-decoration: none;
+    }
+
+    .hotel-home-button--light {
+      background: #fffaf2;
+      color: #15120f;
+    }
+
+    .hotel-home-button--ghost {
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fffaf2;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .hotel-home-button--dark-ghost {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fffaf2;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .hotel-home-button--black {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .hotel-home-button--outline {
+      border: 1px solid rgba(21, 18, 15, 0.18);
+      color: #15120f;
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .hotel-living-section {
+      width: min(100% - clamp(1.25rem, 4vw, 4rem), 1480px);
+      margin-inline: auto;
+      margin-top: clamp(5rem, 10vw, 9rem);
+    }
+
+    .hotel-section-label {
+      font-size: 0.66rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .hotel-section-label--light {
+      color: rgba(255, 250, 242, 0.42);
+    }
+
+    .hotel-living-intro {
+      margin-top: 1.4rem;
+      display: grid;
+      gap: clamp(1.5rem, 5vw, 5rem);
+      grid-template-columns: minmax(0, 1.08fr) minmax(18rem, 0.58fr);
+      align-items: end;
+    }
+
+    .hotel-living-intro h2,
+    .hotel-archive-copy h2 {
+      font-size: 3rem;
+      line-height: 0.9;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .hotel-living-intro p,
+    .hotel-archive-copy p {
+      max-width: 36rem;
+      font-size: 1rem;
+      line-height: 1.82;
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .hotel-living-paths {
+      margin-top: clamp(2.2rem, 5vw, 4.5rem);
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: clamp(0.9rem, 2vw, 1.4rem);
+      align-items: start;
+    }
+
+    .hotel-living-path {
+      position: relative;
+      display: block;
+      min-height: clamp(29rem, 42vw, 46rem);
+      overflow: hidden;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: #15120f;
+      color: #fffaf2;
+      text-decoration: none;
+      isolation: isolate;
+    }
+
+    .hotel-living-path--1 {
+      grid-column: 1 / 8;
+    }
+
+    .hotel-living-path--2 {
+      grid-column: 8 / 13;
+      margin-top: clamp(4rem, 8vw, 8rem);
+      min-height: clamp(26rem, 35vw, 38rem);
+    }
+
+    .hotel-living-path--3 {
+      grid-column: 3 / 11;
+      margin-top: clamp(0.5rem, 2vw, 2rem);
+      min-height: clamp(28rem, 38vw, 42rem);
+    }
+
+    .hotel-living-path__media {
+      position: absolute;
+      inset: 0;
+      min-height: 0;
+      background: #15120f;
+    }
+
+    .hotel-living-path__media::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.12) 52%, rgba(0, 0, 0, 0.76)),
+        linear-gradient(300deg, rgba(255, 240, 210, 0.16), transparent 38%);
+      pointer-events: none;
+    }
+
+    .hotel-living-path__media img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      opacity: 0.94;
+      filter: saturate(0.98) contrast(1.04) brightness(1.04);
+      transition:
+        transform 900ms cubic-bezier(0.16, 1, 0.3, 1),
+        filter 900ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hotel-living-path:hover .hotel-living-path__media img {
+      transform: scale(1.035);
+      filter: saturate(1.05) contrast(1.06) brightness(1.08);
+    }
+
+    .hotel-living-path__copy {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      display: block;
+      padding: clamp(1.4rem, 4vw, 3rem);
+      background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.72));
+    }
+
+    .hotel-living-path__copy span {
+      font-size: 0.64rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(255, 250, 242, 0.48);
+    }
+
+    .hotel-living-path__copy h3 {
+      margin-top: 0.9rem;
+      max-width: 12ch;
+      font-size: 2.5rem;
+      line-height: 0.94;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .hotel-living-path__copy p {
+      margin-top: 1rem;
+      max-width: 34rem;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: rgba(255, 250, 242, 0.68);
+    }
+
+    .hotel-archive-section {
+      position: relative;
+      width: 100%;
+      margin-top: clamp(5rem, 10vw, 9rem);
+      display: grid;
+      min-height: 100svh;
+      grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.28fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: center;
+      background: #15120f;
+      color: #fffaf2;
+      padding: clamp(5rem, 8vw, 8rem) max(1rem, calc((100vw - 1480px) / 2));
+      overflow: hidden;
+    }
+
+    .hotel-archive-section::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(110deg, rgba(255, 255, 255, 0.08), transparent 42%),
+        linear-gradient(290deg, rgba(226, 188, 136, 0.18), transparent 46%);
+      pointer-events: none;
+    }
+
+    .hotel-archive-copy,
+    .hotel-archive-frame {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hotel-archive-copy p {
+      color: rgba(255, 250, 242, 0.64);
+    }
+
+    .hotel-archive-frame {
+      display: block;
+      overflow: hidden;
+      min-height: clamp(30rem, 54vw, 50rem);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      text-decoration: none;
+      color: #fffaf2;
+      box-shadow: 0 36px 110px rgba(0, 0, 0, 0.28);
+    }
+
+    .hotel-archive-frame > img {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      opacity: 1;
+      filter: brightness(1.1) contrast(1.05) saturate(1.04);
+      transition:
+        transform 1000ms cubic-bezier(0.16, 1, 0.3, 1),
+        filter 1000ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hotel-archive-frame:hover > img {
+      transform: scale(1.035);
+      filter: brightness(1.16) contrast(1.08) saturate(1.06);
+    }
+
+    .hotel-archive-frame::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(120deg, rgba(255, 245, 220, 0.12), transparent 38%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.2) 54%, rgba(0, 0, 0, 0.76));
+      pointer-events: none;
+    }
+
+    .hotel-archive-frame__readout {
+      position: absolute;
+      left: clamp(1.1rem, 3vw, 2rem);
+      right: clamp(1.1rem, 3vw, 2rem);
+      bottom: clamp(1.1rem, 3vw, 2rem);
+      z-index: 2;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      padding-top: 1rem;
+    }
+
+    .hotel-archive-frame__readout span {
+      font-size: 0.66rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(255, 250, 242, 0.5);
+    }
+
+    .hotel-archive-frame__readout strong {
+      font-size: 3rem;
+      line-height: 0.9;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .hotel-archive-filmstrip {
+      position: absolute;
+      z-index: 3;
+      right: clamp(1rem, 2vw, 1.4rem);
+      top: clamp(1rem, 2vw, 1.4rem);
+      display: flex;
+      gap: 0.55rem;
+      padding: 0.55rem;
+      background: rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(16px);
+    }
+
+    .hotel-archive-filmstrip span {
+      display: block;
+      height: 5rem;
+      width: 6.8rem;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .hotel-archive-filmstrip img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.04);
+    }
+
+    /* Stage 2G - Home Closing / Notes / CTA Editorial Reframe */
+
+    .hotel-closing-section {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+      min-height: 100svh;
+      overflow: hidden;
+      background: #f6efe4;
+      color: #15120f;
+    }
+
+    .hotel-closing__visual {
+      position: relative;
+      min-height: 100svh;
+      overflow: hidden;
+      background: #15120f;
+    }
+
+    .hotel-closing__visual img {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.04) contrast(1.04) saturate(1.02);
+      transform: scale(1.015);
+    }
+
+    .hotel-closing__visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(110deg, rgba(255, 236, 205, 0.16), transparent 38%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.7));
+      pointer-events: none;
+    }
+
+    .hotel-closing__visual-readout {
+      position: absolute;
+      left: clamp(1.25rem, 3vw, 2.4rem);
+      right: clamp(1.25rem, 3vw, 2.4rem);
+      bottom: clamp(1.25rem, 3vw, 2.4rem);
+      z-index: 2;
+      border-top: 1px solid rgba(255, 250, 242, 0.24);
+      padding-top: 1rem;
+      color: #fffaf2;
+    }
+
+    .hotel-closing__visual-readout span {
+      display: block;
+      font-size: 0.64rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(255, 250, 242, 0.5);
+    }
+
+    .hotel-closing__visual-readout strong {
+      margin-top: 0.75rem;
+      display: block;
+      max-width: 8ch;
+      font-size: 3rem;
+      line-height: 0.9;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .hotel-closing__content {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      min-height: 100svh;
+      padding: clamp(5rem, 8vw, 8rem) max(1.25rem, calc((100vw - 1480px) / 2)) clamp(3rem, 6vw, 5rem) clamp(1.25rem, 5vw, 5rem);
+    }
+
+    .hotel-closing__main {
+      display: flex;
+      max-width: 54rem;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .hotel-closing__main h2 {
+      margin-top: 1.2rem;
+      max-width: 9.8ch;
+      font-size: 3.4rem;
+      line-height: 0.9;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .hotel-closing__main p {
+      margin-top: 1.5rem;
+      max-width: 36rem;
+      font-size: 1rem;
+      line-height: 1.82;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .hotel-closing__actions {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .hotel-closing__notes {
+      display: grid;
+      grid-template-columns: minmax(0, 0.52fr) minmax(0, 0.9fr);
+      gap: clamp(1.2rem, 4vw, 4rem);
+      align-items: start;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: clamp(1.4rem, 3vw, 2.4rem);
+    }
+
+    .hotel-closing__notes h3 {
+      margin-top: 0.9rem;
+      max-width: 11ch;
+      font-size: 2rem;
+      line-height: 0.94;
+      letter-spacing: 0;
+    }
+
+    .hotel-closing__notes > div > p {
+      margin-top: 1rem;
+      max-width: 22rem;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: rgba(21, 18, 15, 0.58);
+    }
+
+    .hotel-closing__note-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .hotel-closing__note-list article {
+      border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+      padding-bottom: 1rem;
+    }
+
+    .hotel-closing__note-list article:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .hotel-closing__note-list small {
+      display: block;
+      margin-bottom: 0.7rem;
+      font-size: 0.64rem;
+      letter-spacing: 0;
+      color: rgba(21, 18, 15, 0.38);
+    }
+
+    .hotel-closing__note-list p {
+      max-width: 38rem;
+      font-size: 1.2rem;
+      line-height: 1.22;
+      letter-spacing: 0;
+    }
+
+    .hotel-closing__note-list span {
+      margin-top: 0.7rem;
+      display: block;
+      font-size: 0.84rem;
+      color: rgba(21, 18, 15, 0.5);
+    }
+
+    /* Stage 2F - Living Field Typography & Spacing Pass */
+
+    .hotel-living-section {
+      position: relative;
+    }
+
+    .hotel-living-section::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -2.2rem;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        rgba(21, 18, 15, 0.18),
+        rgba(21, 18, 15, 0.04),
+        transparent
+      );
+      pointer-events: none;
+    }
+
+    .hotel-living-intro {
+      grid-template-columns: minmax(0, 0.92fr) minmax(18rem, 0.52fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      align-items: start;
+    }
+
+    .hotel-living-intro__title {
+      max-width: 11.6ch;
+      font-size: 3.4rem;
+      line-height: 0.88;
+      letter-spacing: 0;
+    }
+
+    .hotel-living-intro__title span {
+      display: block;
+    }
+
+    .hotel-living-intro__title span + span {
+      margin-top: 0.08em;
+      text-indent: 1.4rem;
+    }
+
+    .hotel-living-intro__side {
+      display: flex;
+      min-height: 15rem;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding-bottom: 0.35rem;
+    }
+
+    .hotel-living-intro__side p {
+      max-width: 34rem;
+    }
+
+    .hotel-living-intro__signal {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .hotel-living-intro__signal span {
+      border: 1px solid rgba(21, 18, 15, 0.12);
+      background: rgba(255, 250, 242, 0.42);
+      padding: 0.62rem 0.78rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.5);
+    }
+
+    .hotel-living-rail {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(0.8rem, 2vw, 1.4rem);
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 0.85rem;
+    }
+
+    .hotel-living-rail span {
+      font-size: 0.62rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .hotel-living-paths {
+      margin-top: clamp(1.4rem, 3.5vw, 3rem);
+      gap: clamp(1rem, 2.5vw, 1.8rem);
+    }
+
+    .hotel-living-path {
+      border: 1px solid rgba(21, 18, 15, 0.08);
+      background: #0f0d0b;
+    }
+
+    .hotel-living-path--1 {
+      grid-column: 1 / 8;
+      min-height: clamp(31rem, 44vw, 47rem);
+    }
+
+    .hotel-living-path--2 {
+      grid-column: 8 / 13;
+      margin-top: clamp(5rem, 9vw, 9rem);
+      min-height: clamp(27rem, 36vw, 39rem);
+    }
+
+    .hotel-living-path--3 {
+      grid-column: 2 / 12;
+      margin-top: clamp(1rem, 3vw, 2.5rem);
+      min-height: clamp(30rem, 39vw, 43rem);
+    }
+
+    .hotel-living-path__copy {
+      padding: clamp(1.35rem, 3.2vw, 2.8rem);
+    }
+
+    .hotel-living-path__index {
+      display: block;
+      margin-bottom: clamp(1.3rem, 3vw, 2.4rem);
+      font-size: 0.72rem;
+      letter-spacing: 0;
+      color: rgba(255, 250, 242, 0.38);
+    }
+
+    .hotel-living-path__copy span {
+      font-size: 0.62rem;
+      letter-spacing: 0;
+    }
+
+    .hotel-living-path__copy h3 {
+      max-width: 10.5ch;
+      font-size: 2.8rem;
+      line-height: 0.9;
+    }
+
+    .hotel-living-path__copy p {
+      max-width: 30rem;
+      margin-top: 1.15rem;
+    }
+
+    .hotel-living-path--2 .hotel-living-path__copy h3 {
+      max-width: 8ch;
+    }
+
+    .hotel-living-path--3 .hotel-living-path__copy {
+      display: grid;
+      grid-template-columns: minmax(0, 0.36fr) minmax(0, 0.64fr);
+      gap: clamp(1rem, 4vw, 4rem);
+      align-items: end;
+    }
+
+    .hotel-living-path--3 .hotel-living-path__index,
+    .hotel-living-path--3 .hotel-living-path__copy span {
+      grid-column: 1;
+    }
+
+    .hotel-living-path--3 .hotel-living-path__copy h3,
+    .hotel-living-path--3 .hotel-living-path__copy p {
+      grid-column: 2;
+    }
+
+    /* Stage 2D - Living Stay Paths Scroll Flow Lite */
+
+    .hotel-living-path {
+      --path-media-x: 0px;
+      --path-media-y: 0px;
+      --path-media-scale: 1.02;
+      --path-media-rotate: 0deg;
+      --path-copy-y: 0px;
+      --path-shadow-y: 22px;
+      --path-shadow-blur: 64px;
+      --path-shadow-alpha: 0.08;
+      --path-focus: 0;
+
+      box-shadow: 0 var(--path-shadow-y) var(--path-shadow-blur)
+        rgba(21, 18, 15, var(--path-shadow-alpha));
+    }
+
+    .hotel-living-path__media {
+      inset: -2.5%;
+      transform:
+        translate3d(var(--path-media-x), var(--path-media-y), 0)
+        rotate(var(--path-media-rotate))
+        scale(var(--path-media-scale));
+      transform-origin: center;
+      will-change: transform;
+    }
+
+    .hotel-living-path__media img {
+      transform: scale(1.02);
+      transform-origin: center;
+    }
+
+    .hotel-living-path__copy {
+      transform: translate3d(0, var(--path-copy-y), 0);
+      will-change: transform;
+    }
+
+    .hotel-living-path::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: calc(0.16 + (var(--path-focus) * 0.22));
+      background:
+        linear-gradient(115deg, rgba(255, 245, 220, 0.14), transparent 42%),
+        linear-gradient(180deg, transparent 38%, rgba(0, 0, 0, 0.18));
+      transition: opacity 320ms ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hotel-living-path,
+      .hotel-living-path__media,
+      .hotel-living-path__copy,
+      .hotel-living-path__media img {
+        transform: none !important;
+        box-shadow: 0 22px 64px rgba(21, 18, 15, 0.08);
+      }
+    }
+
+    @media (min-width: 641px) {
+      .hotel-home-display {
+        font-size: 5.3rem;
+      }
+
+      .hotel-living-intro h2,
+      .hotel-archive-copy h2 {
+        font-size: 4.25rem;
+      }
+
+      .hotel-living-path__copy h3 {
+        font-size: 3.6rem;
+      }
+
+      .hotel-archive-frame__readout strong {
+        font-size: 4rem;
+      }
+
+      .hotel-closing__main h2 {
+        font-size: 5rem;
+      }
+
+      .hotel-closing__notes h3 {
+        font-size: 2.8rem;
+      }
+
+      .hotel-closing__note-list p {
+        font-size: 1.5rem;
+      }
+    }
+
+    @media (min-width: 981px) {
+      .hotel-home-stage__content {
+        grid-template-columns: minmax(0, 0.94fr) minmax(18rem, 28rem);
+        align-items: center;
+      }
+
+      .hotel-home-display {
+        font-size: 7rem;
+      }
+
+      .hotel-living-intro h2,
+      .hotel-archive-copy h2 {
+        font-size: 5.5rem;
+      }
+
+      .hotel-living-path__copy h3 {
+        font-size: 4.5rem;
+      }
+
+      .hotel-archive-frame__readout strong {
+        font-size: 4.8rem;
+      }
+
+      .hotel-closing__main h2 {
+        font-size: 6.8rem;
+      }
+
+      .hotel-closing__visual-readout strong {
+        font-size: 4.8rem;
+      }
+
+      .hotel-closing__notes h3 {
+        font-size: 3.4rem;
+      }
+
+      .hotel-closing__note-list p {
+        font-size: 1.8rem;
+      }
+    }
+
+    @media (min-width: 1280px) {
+      .hotel-home-display {
+        font-size: 8.6rem;
+      }
+
+      .hotel-living-intro h2,
+      .hotel-archive-copy h2 {
+        font-size: 6.25rem;
+      }
+
+      .hotel-closing__main h2 {
+        font-size: 8rem;
+      }
+
+      .hotel-closing__visual-readout strong {
+        font-size: 5.6rem;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hotel-home-stage {
+        margin-top: -5rem;
+      }
+
+      .hotel-home-stage__inner {
+        width: min(100% - 1.2rem, 1480px);
+        padding-top: 7.5rem;
+      }
+
+      .hotel-living-section {
+        width: min(100% - 1.2rem, 1480px);
+      }
+
+      .hotel-home-presence {
+        display: none;
+      }
+
+      .hotel-home-stage__content {
+        grid-template-columns: 1fr;
+        gap: 1.8rem;
+      }
+
+      .hotel-home-stage__panel {
+        justify-self: start;
+        max-width: 34rem;
+      }
+
+      .hotel-home-display span + span {
+        text-indent: 0;
+      }
+
+      .hotel-home-stage__bottom {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .hotel-home-route {
+        width: 100%;
+      }
+
+      .hotel-living-intro,
+      .hotel-archive-section {
+        grid-template-columns: 1fr;
+      }
+
+      .hotel-living-paths {
+        grid-template-columns: 1fr;
+      }
+
+      .hotel-living-path,
+      .hotel-living-path--1,
+      .hotel-living-path--2,
+      .hotel-living-path--3 {
+        grid-column: auto;
+        margin-top: 0;
+        min-height: 32rem;
+      }
+
+      .hotel-living-intro {
+        grid-template-columns: 1fr;
+      }
+
+      .hotel-living-intro__title {
+        max-width: 11ch;
+      }
+
+      .hotel-living-intro__title span + span {
+        text-indent: 0;
+      }
+
+      .hotel-living-intro__side {
+        min-height: auto;
+      }
+
+      .hotel-living-rail {
+        grid-template-columns: 1fr;
+      }
+
+      .hotel-living-path--1,
+      .hotel-living-path--2,
+      .hotel-living-path--3 {
+        grid-column: auto;
+        margin-top: 0;
+      }
+
+      .hotel-living-path--3 .hotel-living-path__copy {
+        display: block;
+      }
+
+      .hotel-closing-section {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .hotel-closing__visual {
+        min-height: 62svh;
+      }
+
+      .hotel-closing__content {
+        min-height: auto;
+        padding: 4rem 1.2rem 3.5rem;
+      }
+
+      .hotel-closing__notes {
+        margin-top: 3rem;
+        grid-template-columns: 1fr;
+      }
+
+      .hotel-archive-section {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hotel-home-stage__inner {
+        padding-top: 6.8rem;
+      }
+
+      .hotel-home-display {
+        font-size: 3.8rem;
+        max-width: 11ch;
+      }
+
+      .hotel-living-intro h2,
+      .hotel-archive-copy h2 {
+        font-size: 3.15rem;
+      }
+
+      .hotel-living-path__media {
+        min-height: 21rem;
+      }
+
+      .hotel-living-path__copy h3 {
+        font-size: 2.7rem;
+      }
+
+      .hotel-archive-filmstrip {
+        display: none;
+      }
+
+      .hotel-archive-frame {
+        min-height: 34rem;
+      }
+
+      .hotel-archive-frame__readout {
+        display: block;
+      }
+
+      .hotel-archive-frame__readout strong {
+        margin-top: 0.8rem;
+        display: block;
+      }
+
+      .hotel-closing__main h2 {
+        font-size: 3.4rem;
+      }
+
+      .hotel-closing__visual-readout strong {
+        font-size: 3rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .hc-home-rise {
+        animation: hcHomeRise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      .hc-home-rise--delay-1 {
+        animation-delay: 120ms;
+      }
+
+      .hc-home-rise--delay-2 {
+        animation-delay: 220ms;
+      }
+
+      .hc-home-rise--delay-3 {
+        animation-delay: 320ms;
+      }
+
+      @keyframes hcHomeRise {
+        from {
+          opacity: 0;
+          transform: translate3d(0, 18px, 0);
+          filter: blur(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0);
+          filter: blur(0);
+        }
+      }
+    }
+
+    /* Stage 2H - Home Global QA + Visual Tuning Pass */
+
+    .hotel-home-stage,
+    .hotel-living-section,
+    .hotel-closing-section {
+      overflow-x: clip;
+    }
+
+    #stay-field {
+      scroll-margin-top: 7rem;
+    }
+
+    .hotel-home-stage {
+      background:
+        linear-gradient(115deg, rgba(226, 188, 136, 0.12), transparent 42%),
+        #080705;
+    }
+
+    .hotel-home-stage__inner {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1680px);
+    }
+
+    .hotel-home-stage__top {
+      min-width: 0;
+    }
+
+    .hotel-home-kicker,
+    .hotel-home-presence {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hotel-home-display {
+      text-shadow: 0 22px 80px rgba(0, 0, 0, 0.26);
+    }
+
+    .hotel-home-display span {
+      overflow-wrap: normal;
+    }
+
+    .hotel-home-stage__panel {
+      background:
+        linear-gradient(180deg, rgba(255, 250, 242, 0.055), rgba(255, 250, 242, 0.018));
+      border-inline: 1px solid rgba(255, 255, 255, 0.08);
+      padding-inline: 1.05rem;
+      backdrop-filter: blur(14px);
+    }
+
+    .hotel-home-scroll-cue {
+      width: fit-content;
+    }
+
+    .hotel-living-section {
+      margin-top: clamp(6rem, 11vw, 10rem);
+    }
+
+    .hotel-living-intro__title {
+      text-shadow: 0 20px 70px rgba(64, 42, 24, 0.08);
+    }
+
+    .hotel-living-intro__side p {
+      color: rgba(21, 18, 15, 0.66);
+    }
+
+    .hotel-living-paths {
+      padding-bottom: clamp(1rem, 3vw, 3rem);
+    }
+
+    .hotel-living-path {
+      will-change: transform;
+      background: #100d0a;
+    }
+
+    .hotel-living-path__media img {
+      filter: saturate(1) contrast(1.045) brightness(1.08);
+    }
+
+    .hotel-living-path__media::after {
+      background:
+        linear-gradient(180deg, transparent 26%, rgba(0, 0, 0, 0.08) 52%, rgba(0, 0, 0, 0.68)),
+        linear-gradient(300deg, rgba(255, 240, 210, 0.18), transparent 38%);
+    }
+
+    .hotel-living-path__copy {
+      background:
+        linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.38) 28%, rgba(0, 0, 0, 0.76) 100%);
+    }
+
+    .hotel-living-path__copy h3 {
+      text-shadow: 0 18px 70px rgba(0, 0, 0, 0.34);
+    }
+
+    .hotel-living-path__copy p {
+      color: rgba(255, 250, 242, 0.72);
+    }
+
+    .hotel-closing-section {
+      margin-top: 0;
+    }
+
+    .hotel-closing__main h2 {
+      text-shadow: 0 22px 70px rgba(64, 42, 24, 0.07);
+    }
+
+    .hotel-closing__main p,
+    .hotel-closing__notes > div > p {
+      color: rgba(21, 18, 15, 0.66);
+    }
+
+    .hotel-closing__visual img {
+      object-position: center center;
+      filter: brightness(1.08) contrast(1.045) saturate(1.03);
+    }
+
+    @media (max-width: 1180px) {
+      .hotel-home-stage__inner {
+        width: min(100% - 1.4rem, 1680px);
+      }
+
+      .hotel-home-stage__content {
+        grid-template-columns: minmax(0, 1fr) minmax(17rem, 25rem);
+        gap: 2rem;
+      }
+
+      .hotel-home-stage__panel {
+        max-width: 27rem;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hotel-home-stage {
+        min-height: 100svh;
+      }
+
+      .hotel-home-stage__inner {
+        padding-top: 7rem;
+        padding-bottom: 1.25rem;
+      }
+
+      .hotel-home-stage__content {
+        align-items: end;
+      }
+
+      .hotel-home-stage__panel {
+        background: rgba(5, 5, 4, 0.2);
+      }
+
+      .hotel-home-scroll-cue {
+        margin-top: 1rem;
+      }
+
+      .hotel-living-section {
+        margin-top: 5.5rem;
+      }
+
+      .hotel-living-path {
+        min-height: 34rem;
+      }
+
+      .hotel-closing__content {
+        gap: 3rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hotel-home-stage__inner {
+        width: min(100% - 1rem, 1680px);
+        padding-top: 6.8rem;
+      }
+
+      .hotel-home-kicker {
+        max-width: 100%;
+        font-size: 0.58rem;
+        letter-spacing: 0;
+      }
+
+      .hotel-home-display {
+        font-size: 3.6rem;
+        line-height: 0.9;
+        letter-spacing: 0;
+      }
+
+      .hotel-home-stage__panel {
+        padding-inline: 0.9rem;
+      }
+
+      .hotel-home-route {
+        font-size: 0.64rem;
+        letter-spacing: 0;
+      }
+
+      .hotel-living-intro__title {
+        font-size: 3.1rem;
+        line-height: 0.9;
+      }
+
+      .hotel-living-intro__signal {
+        gap: 0.45rem;
+      }
+
+      .hotel-living-intro__signal span {
+        font-size: 0.56rem;
+        letter-spacing: 0;
+        padding: 0.55rem 0.65rem;
+      }
+
+      .hotel-living-rail span {
+        font-size: 0.56rem;
+        letter-spacing: 0;
+      }
+
+      .hotel-living-path {
+        min-height: 31rem;
+      }
+
+      .hotel-living-path__copy {
+        padding: 1.1rem;
+      }
+
+      .hotel-living-path__copy h3 {
+        font-size: 2.4rem;
+      }
+
+      .hotel-living-path__copy p {
+        font-size: 0.9rem;
+        line-height: 1.65;
+      }
+
+      .hotel-closing__content {
+        padding-inline: 1rem;
+      }
+
+      .hotel-closing__main h2 {
+        font-size: 3.2rem;
+        line-height: 0.9;
+      }
+
+      .hotel-closing__note-list p {
+        font-size: 1.15rem;
+      }
+    }
+
+    @supports not (overflow: clip) {
+      .hotel-home-stage,
+      .hotel-living-section,
+      .hotel-closing-section {
+        overflow-x: hidden;
+      }
+    }
+
+    /* Stage 2I - Stay Path Object Field Rebuild */
+
+    .hotel-stay-object-field {
+      --stay-pointer-x: 0px;
+      --stay-pointer-y: 0px;
+      --stay-field-presence: 0;
+
+      margin-top: clamp(2.5rem, 6vw, 5rem);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.38fr);
+      gap: clamp(1.2rem, 4vw, 4rem);
+      align-items: stretch;
+    }
+
+    .hotel-stay-object-field__stage {
+      position: relative;
+      min-height: clamp(38rem, 58vw, 56rem);
+      min-width: 0;
+      outline: none;
+      perspective: 1200px;
+      isolation: isolate;
+    }
+
+    .hotel-stay-object {
+      position: absolute;
+      display: block;
+      overflow: hidden;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: #15120f;
+      color: #fffaf2;
+      text-decoration: none;
+      box-shadow: 0 34px 100px rgba(21, 18, 15, 0.1);
+      transition:
+        opacity 720ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 720ms cubic-bezier(0.16, 1, 0.3, 1),
+        width 720ms cubic-bezier(0.16, 1, 0.3, 1),
+        height 720ms cubic-bezier(0.16, 1, 0.3, 1),
+        left 720ms cubic-bezier(0.16, 1, 0.3, 1),
+        right 720ms cubic-bezier(0.16, 1, 0.3, 1),
+        top 720ms cubic-bezier(0.16, 1, 0.3, 1),
+        bottom 720ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 720ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hotel-stay-object img {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.045) saturate(1.02);
+      transform: scale(1.02);
+      transition:
+        transform 900ms cubic-bezier(0.16, 1, 0.3, 1),
+        filter 900ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hotel-stay-object__shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(115deg, rgba(255, 245, 220, 0.18), transparent 38%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.2) 48%, rgba(0, 0, 0, 0.78));
+      pointer-events: none;
+    }
+
+    .hotel-stay-object__readout {
+      position: absolute;
+      left: clamp(1rem, 2.5vw, 2rem);
+      right: clamp(1rem, 2.5vw, 2rem);
+      bottom: clamp(1rem, 2.5vw, 2rem);
+      z-index: 2;
+      border-top: 1px solid rgba(255, 250, 242, 0.24);
+      padding-top: 1rem;
+    }
+
+    .hotel-stay-object__readout small,
+    .hotel-stay-object__readout span {
+      display: block;
+      font-size: 0.62rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(255, 250, 242, 0.48);
+    }
+
+    .hotel-stay-object__readout span {
+      margin-top: 1.2rem;
+    }
+
+    .hotel-stay-object__readout strong {
+      margin-top: 0.72rem;
+      display: block;
+      max-width: 10ch;
+      font-size: 2.8rem;
+      line-height: 0.9;
+      letter-spacing: 0;
+      font-weight: 400;
+      text-shadow: 0 18px 80px rgba(0, 0, 0, 0.34);
+    }
+
+    .hotel-stay-object.is-active {
+      left: 0;
+      top: 5%;
+      z-index: 4;
+      width: 72%;
+      height: 72%;
+      opacity: 1;
+      transform:
+        translate3d(var(--stay-pointer-x), var(--stay-pointer-y), 0)
+        scale(calc(1 + (var(--stay-field-presence) * 0.012)));
+      box-shadow: 0 42px 130px rgba(21, 18, 15, 0.16);
+    }
+
+    .hotel-stay-object.is-active:hover img {
+      transform: scale(1.045);
+      filter: brightness(1.13) contrast(1.055) saturate(1.04);
+    }
+
+    .hotel-stay-object.is-next {
+      right: 0;
+      top: 14%;
+      z-index: 3;
+      width: 42%;
+      height: 48%;
+      opacity: 0.86;
+      transform:
+        translate3d(
+          calc(var(--stay-pointer-x) * -0.42),
+          calc(var(--stay-pointer-y) * 0.42),
+          0
+        )
+        scale(0.985);
+    }
+
+    .hotel-stay-object.is-prev {
+      left: 12%;
+      bottom: 2%;
+      z-index: 2;
+      width: 50%;
+      height: 36%;
+      opacity: 0.68;
+      transform:
+        translate3d(
+          calc(var(--stay-pointer-x) * 0.32),
+          calc(var(--stay-pointer-y) * -0.28),
+          0
+        )
+        scale(0.96);
+    }
+
+    .hotel-stay-object.is-quiet {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.92);
+    }
+
+    .hotel-stay-object.is-next .hotel-stay-object__readout strong,
+    .hotel-stay-object.is-prev .hotel-stay-object__readout strong {
+      font-size: 2rem;
+    }
+
+    .hotel-stay-object-field__panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: clamp(1.4rem, 4vw, 3rem);
+      border-top: 1px solid rgba(21, 18, 15, 0.14);
+      padding-top: 1rem;
+    }
+
+    .hotel-stay-object-field__panel h3 {
+      margin-top: 1.1rem;
+      max-width: 10ch;
+      font-size: 2.6rem;
+      line-height: 0.92;
+      letter-spacing: 0;
+    }
+
+    .hotel-stay-object-field__panel > div > p {
+      margin-top: 1.2rem;
+      max-width: 28rem;
+      font-size: 0.96rem;
+      line-height: 1.76;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .hotel-stay-object-field__active {
+      align-self: end;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1.2rem;
+    }
+
+    .hotel-stay-object-field__count,
+    .hotel-stay-object-field__label {
+      font-size: 0.62rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .hotel-stay-object-field__label {
+      margin-top: 1.4rem;
+    }
+
+    .hotel-stay-object-field__active h4 {
+      margin-top: 0.8rem;
+      max-width: 9ch;
+      font-size: 2.4rem;
+      line-height: 0.92;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .hotel-stay-object-field__active p {
+      margin-top: 1rem;
+      max-width: 28rem;
+      font-size: 0.94rem;
+      line-height: 1.72;
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .hotel-stay-object-field__actions {
+      margin-top: 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .hotel-stay-object-field__actions > a {
+      display: inline-flex;
+      min-height: 2.7rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: #15120f;
+      color: #fffaf2;
+      padding-inline: 1rem;
+      font-size: 0.86rem;
+      text-decoration: none;
+    }
+
+    .hotel-stay-object-field__nav {
+      display: flex;
+      gap: 0.45rem;
+    }
+
+    .hotel-stay-object-field__nav button {
+      display: grid;
+      height: 2.7rem;
+      width: 2.7rem;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(21, 18, 15, 0.14);
+      background: rgba(255, 250, 242, 0.45);
+      color: #15120f;
+      cursor: pointer;
+    }
+
+    .hotel-stay-object-field__nav button:hover {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    @media (min-width: 641px) {
+      .hotel-stay-object__readout strong {
+        font-size: 4rem;
+      }
+
+      .hotel-stay-object.is-next .hotel-stay-object__readout strong,
+      .hotel-stay-object.is-prev .hotel-stay-object__readout strong {
+        font-size: 2.8rem;
+      }
+
+      .hotel-stay-object-field__panel h3 {
+        font-size: 3.4rem;
+      }
+
+      .hotel-stay-object-field__active h4 {
+        font-size: 3.2rem;
+      }
+    }
+
+    @media (min-width: 981px) {
+      .hotel-stay-object__readout strong {
+        font-size: 5.4rem;
+      }
+
+      .hotel-stay-object.is-next .hotel-stay-object__readout strong,
+      .hotel-stay-object.is-prev .hotel-stay-object__readout strong {
+        font-size: 3.4rem;
+      }
+
+      .hotel-stay-object-field__panel h3 {
+        font-size: 4.4rem;
+      }
+
+      .hotel-stay-object-field__active h4 {
+        font-size: 4rem;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hotel-stay-object-field {
+        grid-template-columns: 1fr;
+      }
+
+      .hotel-stay-object-field__stage {
+        min-height: 52rem;
+      }
+
+      .hotel-stay-object.is-active {
+        left: 0;
+        top: 0;
+        width: 82%;
+        height: 48%;
+      }
+
+      .hotel-stay-object.is-next {
+        right: 0;
+        top: 36%;
+        width: 52%;
+        height: 30%;
+      }
+
+      .hotel-stay-object.is-prev {
+        left: 0;
+        bottom: 0;
+        width: 58%;
+        height: 28%;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hotel-stay-object-field__stage {
+        display: grid;
+        gap: 0.8rem;
+        min-height: auto;
+      }
+
+      .hotel-stay-object.is-active,
+      .hotel-stay-object.is-next,
+      .hotel-stay-object.is-prev {
+        left: auto;
+        right: auto;
+        top: auto;
+        bottom: auto;
+        position: relative;
+        display: block;
+        width: 100%;
+        height: auto;
+        min-height: 18rem;
+        margin-bottom: 0.8rem;
+        opacity: 1;
+        transform: none;
+      }
+
+      .hotel-stay-object__readout strong {
+        font-size: 2.4rem;
+      }
+
+      .hotel-stay-object-field__actions {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hotel-stay-object,
+      .hotel-stay-object img {
+        transition-duration: 1ms !important;
+        transform: none !important;
+      }
+    }
+
+    /* Stage 2J - Home Stay Dock */
+
+    #home-hero,
+    #stay-field,
+    #home-gallery,
+    #home-closing {
+      scroll-margin-top: 6.5rem;
+    }
+
+    .hotel-stay-dock {
+      position: fixed;
+      left: 50%;
+      bottom: calc(1rem + env(safe-area-inset-bottom));
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      max-width: calc(100vw - 1rem);
+      transform: translateX(-50%);
+      border: 1px solid rgba(21, 18, 15, 0.14);
+      background: rgba(251, 247, 240, 0.72);
+      color: #15120f;
+      padding: 0.38rem;
+      border-radius: 999px;
+      box-shadow: 0 22px 80px rgba(64, 42, 24, 0.16);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .hotel-stay-dock__button {
+      display: grid;
+      height: 2.45rem;
+      width: 2.45rem;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.62);
+      color: #15120f;
+      font-size: 0.95rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .hotel-stay-dock__button:hover {
+      background: #15120f;
+      color: #fffaf2;
+      transform: translateY(-1px);
+    }
+
+    .hotel-stay-dock__button:active {
+      transform: translateY(0);
+    }
+
+    .hotel-stay-dock__status {
+      display: grid;
+      min-width: clamp(9rem, 16vw, 14rem);
+      padding-inline: 0.75rem;
+      text-align: center;
+    }
+
+    .hotel-stay-dock__status span {
+      font-size: 0.52rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .hotel-stay-dock__status strong {
+      margin-top: 0.18rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.82rem;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .hotel-stay-dock[data-context="stay"] [data-dock-left],
+    .hotel-stay-dock[data-context="stay"] [data-dock-right],
+    .hotel-stay-dock[data-context="gallery"] [data-dock-left],
+    .hotel-stay-dock[data-context="gallery"] [data-dock-right] {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .hotel-stay-dock[data-context="hero"] [data-dock-left],
+    .hotel-stay-dock[data-context="hero"] [data-dock-right],
+    .hotel-stay-dock[data-context="closing"] [data-dock-left],
+    .hotel-stay-dock[data-context="closing"] [data-dock-right] {
+      opacity: 0.58;
+    }
+
+    @media (max-width: 640px) {
+      .hotel-stay-dock {
+        gap: 0.28rem;
+        padding: 0.28rem;
+        bottom: calc(0.75rem + env(safe-area-inset-bottom));
+      }
+
+      .hotel-stay-dock__button {
+        height: 2.35rem;
+        width: 2.35rem;
+      }
+
+      .hotel-stay-dock__status {
+        min-width: 6.6rem;
+        padding-inline: 0.35rem;
+      }
+
+      .hotel-stay-dock__status span {
+        display: none;
+      }
+
+      .hotel-stay-dock__status strong {
+        font-size: 0.72rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hotel-stay-dock,
+      .hotel-stay-dock * {
+        transition-duration: 1ms !important;
+      }
+    }
+
+    /* Stage 2K - Home Dock QA + Mobile Compact Pass */
+
+    .hotel-stay-dock {
+      transition:
+        opacity 260ms ease,
+        transform 260ms ease,
+        background-color 260ms ease,
+        border-color 260ms ease;
+    }
+
+    .hotel-stay-dock[data-idle="true"] {
+      opacity: 0.68;
+      transform: translateX(-50%) translateY(4px);
+    }
+
+    .hotel-stay-dock:hover,
+    .hotel-stay-dock:focus-within {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hotel-stay-dock__button:disabled {
+      opacity: 0.28;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .hotel-stay-dock__button:focus-visible {
+      outline: 2px solid rgba(21, 18, 15, 0.72);
+      outline-offset: 3px;
+    }
+
+    .hotel-stay-dock[data-context="stay"] [data-dock-left],
+    .hotel-stay-dock[data-context="stay"] [data-dock-right],
+    .hotel-stay-dock[data-context="gallery"] [data-dock-left],
+    .hotel-stay-dock[data-context="gallery"] [data-dock-right] {
+      box-shadow: 0 10px 28px rgba(21, 18, 15, 0.18);
+    }
+
+    .hotel-closing__content {
+      padding-bottom: max(
+        clamp(5.5rem, 8vw, 7rem),
+        calc(5.8rem + env(safe-area-inset-bottom))
+      );
+    }
+
+    @media (max-width: 760px) {
+      .hotel-stay-dock {
+        bottom: calc(0.65rem + env(safe-area-inset-bottom));
+        gap: 0.22rem;
+        padding: 0.28rem;
+        background: rgba(251, 247, 240, 0.82);
+      }
+
+      .hotel-stay-dock__button {
+        height: 2.28rem;
+        width: 2.28rem;
+        font-size: 0.86rem;
+      }
+
+      .hotel-stay-dock__status {
+        min-width: 5.8rem;
+        max-width: 6.8rem;
+        padding-inline: 0.28rem;
+      }
+
+      .hotel-stay-dock__status span {
+        display: none;
+      }
+
+      .hotel-stay-dock__status strong {
+        font-size: 0.68rem;
+        line-height: 1.1;
+        white-space: nowrap;
+      }
+
+      .hotel-closing__content {
+        padding-bottom: calc(6.6rem + env(safe-area-inset-bottom));
+      }
+    }
+
+    @media (max-width: 390px) {
+      .hotel-stay-dock {
+        max-width: calc(100vw - 0.5rem);
+      }
+
+      .hotel-stay-dock__button {
+        height: 2.1rem;
+        width: 2.1rem;
+        font-size: 0.78rem;
+      }
+
+      .hotel-stay-dock__status {
+        min-width: 4.7rem;
+        max-width: 5.4rem;
+      }
+
+      .hotel-stay-dock__status strong {
+        font-size: 0.62rem;
+      }
+    }
+
+    /* Stage 2K-R1 - Compact icon-only dock */
+
+    .hotel-stay-dock--compact {
+      gap: 0.24rem;
+      padding: 0.28rem;
+      border-color: rgba(21, 18, 15, 0.08);
+      background: rgba(251, 247, 240, 0.42);
+      box-shadow: 0 18px 60px rgba(64, 42, 24, 0.12);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+
+    .hotel-stay-dock--compact .hotel-stay-dock__status {
+      display: none;
+    }
+
+    .hotel-stay-dock--compact .hotel-stay-dock__button {
+      height: 2.34rem;
+      width: 2.34rem;
+      border-color: rgba(21, 18, 15, 0.08);
+      background: rgba(255, 250, 242, 0.36);
+      color: rgba(21, 18, 15, 0.82);
+      font-size: 0.86rem;
+      box-shadow: none;
+    }
+
+    .hotel-stay-dock--compact .hotel-stay-dock__button:hover {
+      background: rgba(21, 18, 15, 0.92);
+      color: #fffaf2;
+    }
+
+    .hotel-stay-dock--compact[data-idle="true"] {
+      opacity: 0.5;
+      transform: translateX(-50%) translateY(5px) scale(0.96);
+    }
+
+    .hotel-stay-dock--compact:hover,
+    .hotel-stay-dock--compact:focus-within {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+
+    .hotel-stay-dock--compact[data-context="stay"] [data-dock-left],
+    .hotel-stay-dock--compact[data-context="stay"] [data-dock-right],
+    .hotel-stay-dock--compact[data-context="gallery"] [data-dock-left],
+    .hotel-stay-dock--compact[data-context="gallery"] [data-dock-right],
+    .hotel-stay-dock--compact[data-context="hero"] [data-dock-left],
+    .hotel-stay-dock--compact[data-context="hero"] [data-dock-right],
+    .hotel-stay-dock--compact[data-context="closing"] [data-dock-left],
+    .hotel-stay-dock--compact[data-context="closing"] [data-dock-right] {
+      background: rgba(255, 250, 242, 0.36);
+      color: rgba(21, 18, 15, 0.82);
+      box-shadow: none;
+      opacity: 1;
+    }
+
+    .hotel-stay-dock--compact[data-context="stay"] [data-dock-left]:hover,
+    .hotel-stay-dock--compact[data-context="stay"] [data-dock-right]:hover,
+    .hotel-stay-dock--compact[data-context="gallery"] [data-dock-left]:hover,
+    .hotel-stay-dock--compact[data-context="gallery"] [data-dock-right]:hover,
+    .hotel-stay-dock--compact[data-context="hero"] [data-dock-left]:hover,
+    .hotel-stay-dock--compact[data-context="hero"] [data-dock-right]:hover,
+    .hotel-stay-dock--compact[data-context="closing"] [data-dock-left]:hover,
+    .hotel-stay-dock--compact[data-context="closing"] [data-dock-right]:hover {
+      background: rgba(21, 18, 15, 0.92);
+      color: #fffaf2;
+    }
+
+    @media (max-width: 760px) {
+      .hotel-stay-dock--compact {
+        gap: 0.18rem;
+        padding: 0.22rem;
+        background: rgba(251, 247, 240, 0.52);
+      }
+
+      .hotel-stay-dock--compact .hotel-stay-dock__button {
+        height: 2.2rem;
+        width: 2.2rem;
+        font-size: 0.78rem;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .hotel-stay-dock--compact .hotel-stay-dock__button {
+        height: 2.05rem;
+        width: 2.05rem;
+      }
+    }
+  </style>
+
+  <script is:inline>
+    (() => {
+      const items = Array.from(document.querySelectorAll("[data-living-path]"));
+      if (!items.length) return;
+
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      if (reducedMotion.matches) return;
+
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const lerp = (current, target, amount) => current + (target - current) * amount;
+      const smoothstep = (value) => value * value * (3 - 2 * value);
+
+      const states = items.map((el) => {
+        const depth = Number(el.getAttribute("data-depth")) || 1;
+
+        const base = {
+          mediaX: 0,
+          mediaY: 0,
+          scale: 1.02,
+          rotate: 0,
+          copyY: 0,
+          shadowY: 22,
+          shadowBlur: 64,
+          shadowAlpha: 0.08,
+          focus: 0,
+        };
+
+        return {
+          el,
+          depth,
+          current: { ...base },
+          target: { ...base },
+        };
+      });
+
+      let running = false;
+
+      const applyVars = (state) => {
+        const { el, current } = state;
+
+        el.style.setProperty("--path-media-x", `${current.mediaX.toFixed(2)}px`);
+        el.style.setProperty("--path-media-y", `${current.mediaY.toFixed(2)}px`);
+        el.style.setProperty("--path-media-scale", current.scale.toFixed(4));
+        el.style.setProperty("--path-media-rotate", `${current.rotate.toFixed(3)}deg`);
+        el.style.setProperty("--path-copy-y", `${current.copyY.toFixed(2)}px`);
+        el.style.setProperty("--path-shadow-y", `${current.shadowY.toFixed(2)}px`);
+        el.style.setProperty("--path-shadow-blur", `${current.shadowBlur.toFixed(2)}px`);
+        el.style.setProperty("--path-shadow-alpha", current.shadowAlpha.toFixed(4));
+        el.style.setProperty("--path-focus", current.focus.toFixed(4));
+      };
+
+      const startLoop = () => {
+        if (running) return;
+        running = true;
+        requestAnimationFrame(step);
+      };
+
+      const computeTargets = () => {
+        const vh = window.innerHeight || 1;
+        const vw = window.innerWidth || 1;
+        const focusLine = vh * 0.54;
+        const mobileFactor = vw < 760 ? 0.45 : vw < 980 ? 0.68 : 1;
+
+        states.forEach((state) => {
+          const rect = state.el.getBoundingClientRect();
+          const center = rect.top + rect.height / 2;
+          const signed = clamp((center - focusLine) / (vh * 0.78), -1.25, 1.25);
+          const presenceRaw = clamp(1 - Math.abs(signed), 0, 1);
+          const presence = smoothstep(presenceRaw);
+          const depth = state.depth;
+
+          state.target.mediaX = -signed * 24 * depth * mobileFactor;
+          state.target.mediaY = -presence * 34 * mobileFactor;
+          state.target.scale = 1.02 + presence * 0.065 * mobileFactor;
+          state.target.rotate = -signed * 0.75 * depth * mobileFactor;
+          state.target.copyY = -presence * 14 * mobileFactor;
+          state.target.shadowY = 22 + presence * 26;
+          state.target.shadowBlur = 64 + presence * 58;
+          state.target.shadowAlpha = 0.08 + presence * 0.08;
+          state.target.focus = presence;
+        });
+
+        startLoop();
+      };
+
+      function step() {
+        running = false;
+
+        const amount = window.innerWidth < 760 ? 0.24 : 0.16;
+        let settled = true;
+
+        states.forEach((state) => {
+          Object.keys(state.current).forEach((key) => {
+            const before = state.current[key];
+            const after = state.target[key];
+
+            state.current[key] = lerp(before, after, amount);
+
+            if (Math.abs(state.current[key] - after) > 0.015) {
+              settled = false;
+            }
+          });
+
+          applyVars(state);
+        });
+
+        if (!settled) {
+          running = true;
+          requestAnimationFrame(step);
+        }
+      }
+
+      window.addEventListener("scroll", computeTargets, { passive: true });
+      window.addEventListener("resize", computeTargets);
+
+      computeTargets();
+    })();
+  </script>
+
+  <script is:inline>
+    (() => {
+      const root = document.querySelector("[data-stay-object-field]");
+      if (!root) return;
+
+      const stage = root.querySelector("[data-stay-object-stage]");
+      const objects = Array.from(root.querySelectorAll("[data-stay-object]"));
+      const prevBtn = root.querySelector("[data-stay-prev]");
+      const nextBtn = root.querySelector("[data-stay-next]");
+      const activeCount = root.querySelector("[data-stay-active-count]");
+      const activeLabel = root.querySelector("[data-stay-active-label]");
+      const activeTitle = root.querySelector("[data-stay-active-title]");
+      const activeText = root.querySelector("[data-stay-active-text]");
+      const activeLink = root.querySelector("[data-stay-active-link]");
+
+      if (!objects.length) return;
+
+      const total = objects.length;
+      let activeIndex = 0;
+
+      const pad = (n) => String(n).padStart(2, "0");
+      const normalize = (index) => ((index % total) + total) % total;
+
+      const setActive = (nextIndex) => {
+        activeIndex = normalize(nextIndex);
+
+        const prevIndex = normalize(activeIndex - 1);
+        const nextIndexSafe = normalize(activeIndex + 1);
+
+        objects.forEach((node, index) => {
+          node.classList.remove("is-active", "is-prev", "is-next", "is-quiet");
+
+          if (index === activeIndex) node.classList.add("is-active");
+          else if (index === nextIndexSafe) node.classList.add("is-next");
+          else if (index === prevIndex) node.classList.add("is-prev");
+          else node.classList.add("is-quiet");
+        });
+
+        const active = objects[activeIndex];
+        const label = active.getAttribute("data-stay-label") || "";
+        const title = active.getAttribute("data-stay-title") || "";
+        const text = active.getAttribute("data-stay-text") || "";
+        const href = active.getAttribute("data-stay-href") || "#";
+
+        if (activeCount) activeCount.textContent = `${pad(activeIndex + 1)} / ${pad(total)}`;
+        if (activeLabel) activeLabel.textContent = label;
+        if (activeTitle) activeTitle.textContent = title;
+        if (activeText) activeText.textContent = text;
+        if (activeLink) activeLink.setAttribute("href", href);
+
+        window.dispatchEvent(
+          new CustomEvent("hotel:stay-change", {
+            detail: { index: activeIndex, label, title, href },
+          })
+        );
+      };
+
+      objects.forEach((node, index) => {
+        node.addEventListener("click", (event) => {
+          if (index !== activeIndex) {
+            event.preventDefault();
+            setActive(index);
+          }
+        });
+      });
+
+      if (prevBtn) {
+        prevBtn.addEventListener("click", () => setActive(activeIndex - 1));
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener("click", () => setActive(activeIndex + 1));
+      }
+
+      if (stage) {
+        stage.addEventListener("keydown", (event) => {
+          if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+            event.preventDefault();
+            setActive(activeIndex - 1);
+          }
+
+          if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+            event.preventDefault();
+            setActive(activeIndex + 1);
+          }
+        });
+
+        stage.addEventListener("pointermove", (event) => {
+          const rect = stage.getBoundingClientRect();
+          const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+          const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+
+          root.style.setProperty("--stay-pointer-x", `${(x * 10).toFixed(2)}px`);
+          root.style.setProperty("--stay-pointer-y", `${(y * 8).toFixed(2)}px`);
+        });
+
+        stage.addEventListener("pointerleave", () => {
+          root.style.setProperty("--stay-pointer-x", "0px");
+          root.style.setProperty("--stay-pointer-y", "0px");
+        });
+      }
+
+      const updatePresence = () => {
+        const rect = root.getBoundingClientRect();
+        const vh = window.innerHeight || 1;
+        const center = rect.top + rect.height / 2;
+        const focus = vh * 0.52;
+        const distance = Math.abs(center - focus) / (vh * 0.82);
+        const presence = Math.max(0, Math.min(1, 1 - distance));
+
+        root.style.setProperty("--stay-field-presence", presence.toFixed(4));
+      };
+
+      window.addEventListener("scroll", updatePresence, { passive: true });
+      window.addEventListener("resize", updatePresence);
+
+      window.addEventListener("hotel:stay-next", () => setActive(activeIndex + 1));
+      window.addEventListener("hotel:stay-prev", () => setActive(activeIndex - 1));
+
+      updatePresence();
+      setActive(0);
+    })();
+  </script>
+
+  <script is:inline>
+    (() => {
+      const dock = document.querySelector("[data-home-stay-dock]");
+      const sections = Array.from(document.querySelectorAll("[data-home-section]"));
+
+      if (!dock || sections.length === 0) return;
+
+      const upBtn = dock.querySelector("[data-dock-up]");
+      const downBtn = dock.querySelector("[data-dock-down]");
+      const leftBtn = dock.querySelector("[data-dock-left]");
+      const rightBtn = dock.querySelector("[data-dock-right]");
+
+      let activeIndex = 0;
+      let ticking = false;
+      let idleTimer = 0;
+
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+      const normalizePath = (path) => {
+        if (!path) return "/";
+        return path.endsWith("/") ? path : `${path}/`;
+      };
+
+      const langFromPath = () => {
+        const first = window.location.pathname.split("/").filter(Boolean)[0];
+        return first === "es" ? "es" : "en";
+      };
+
+      const getPageRoutes = () => {
+        const pageLang = langFromPath();
+
+        return [
+          `/${pageLang}/`,
+          `/${pageLang}/rooms/`,
+          `/${pageLang}/offers/`,
+          `/${pageLang}/experiences/`,
+          `/${pageLang}/gallery/`,
+          `/${pageLang}/location/`,
+          `/${pageLang}/contact/`,
+        ];
+      };
+
+      const goPage = (direction) => {
+        const routes = getPageRoutes();
+        const current = normalizePath(window.location.pathname);
+        const currentIndex = Math.max(0, routes.indexOf(current));
+        const nextIndex = (currentIndex + direction + routes.length) % routes.length;
+
+        window.location.href = routes[nextIndex];
+      };
+
+      const wakeDock = () => {
+        dock.setAttribute("data-idle", "false");
+
+        window.clearTimeout(idleTimer);
+
+        idleTimer = window.setTimeout(() => {
+          dock.setAttribute("data-idle", "true");
+        }, 2400);
+      };
+
+      const getActiveIndex = () => {
+        const focusY = window.innerHeight * 0.48;
+
+        let bestIndex = 0;
+        let bestDistance = Infinity;
+
+        sections.forEach((section, index) => {
+          const rect = section.getBoundingClientRect();
+          const center = rect.top + rect.height / 2;
+          const distance = Math.abs(center - focusY);
+
+          const isVisible =
+            rect.bottom > window.innerHeight * 0.18 &&
+            rect.top < window.innerHeight * 0.82;
+
+          if (isVisible && distance < bestDistance) {
+            bestDistance = distance;
+            bestIndex = index;
+          }
+        });
+
+        return bestIndex;
+      };
+
+      const contextForSection = (section) => {
+        if (!section) return "section";
+        if (section.id === "stay-field") return "stay";
+        if (section.id === "home-gallery") return "gallery";
+        if (section.id === "home-hero") return "hero";
+        if (section.id === "home-closing") return "closing";
+        return "section";
+      };
+
+      const applyDisabledStates = () => {
+        const first = activeIndex <= 0;
+        const last = activeIndex >= sections.length - 1;
+
+        if (upBtn) upBtn.disabled = first;
+        if (downBtn) downBtn.disabled = last;
+
+        /*
+          R1 rule:
+          Left / right are page navigation.
+          They stay enabled and wrap through site pages:
+          Home -> Rooms -> Offers -> Experiences -> Gallery -> Location -> Contact.
+        */
+        if (leftBtn) leftBtn.disabled = false;
+        if (rightBtn) rightBtn.disabled = false;
+      };
+
+      const updateDock = () => {
+        activeIndex = getActiveIndex();
+
+        const section = sections[activeIndex];
+        const context = contextForSection(section);
+
+        dock.setAttribute("data-context", context);
+
+        applyDisabledStates();
+      };
+
+      const requestDockUpdate = () => {
+        wakeDock();
+
+        if (ticking) return;
+
+        ticking = true;
+
+        requestAnimationFrame(() => {
+          ticking = false;
+          updateDock();
+        });
+      };
+
+      const scrollToSection = (index) => {
+        const nextIndex = clamp(index, 0, sections.length - 1);
+        const section = sections[nextIndex];
+
+        if (!section) return;
+
+        wakeDock();
+
+        section.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      };
+
+      if (upBtn) {
+        upBtn.addEventListener("click", () => {
+          updateDock();
+          scrollToSection(activeIndex - 1);
+        });
+      }
+
+      if (downBtn) {
+        downBtn.addEventListener("click", () => {
+          updateDock();
+          scrollToSection(activeIndex + 1);
+        });
+      }
+
+      if (leftBtn) {
+        leftBtn.addEventListener("click", () => {
+          wakeDock();
+          goPage(-1);
+        });
+      }
+
+      if (rightBtn) {
+        rightBtn.addEventListener("click", () => {
+          wakeDock();
+          goPage(1);
+        });
+      }
+
+      dock.addEventListener("pointerdown", wakeDock);
+      dock.addEventListener("focusin", wakeDock);
+
+      window.addEventListener("scroll", requestDockUpdate, { passive: true });
+      window.addEventListener("resize", requestDockUpdate);
+
+      updateDock();
+      wakeDock();
+    })();
+  </script>
 </BaseLayout>

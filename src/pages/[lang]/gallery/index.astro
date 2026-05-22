@@ -1,0 +1,104 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { getSettings } from "../../../cms/sheets";
+import { getHotelLabels } from "../../../hotel/content/labels";
+import { GALLERY_ARCHIVE_IMAGES } from "../../../hotel/data/demoAssets";
+import CinematicGalleryArchive from "../../../hotel/ui/CinematicGalleryArchive.astro";
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const langParam = Astro.params.lang ?? "en";
+if (!isLang(langParam)) throw new Error("Invalid lang");
+const lang = langParam as Lang;
+
+const L = getHotelLabels(lang);
+const s = await getSettings();
+
+const siteName = t(lang, s.hotel_name_en, s.hotel_name_es);
+const title = `${siteName} - ${L.gallery}`;
+
+const bookingUrl = String((s as any).booking_url || "").trim();
+
+const galleryTitle = t(
+  lang,
+  "A cinematic memory of rooms, courtyards and quiet returns.",
+  "Una memoria cinematográfica de habitaciones, patios y regresos tranquilos."
+);
+
+const galleryIntro = t(
+  lang,
+  "Move through the hotel as a visual archive: one active frame, a compact filmstrip, and a slower way to read the atmosphere before arrival.",
+  "Recorra el hotel como un archivo visual: un frame activo, una tira compacta y una forma más pausada de leer la atmósfera antes de llegar."
+);
+
+const archiveLabels = [
+  {
+    id: "courtyard-arrival",
+    title: t(lang, "Courtyard arrival", "Llegada al patio"),
+    section: t(lang, "Courtyard", "Patio"),
+    mood: t(lang, "Quiet arrival", "Llegada tranquila"),
+    signal: t(lang, "stone / water / olive light", "piedra / agua / luz de olivo"),
+    src: GALLERY_ARCHIVE_IMAGES[0],
+    alt: t(lang, "Quiet hotel courtyard with pool and olive tree.", "Patio tranquilo del hotel con piscina y olivo."),
+  },
+  {
+    id: "staircase-light",
+    title: t(lang, "Staircase light", "Luz de escalera"),
+    section: t(lang, "Architecture", "Arquitectura"),
+    mood: t(lang, "Soft vertical movement", "Movimiento vertical suave"),
+    signal: t(lang, "curve / plaster / silence", "curva / estuco / silencio"),
+    src: GALLERY_ARCHIVE_IMAGES[1],
+    alt: t(lang, "Warm sculptural staircase in a boutique hotel.", "Escalera escultórica cálida en un hotel boutique."),
+  },
+  {
+    id: "dining-evening",
+    title: t(lang, "Dining evening", "Cena de noche"),
+    section: t(lang, "Dining", "Gastronomía"),
+    mood: t(lang, "Warm evening", "Noche cálida"),
+    signal: t(lang, "table / glow / return", "mesa / brillo / regreso"),
+    src: GALLERY_ARCHIVE_IMAGES[2],
+    alt: t(lang, "Warm dining corner with table and soft light.", "Rincón de comedor cálido con mesa y luz suave."),
+  },
+  {
+    id: "water-reflection",
+    title: t(lang, "Water reflection", "Reflejo de agua"),
+    section: t(lang, "Pool", "Piscina"),
+    mood: t(lang, "Still afternoon", "Tarde quieta"),
+    signal: t(lang, "reflection / shade / pause", "reflejo / sombra / pausa"),
+    src: GALLERY_ARCHIVE_IMAGES[3],
+    alt: t(lang, "Pool reflection and courtyard texture.", "Reflejo de piscina y textura del patio."),
+  },
+  {
+    id: "room-calm",
+    title: t(lang, "Room calm", "Calma de habitación"),
+    section: t(lang, "Room", "Habitación"),
+    mood: t(lang, "Morning room", "Habitación de mañana"),
+    signal: t(lang, "linen / wood / soft light", "lino / madera / luz suave"),
+    src: GALLERY_ARCHIVE_IMAGES[7],
+    alt: t(lang, "Quiet room with bed, wood and soft morning light.", "Habitación tranquila con cama, madera y luz suave de mañana."),
+  },
+];
+
+const archiveItems = archiveLabels.filter((item) => Boolean(item.src));
+---
+
+<BaseLayout lang={lang} title={title} fullBleed>
+  <CinematicGalleryArchive
+    id={`hotel-gallery-${lang}`}
+    eyebrow={t(lang, "Cinematic gallery", "Galería cinematográfica")}
+    title={galleryTitle}
+    intro={galleryIntro}
+    items={archiveItems}
+    backHref={`/${lang}/`}
+    backLabel={t(lang, "Back to home", "Volver al inicio")}
+    bookingHref={bookingUrl}
+    bookingLabel={L.bookNow}
+    fullViewLabel={t(lang, "Open full view", "Abrir vista completa")}
+    previousLabel={t(lang, "Previous frame", "Frame anterior")}
+    nextLabel={t(lang, "Next frame", "Siguiente frame")}
+    returnLabel={t(lang, "Return", "Volver")}
+  />
+</BaseLayout>

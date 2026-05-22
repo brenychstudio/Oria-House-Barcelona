@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { LANGS, type Lang, isLang, t } from "../../content/languages";
 import { getSettings } from "../../cms/sheets";
+import { HOTEL_DEMO_ASSETS } from "../../hotel/data/demoAssets";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -13,183 +14,611 @@ const lang = langParam as Lang;
 
 const s = await getSettings();
 
+const hotelName = t(
+  lang,
+  String((s as any).hotel_name_en || "Hotel Core"),
+  String((s as any).hotel_name_es || (s as any).hotel_name_en || "Hotel Core")
+);
+
 const title = t(lang, "Location", "Ubicación");
-const address = t(lang, s.address_en, s.address_es);
 
-const lat = Number(String(s.coords_lat ?? "").trim());
-const lng = Number(String(s.coords_lng ?? "").trim());
+const address = t(
+  lang,
+  String((s as any).address_en || "Barcelona, Spain"),
+  String((s as any).address_es || "Barcelona, España")
+);
+
+const lat = Number(String((s as any).coords_lat ?? "").trim());
+const lng = Number(String((s as any).coords_lng ?? "").trim());
 const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
-
-// Без ключів / SDK: Google Maps embed через q=...
 const mapQuery = hasCoords ? `${lat},${lng}` : address;
-const mapsEmbedSrc = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`;
-const mapsLink = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}`;
 
-// MVP demo picks (пізніше перенесемо в Sheets як таб "nearby")
-const nearby = [
+const generatedMapEmbed = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`;
+
+const mapEmbed =
+  String(
+    (s as any).google_maps_embed_url ||
+      (s as any).maps_embed_url ||
+      (s as any).map_embed_url ||
+      ""
+  ).trim() || generatedMapEmbed;
+
+const bookingUrl = String((s as any).booking_url || "").trim();
+
+const heroImage = HOTEL_DEMO_ASSETS.locationHero;
+const routeImage = HOTEL_DEMO_ASSETS.galleryArchitectureStaircase;
+const diningImage = HOTEL_DEMO_ASSETS.galleryDiningEvening;
+const waterImage = HOTEL_DEMO_ASSETS.galleryPoolReflection;
+
+const heroEyebrow = t(lang, "Barcelona base", "Base en Barcelona");
+
+const heroTitle = t(
+  lang,
+  "A quiet address between city movement and private return.",
+  "Una dirección tranquila entre el movimiento de la ciudad y el regreso privado."
+);
+
+const heroText = t(
+  lang,
+  "The hotel is positioned as a calm base: close enough to the city rhythm, but composed enough to feel private when you come back.",
+  "El hotel se presenta como una base serena: suficientemente cerca del ritmo de la ciudad, pero lo bastante tranquila para sentirse privada al volver."
+);
+
+const routeEyebrow = t(lang, "Local rhythm", "Ritmo local");
+
+const routeTitle = t(
+  lang,
+  "Read the area as a sequence, not a checklist.",
+  "Lea la zona como una secuencia, no como una lista."
+);
+
+const routeText = t(
+  lang,
+  "Morning coffee, architecture, galleries, terraces and golden-hour returns are treated as parts of one stay route.",
+  "Café de mañana, arquitectura, galerías, terrazas y regresos a la hora dorada se tratan como partes de una misma ruta de estancia."
+);
+
+const mapEyebrow = t(lang, "Arrival layer", "Capa de llegada");
+
+const mapTitle = t(
+  lang,
+  "Use the map for arrival. Use the guide for rhythm.",
+  "Use el mapa para llegar. Use la guía para entender el ritmo."
+);
+
+const mapText = t(
+  lang,
+  "The map remains practical, but the stay is shaped by what happens around it: walks, pauses, local routes and the return to the hotel.",
+  "El mapa sigue siendo práctico, pero la estancia se define por lo que ocurre alrededor: paseos, pausas, rutas locales y el regreso al hotel."
+);
+
+const bookLabel = t(lang, "Book direct", "Reservar directo");
+const contactLabel = t(lang, "Contact hotel", "Contactar hotel");
+const addressLabel = t(lang, "Address", "Dirección");
+
+const nearbyNotes = [
   {
-    category: "culture",
-    title_en: "Gothic Quarter walk",
-    title_es: "Paseo por el Barrio Gótico",
-    distance_en: "12–18 min",
-    distance_es: "12–18 min",
-    url: "https://www.google.com/maps/search/?api=1&query=Barri+G%C3%B2tic+Barcelona",
-    note_en: "Quiet morning route with iconic streets.",
-    note_es: "Ruta tranquila por calles icónicas.",
+    index: "01",
+    label: t(lang, "Morning", "Mañana"),
+    title: t(lang, "Coffee before the city gets loud", "Café antes de que la ciudad despierte"),
+    text: t(
+      lang,
+      "Start with a quiet walk, soft light and a slower first hour before the city opens fully.",
+      "Empiece con un paseo tranquilo, luz suave y una primera hora pausada antes de que la ciudad se abra por completo."
+    ),
+    image: waterImage,
   },
   {
-    category: "culture",
-    title_en: "Casa Batlló / Passeig de Gràcia",
-    title_es: "Casa Batlló / Passeig de Gràcia",
-    distance_en: "10–15 min",
-    distance_es: "10–15 min",
-    url: "https://www.google.com/maps/search/?api=1&query=Casa+Batllo+Barcelona",
-    note_en: "Design landmark, perfect for golden hour.",
-    note_es: "Icono de diseño, ideal a la hora dorada.",
+    index: "02",
+    label: t(lang, "Culture", "Cultura"),
+    title: t(lang, "Architecture, galleries and short routes", "Arquitectura, galerías y rutas cortas"),
+    text: t(
+      lang,
+      "Use the hotel as a base for nearby architecture, local galleries and short cultural routes.",
+      "Use el hotel como base para arquitectura cercana, galerías locales y pequeñas rutas culturales."
+    ),
+    image: routeImage,
   },
   {
-    category: "food",
-    title_en: "Local specialty coffee",
-    title_es: "Café de especialidad",
-    distance_en: "5–9 min",
-    distance_es: "5–9 min",
-    url: "https://www.google.com/maps/search/?api=1&query=specialty+coffee+near+Barcelona",
-    note_en: "Minimal spots for a slow start.",
-    note_es: "Sitios minimal para empezar lento.",
-  },
-  {
-    category: "beach",
-    title_en: "Barceloneta beach mood",
-    title_es: "Mood playa Barceloneta",
-    distance_en: "18–25 min",
-    distance_es: "18–25 min",
-    url: "https://www.google.com/maps/search/?api=1&query=Barceloneta+Beach",
-    note_en: "A simple beach walk and sea air.",
-    note_es: "Paseo simple y aire de mar.",
+    index: "03",
+    label: t(lang, "Evening", "Noche"),
+    title: t(lang, "Golden-hour return", "Regreso a la hora dorada"),
+    text: t(
+      lang,
+      "Return before dinner, when the city softens and the hotel becomes a private pause between routes.",
+      "Vuelva antes de cenar, cuando la ciudad se suaviza y el hotel se convierte en una pausa privada entre rutas."
+    ),
+    image: diningImage,
   },
 ];
-
-const catLabel = (c: string) =>
-  c === "food"
-    ? t(lang, "Dining", "Gastronomía")
-    : c === "beach"
-    ? t(lang, "Beach", "Playa")
-    : c === "culture"
-    ? t(lang, "Culture", "Cultura")
-    : t(lang, "Nearby", "Cerca");
 ---
 
-<BaseLayout lang={lang} title={title}>
-  <section class="mt-2">
-    <div class="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 class="text-3xl sm:text-4xl tracking-tight">{title}</h1>
-        <p class="mt-3 max-w-2xl text-sm sm:text-base opacity-80">
-          {t(lang, "A calm base for Barcelona — walkable, curated, direct.", "Una base tranquila en Barcelona — caminable, curada, directa.")}
-        </p>
+<BaseLayout lang={lang} title={title} fullBleed>
+  <section class="location-hero" data-dock-section>
+    <img src={heroImage} alt="" class="location-hero__image" loading="eager" decoding="async" />
+    <div class="location-hero__veil" aria-hidden="true"></div>
+
+    <div class="location-hero__inner">
+      <div class="location-hero__top">
+        <span>{heroEyebrow}</span>
+        <span>{hotelName}</span>
       </div>
 
-      <div class="flex gap-2">
-        <a
-          class="rounded-full px-4 py-2 border border-black/15 active:scale-[0.98] transition"
-          href={mapsLink}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t(lang, "Open in Maps", "Abrir en Maps")}
-        </a>
-        <a
-          class="rounded-full px-4 py-2 bg-black text-white active:scale-[0.98] transition"
-          href={s.booking_url}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t(lang, "Book", "Reservar")}
-        </a>
-      </div>
-    </div>
+      <div class="location-hero__content">
+        <h1>{heroTitle}</h1>
 
-    <div class="mt-8 grid gap-6 lg:grid-cols-12">
-      <!-- Map -->
-      <div class="lg:col-span-7 rounded-3xl overflow-hidden border border-black/10 bg-black/5">
-        <iframe
-          title="Map"
-          src={mapsEmbedSrc}
-          class="w-full h-[420px] lg:h-[520px]"
-          style="border:0;"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-        ></iframe>
+        <aside>
+          <p>{heroText}</p>
+
+          <div class="location-hero__actions">
+            <a href="#location-map">{t(lang, "View arrival map", "Ver mapa de llegada")}</a>
+            <a href={`/${lang}/contact/`}>{contactLabel}</a>
+          </div>
+        </aside>
       </div>
 
-      <!-- Address + Nearby -->
-      <div class="lg:col-span-5">
-        <div class="rounded-3xl border border-black/10 p-5">
-          <div class="text-xs uppercase tracking-widest opacity-60">
-            {t(lang, "Address", "Dirección")}
-          </div>
-          <div class="mt-2 text-base">{address}</div>
-
-          {hasCoords ? (
-            <div class="mt-2 text-xs opacity-60">
-              {lat.toFixed(5)}, {lng.toFixed(5)}
-            </div>
-          ) : null}
-
-          <div class="mt-6 flex flex-wrap gap-2">
-            <span class="text-xs rounded-full px-3 py-1 bg-black/5">
-              {t(lang, "Walkable", "Caminable")}
-            </span>
-            <span class="text-xs rounded-full px-3 py-1 bg-black/5">
-              {t(lang, "Direct booking", "Reserva directa")}
-            </span>
-            <span class="text-xs rounded-full px-3 py-1 bg-black/5">
-              {t(lang, "Quiet luxury", "Lujo silencioso")}
-            </span>
-          </div>
-        </div>
-
-        <div class="mt-6">
-          <div class="flex items-end justify-between">
-            <h2 class="text-lg tracking-tight">{t(lang, "Nearby picks", "Recomendaciones")}</h2>
-            <div class="text-xs opacity-60">{t(lang, "Curated", "Curado")}</div>
-          </div>
-
-          <div class="mt-4 grid gap-3">
-            {nearby.map((x) => (
-              <a
-                href={x.url}
-                target="_blank"
-                rel="noreferrer"
-                class="block rounded-2xl border border-black/10 p-4 hover:bg-black/5 transition"
-              >
-                <div class="flex items-baseline justify-between gap-3">
-                  <div class="text-xs opacity-60">{catLabel(x.category)}</div>
-                  <div class="text-xs opacity-60">
-                    {lang === "en" ? x.distance_en : x.distance_es}
-                  </div>
-                </div>
-
-                <div class="mt-1 text-base">
-                  {lang === "en" ? x.title_en : x.title_es}
-                </div>
-
-                <div class="mt-2 text-sm opacity-75">
-                  {lang === "en" ? x.note_en : x.note_es}
-                </div>
-              </a>
-            ))}
-          </div>
-
-          <div class="mt-4 text-xs opacity-60">
-            {t(
-              lang,
-              "Tip: we can move these picks to Google Sheets (nearby tab) later.",
-              "Tip: потом перенесём ці рекомендації в Google Sheets (таб nearby)."
-            )}
-          </div>
-        </div>
+      <div class="location-hero__rail" aria-hidden="true">
+        <span>{t(lang, "Morning route", "Ruta de mañana")}</span>
+        <span>{t(lang, "City culture", "Cultura urbana")}</span>
+        <span>{t(lang, "Private return", "Regreso privado")}</span>
       </div>
     </div>
   </section>
+
+  <section class="location-route" data-dock-section>
+    <div class="location-route__intro">
+      <div>
+        <div class="location-kicker">{routeEyebrow}</div>
+        <h2>{routeTitle}</h2>
+      </div>
+
+      <p>{routeText}</p>
+    </div>
+
+    <div class="location-route__field">
+      {nearbyNotes.map((note) => (
+        <article class="location-route__item">
+          <div class="location-route__media">
+            <img src={note.image} alt="" loading="lazy" decoding="async" />
+          </div>
+
+          <div class="location-route__copy">
+            <small>{note.index}</small>
+            <span>{note.label}</span>
+            <h3>{note.title}</h3>
+            <p>{note.text}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section id="location-map" class="location-map" data-dock-section>
+    <div class="location-map__copy">
+      <div class="location-kicker">{mapEyebrow}</div>
+      <h2>{mapTitle}</h2>
+      <p>{mapText}</p>
+
+      <div class="location-map__address">
+        <span>{addressLabel}</span>
+        <strong>{address}</strong>
+      </div>
+
+      <div class="location-map__actions">
+        {bookingUrl ? (
+          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookLabel}</a>
+        ) : null}
+        <a href={`/${lang}/contact/`}>{contactLabel}</a>
+      </div>
+    </div>
+
+    <div class="location-map__frame">
+      {mapEmbed ? (
+        <iframe
+          src={mapEmbed}
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title={`${hotelName} location map`}
+        ></iframe>
+      ) : (
+        <div class="location-map__fallback">
+          <span>{t(lang, "Map", "Mapa")}</span>
+          <p>{address}</p>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <style>
+    .location-hero {
+      position: relative;
+      min-height: 100svh;
+      margin-top: -5.2rem;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .location-hero__image {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.02);
+      transform: scale(1.015);
+    }
+
+    .location-hero__veil {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 72% 20%, rgba(255, 238, 208, 0.2), transparent 34rem),
+        linear-gradient(90deg, rgba(5, 5, 4, 0.64), rgba(5, 5, 4, 0.16) 48%, rgba(5, 5, 4, 0.58)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.14), rgba(5, 5, 4, 0.1) 42%, rgba(5, 5, 4, 0.76));
+    }
+
+    .location-hero__inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      min-height: 100svh;
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1680px);
+      margin-inline: auto;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(7.8rem, 13vh, 10.5rem) 0 clamp(1.4rem, 4vh, 2.8rem);
+    }
+
+    .location-hero__top,
+    .location-hero__rail {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .location-hero__top span,
+    .location-hero__rail span,
+    .location-kicker {
+      font-size: 0.64rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    .location-hero__top span {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.62rem 0.86rem;
+      border-radius: 999px;
+      backdrop-filter: blur(18px);
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .location-hero__content {
+      display: grid;
+      grid-template-columns: minmax(0, 0.98fr) minmax(18rem, 0.42fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: end;
+    }
+
+    .location-hero h1 {
+      max-width: 11ch;
+      font-size: clamp(4.8rem, 9vw, 10.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .location-hero aside {
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      padding-top: 1.1rem;
+    }
+
+    .location-hero aside p {
+      max-width: 30rem;
+      font-size: 1rem;
+      line-height: 1.78;
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .location-hero__actions,
+    .location-map__actions {
+      margin-top: 1.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .location-hero__actions a,
+    .location-map__actions a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.1rem;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+
+    .location-hero__actions a:first-child,
+    .location-map__actions a:first-child {
+      background: #fffaf2;
+      color: #15120f;
+    }
+
+    .location-hero__actions a:last-child {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fffaf2;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .location-map__actions a {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .location-map__actions a + a {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .location-hero__rail {
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 0.8rem;
+      color: rgba(255, 255, 255, 0.52);
+    }
+
+    .location-route,
+    .location-map {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-inline: auto;
+      margin-top: clamp(6rem, 11vw, 10rem);
+    }
+
+    .location-kicker {
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .location-route__intro {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 0.52fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      align-items: end;
+    }
+
+    .location-route__intro h2,
+    .location-map__copy h2 {
+      margin-top: 1.1rem;
+      max-width: 11ch;
+      font-size: clamp(3.8rem, 8vw, 8.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .location-route__intro p,
+    .location-map__copy p {
+      max-width: 34rem;
+      font-size: 1rem;
+      line-height: 1.82;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .location-route__field {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: clamp(1rem, 2.5vw, 1.8rem);
+    }
+
+    .location-route__item {
+      position: relative;
+      min-height: clamp(28rem, 38vw, 42rem);
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .location-route__item:nth-child(1) {
+      grid-column: 1 / 7;
+    }
+
+    .location-route__item:nth-child(2) {
+      grid-column: 7 / 13;
+      margin-top: clamp(4rem, 8vw, 8rem);
+    }
+
+    .location-route__item:nth-child(3) {
+      grid-column: 3 / 11;
+      margin-top: clamp(1rem, 3vw, 2.5rem);
+    }
+
+    .location-route__media {
+      position: absolute;
+      inset: 0;
+    }
+
+    .location-route__media img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.02);
+      transform: scale(1.015);
+      transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .location-route__item:hover .location-route__media img {
+      transform: scale(1.04);
+    }
+
+    .location-route__media::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 72% 20%, rgba(255, 245, 220, 0.18), transparent 28rem),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.2) 48%, rgba(0, 0, 0, 0.78));
+    }
+
+    .location-route__copy {
+      position: absolute;
+      left: clamp(1.1rem, 3vw, 2.3rem);
+      right: clamp(1.1rem, 3vw, 2.3rem);
+      bottom: clamp(1.1rem, 3vw, 2.3rem);
+      z-index: 2;
+      border-top: 1px solid rgba(255, 250, 242, 0.24);
+      padding-top: 1rem;
+    }
+
+    .location-route__copy small,
+    .location-route__copy span {
+      display: block;
+      font-size: 0.62rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(255, 250, 242, 0.48);
+    }
+
+    .location-route__copy span {
+      margin-top: 1.2rem;
+    }
+
+    .location-route__copy h3 {
+      margin-top: 0.75rem;
+      max-width: 10ch;
+      font-size: clamp(2.6rem, 4.8vw, 5rem);
+      line-height: 0.88;
+      letter-spacing: -0.075em;
+      font-weight: 400;
+    }
+
+    .location-route__copy p {
+      margin-top: 1rem;
+      max-width: 31rem;
+      color: rgba(255, 250, 242, 0.72);
+      line-height: 1.68;
+    }
+
+    .location-map {
+      display: grid;
+      grid-template-columns: minmax(20rem, 0.42fr) minmax(0, 1fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: stretch;
+      padding-bottom: clamp(5rem, 8vw, 7rem);
+    }
+
+    .location-map__copy {
+      align-self: end;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1.2rem;
+    }
+
+    .location-map__address {
+      margin-top: 2rem;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.42);
+      padding: 1rem;
+    }
+
+    .location-map__address span {
+      display: block;
+      font-size: 0.58rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .location-map__address strong {
+      margin-top: 0.65rem;
+      display: block;
+      font-weight: 400;
+      color: rgba(21, 18, 15, 0.72);
+      line-height: 1.45;
+    }
+
+    .location-map__frame {
+      overflow: hidden;
+      min-height: clamp(32rem, 50vw, 48rem);
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(21, 18, 15, 0.05);
+      box-shadow: 0 42px 130px rgba(21, 18, 15, 0.1);
+    }
+
+    .location-map__frame iframe {
+      height: 100%;
+      min-height: clamp(32rem, 50vw, 48rem);
+      width: 100%;
+      filter: grayscale(0.2) saturate(0.86) contrast(0.98);
+    }
+
+    .location-map__fallback {
+      display: grid;
+      min-height: 32rem;
+      place-items: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .location-map__fallback span {
+      font-size: 0.64rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .location-map__fallback p {
+      margin-top: 1rem;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    @media (max-width: 980px) {
+      .location-hero__content,
+      .location-route__intro,
+      .location-map {
+        grid-template-columns: 1fr;
+      }
+
+      .location-hero__rail {
+        display: grid;
+      }
+
+      .location-route__field {
+        grid-template-columns: 1fr;
+      }
+
+      .location-route__item,
+      .location-route__item:nth-child(1),
+      .location-route__item:nth-child(2),
+      .location-route__item:nth-child(3) {
+        grid-column: auto;
+        margin-top: 0;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .location-hero__inner,
+      .location-route,
+      .location-map {
+        width: min(100% - 1rem, 1480px);
+      }
+
+      .location-hero h1,
+      .location-route__intro h2,
+      .location-map__copy h2 {
+        font-size: clamp(3.4rem, 15vw, 5.8rem);
+        line-height: 0.9;
+      }
+
+      .location-route__item {
+        min-height: 31rem;
+      }
+
+      .location-map__frame,
+      .location-map__frame iframe {
+        min-height: 28rem;
+      }
+    }
+  </style>
 </BaseLayout>

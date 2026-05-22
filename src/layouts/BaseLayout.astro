@@ -1,8 +1,128 @@
 ---
-import HotelLayout from "../vertical/layouts/HotelLayout.astro";
-const props = Astro.props;
+import "../styles/global.css";
+
+import { LANGS, t, type Lang } from "../content/languages";
+import { getSettings } from "../cms/sheets";
+import HotelHeader from "../hotel/ui/HotelHeader.astro";
+import HotelFooter from "../hotel/ui/HotelFooter.astro";
+import HotelDock from "../hotel/ui/HotelDock.astro";
+import HotelVisualStabilization from "../hotel/ui/HotelVisualStabilization.astro";
+import HotelBookingPlanner from "../hotel/ui/HotelBookingPlanner.astro";
+
+type Props = {
+  lang: Lang;
+  title: string;
+  fullBleed?: boolean;
+  description?: string;
+  ogImage?: string;
+  noindex?: boolean;
+  canonicalPath?: string;
+};
+
+const {
+  lang,
+  title,
+  description,
+  ogImage,
+  noindex,
+  canonicalPath,
+  fullBleed = false,
+} = Astro.props as Props;
+
+const mainClass = fullBleed
+  ? "hc-page-shell hc-page-shell--full"
+  : "hc-page-shell";
+
+const s = await getSettings();
+
+const site = Astro.site ?? new URL("http://localhost:4321");
+const path = canonicalPath ?? Astro.url.pathname;
+
+function withLangPath(pathname: string, targetLang: string) {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts.length === 0) return `/${targetLang}/`;
+  parts[0] = targetLang;
+  return `/${parts.join("/")}/`;
+}
+
+const canonicalUrl = new URL(path, site).toString();
+
+const fallbackDesc = t(
+  lang,
+  String((s as any).meta_description_en || ""),
+  String((s as any).meta_description_es || "")
+).trim();
+
+const desc = String(description || fallbackDesc || "").trim();
+
+const fallbackOg = String((s as any).og_image || (s as any).hero_image || "").trim();
+const og = String(ogImage || fallbackOg || "").trim();
+const ogAbs = og
+  ? og.startsWith("http://") || og.startsWith("https://")
+    ? og
+    : new URL(og, site).toString()
+  : "";
+
+const isNoindex =
+  Boolean(noindex) || String((s as any).noindex || "").toUpperCase() === "TRUE";
+
+const alternates = LANGS.map((l) => ({
+  lang: l,
+  href: new URL(withLangPath(path, l), site).toString(),
+}));
+
+const siteName = t(lang, s.hotel_name_en, s.hotel_name_es);
 ---
 
-<HotelLayout {...props}>
-  <slot />
-</HotelLayout>
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+
+    {desc ? <meta name="description" content={desc} /> : null}
+
+    <link rel="canonical" href={canonicalUrl} />
+
+    {alternates.map((a) => (
+      <link rel="alternate" hreflang={a.lang} href={a.href} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={alternates[0]?.href ?? canonicalUrl} />
+
+    {isNoindex ? (
+      <meta name="robots" content="noindex,nofollow" />
+    ) : (
+      <meta name="robots" content="index,follow" />
+    )}
+
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={title} />
+    {desc ? <meta property="og:description" content={desc} /> : null}
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    {ogAbs ? <meta property="og:image" content={ogAbs} /> : null}
+
+    <meta name="twitter:card" content={ogAbs ? "summary_large_image" : "summary"} />
+    <meta name="twitter:title" content={title} />
+    {desc ? <meta name="twitter:description" content={desc} /> : null}
+    {ogAbs ? <meta name="twitter:image" content={ogAbs} /> : null}
+  </head>
+
+  <body>
+    <div class="hc-atmosphere" aria-hidden="true"></div>
+
+    <HotelHeader lang={lang} pathname={Astro.url.pathname} />
+    <main class={mainClass}>
+      <slot />
+    </main>
+
+    <HotelBookingPlanner lang={lang} />
+
+    <HotelFooter lang={lang} />
+
+    <HotelVisualStabilization />
+
+    <HotelDock lang={lang} />
+  </body>
+</html>

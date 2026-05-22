@@ -1,0 +1,710 @@
+---
+type PreviewItem = {
+  id: string;
+  title: string;
+  section: string;
+  mood: string;
+  signal?: string;
+  src: string;
+  alt?: string;
+};
+
+type Props = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  intro: string;
+  href: string;
+  hrefLabel: string;
+  items: PreviewItem[];
+  secondaryHref?: string;
+  secondaryLabel?: string;
+};
+
+const {
+  id,
+  eyebrow,
+  title,
+  intro,
+  href,
+  hrefLabel,
+  secondaryHref,
+  secondaryLabel,
+  items,
+} = Astro.props as Props;
+
+const archiveItems = (items ?? [])
+  .filter((item) => item?.src?.trim())
+  .map((item, index) => ({
+    ...item,
+    id: item.id || `preview-${index + 1}`,
+    alt: item.alt || item.title,
+  }));
+
+const first = archiveItems[0];
+const total = archiveItems.length;
+---
+
+{first ? (
+  <section class="hc-gallery-preview" data-hc-gallery-preview={id} data-direction="1">
+    <div class="hc-gallery-preview__ambient" aria-hidden="true"></div>
+
+    <div class="hc-gallery-preview__copy">
+      <div class="hc-gallery-preview__eyebrow">{eyebrow}</div>
+      <h2>{title}</h2>
+      <p>{intro}</p>
+
+      <div class="hc-gallery-preview__actions">
+        <a href={href} class="hc-gallery-preview__button hc-gallery-preview__button--light">
+          {hrefLabel}
+        </a>
+
+        {secondaryHref && secondaryLabel ? (
+          <a href={secondaryHref} class="hc-gallery-preview__button hc-gallery-preview__button--ghost">
+            {secondaryLabel}
+          </a>
+        ) : null}
+      </div>
+    </div>
+
+    <div class="hc-gallery-preview__field" data-preview-field tabindex="0" role="group" aria-label={title}>
+      <div class="hc-gallery-preview__frame">
+        <img
+          data-preview-image
+          src={first.src}
+          alt={first.alt}
+          loading="lazy"
+          decoding="async"
+        />
+
+        <div class="hc-gallery-preview__veil" aria-hidden="true"></div>
+        <div class="hc-gallery-preview__sweep" aria-hidden="true"></div>
+
+        <div class="hc-gallery-preview__readout">
+          <span data-preview-section>{first.section}</span>
+          <strong data-preview-title>{first.title}</strong>
+          <small data-preview-signal>{first.signal || first.mood}</small>
+        </div>
+
+        <div class="hc-gallery-preview__counter" data-preview-count>
+          {`01 / ${String(total).padStart(2, "0")}`}
+        </div>
+
+        <div class="hc-gallery-preview__nav">
+          <button type="button" data-preview-prev aria-label="Previous">&lt;</button>
+          <button type="button" data-preview-next aria-label="Next">&gt;</button>
+        </div>
+      </div>
+
+      <div class="hc-gallery-preview__filmstrip">
+        {archiveItems.map((item, index) => (
+          <button
+            type="button"
+            data-preview-thumb={index}
+            class:list={["hc-gallery-preview__thumb", index === 0 && "is-active"]}
+            aria-label={`Show ${item.title}`}
+            aria-current={index === 0 ? "true" : undefined}
+          >
+            <img src={item.src} alt="" loading="lazy" decoding="async" />
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <style>
+      .hc-gallery-preview {
+        position: relative;
+        width: 100%;
+        min-height: 100svh;
+        margin-top: clamp(5rem, 10vw, 9rem);
+        display: grid;
+        grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+        gap: clamp(2rem, 5vw, 5rem);
+        align-items: center;
+        overflow: hidden;
+        background: #15120f;
+        color: #fffaf2;
+        padding: clamp(5rem, 8vw, 8rem) max(1rem, calc((100vw - 1480px) / 2));
+        isolation: isolate;
+      }
+
+      .hc-gallery-preview__ambient {
+        pointer-events: none;
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background:
+          linear-gradient(120deg, rgba(255, 250, 242, 0.075), transparent 38%),
+          linear-gradient(290deg, rgba(226, 188, 136, 0.18), transparent 48%),
+          linear-gradient(180deg, #17130f 0%, #0f0d0b 100%);
+      }
+
+      .hc-gallery-preview__copy,
+      .hc-gallery-preview__field {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hc-gallery-preview__eyebrow {
+        font-size: 0.66rem;
+        letter-spacing: 0;
+        text-transform: uppercase;
+        color: rgba(255, 250, 242, 0.42);
+      }
+
+      .hc-gallery-preview h2 {
+        margin-top: 1.2rem;
+        max-width: 10ch;
+        font-size: 3.8rem;
+        line-height: 0.9;
+        letter-spacing: 0;
+        text-wrap: balance;
+      }
+
+      .hc-gallery-preview__copy p {
+        margin-top: 1.4rem;
+        max-width: 34rem;
+        font-size: 1rem;
+        line-height: 1.78;
+        color: rgba(255, 250, 242, 0.64);
+      }
+
+      .hc-gallery-preview__actions {
+        margin-top: 1.8rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .hc-gallery-preview__button {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding-inline: 1.1rem;
+        font-size: 0.88rem;
+        text-decoration: none;
+      }
+
+      .hc-gallery-preview__button--light {
+        background: #fffaf2;
+        color: #15120f;
+      }
+
+      .hc-gallery-preview__button--ghost {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.04);
+        color: #fffaf2;
+      }
+
+      .hc-gallery-preview__field {
+        display: grid;
+        gap: 0.85rem;
+        min-width: 0;
+      }
+
+      .hc-gallery-preview__frame {
+        position: relative;
+        min-height: clamp(30rem, 54vw, 50rem);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 42px 120px rgba(0, 0, 0, 0.32);
+      }
+
+      .hc-gallery-preview__frame > img {
+        position: absolute;
+        inset: 0;
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+        opacity: 1;
+        filter: brightness(1.12) contrast(1.06) saturate(1.04);
+        transform: scale(1.01);
+      }
+
+      .hc-gallery-preview__veil {
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(120deg, rgba(255, 245, 220, 0.12), transparent 38%),
+          linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.18) 54%, rgba(0, 0, 0, 0.78));
+        pointer-events: none;
+      }
+
+      .hc-gallery-preview__sweep {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        background: linear-gradient(
+          105deg,
+          transparent 0%,
+          rgba(255, 250, 242, 0.18) 42%,
+          transparent 58%
+        );
+        transform: translateX(-120%);
+      }
+
+      .hc-gallery-preview.is-switching .hc-gallery-preview__sweep {
+        animation: hcPreviewSweep 860ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .hc-gallery-preview.is-switching .hc-gallery-preview__frame > img {
+        animation: hcPreviewImageIn 860ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .hc-gallery-preview.is-switching[data-direction="-1"] .hc-gallery-preview__frame > img {
+        animation-name: hcPreviewImageInReverse;
+      }
+
+      .hc-gallery-preview__readout {
+        position: absolute;
+        left: clamp(1rem, 2.5vw, 1.8rem);
+        right: clamp(1rem, 2.5vw, 1.8rem);
+        bottom: clamp(1rem, 2.5vw, 1.8rem);
+        z-index: 4;
+        border-top: 1px solid rgba(255, 255, 255, 0.24);
+        padding-top: 1rem;
+      }
+
+      .hc-gallery-preview__readout span,
+      .hc-gallery-preview__readout small {
+        display: block;
+        font-size: 0.64rem;
+        letter-spacing: 0;
+        text-transform: uppercase;
+        color: rgba(255, 250, 242, 0.5);
+      }
+
+      .hc-gallery-preview__readout strong {
+        margin-top: 0.75rem;
+        display: block;
+        max-width: 11ch;
+        font-size: 2.8rem;
+        line-height: 0.9;
+        letter-spacing: 0;
+        font-weight: 400;
+      }
+
+      .hc-gallery-preview__readout small {
+        margin-top: 1rem;
+        color: rgba(255, 250, 242, 0.62);
+      }
+
+      .hc-gallery-preview__counter {
+        position: absolute;
+        left: clamp(1rem, 2vw, 1.4rem);
+        top: clamp(1rem, 2vw, 1.4rem);
+        z-index: 5;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(0, 0, 0, 0.22);
+        padding: 0.7rem 0.9rem;
+        border-radius: 999px;
+        backdrop-filter: blur(16px);
+        font-size: 0.64rem;
+        letter-spacing: 0;
+        color: rgba(255, 250, 242, 0.7);
+      }
+
+      .hc-gallery-preview__nav {
+        position: absolute;
+        right: clamp(1rem, 2vw, 1.4rem);
+        top: clamp(1rem, 2vw, 1.4rem);
+        z-index: 5;
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .hc-gallery-preview__nav button {
+        display: grid;
+        height: 2.55rem;
+        width: 2.55rem;
+        place-items: center;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(0, 0, 0, 0.24);
+        color: #fffaf2;
+        font-size: 1rem;
+        line-height: 1;
+        backdrop-filter: blur(16px);
+        cursor: pointer;
+      }
+
+      .hc-gallery-preview__filmstrip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(5.8rem, 1fr));
+        gap: 0.6rem;
+      }
+
+      .hc-gallery-preview__thumb {
+        position: relative;
+        height: 5.3rem;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.045);
+        cursor: pointer;
+        opacity: 0.62;
+      }
+
+      .hc-gallery-preview__thumb img {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+        filter: brightness(0.9) contrast(1.04);
+      }
+
+      .hc-gallery-preview__thumb.is-active {
+        border-color: rgba(255, 250, 242, 0.55);
+        opacity: 1;
+      }
+
+      .hc-gallery-preview__thumb.is-active img {
+        filter: brightness(1.12) contrast(1.06);
+      }
+
+      @keyframes hcPreviewImageIn {
+        from {
+          opacity: 0.32;
+          transform: translate3d(30px, 0, 0) scale(1.04);
+          filter: blur(12px) brightness(1.08) contrast(1.04) saturate(1.02);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scale(1.01);
+          filter: blur(0) brightness(1.12) contrast(1.06) saturate(1.04);
+        }
+      }
+
+      @keyframes hcPreviewImageInReverse {
+        from {
+          opacity: 0.32;
+          transform: translate3d(-30px, 0, 0) scale(1.04);
+          filter: blur(12px) brightness(1.08) contrast(1.04) saturate(1.02);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scale(1.01);
+          filter: blur(0) brightness(1.12) contrast(1.06) saturate(1.04);
+        }
+      }
+
+      @keyframes hcPreviewSweep {
+        0% {
+          opacity: 0;
+          transform: translateX(-120%);
+        }
+        34% {
+          opacity: 0.52;
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(120%);
+        }
+      }
+
+      @media (min-width: 641px) {
+        .hc-gallery-preview h2 {
+          font-size: 5.2rem;
+        }
+
+        .hc-gallery-preview__readout strong {
+          font-size: 4.2rem;
+        }
+      }
+
+      @media (min-width: 981px) {
+        .hc-gallery-preview h2 {
+          font-size: 7rem;
+        }
+
+        .hc-gallery-preview__readout strong {
+          font-size: 5.4rem;
+        }
+      }
+
+      @media (min-width: 1280px) {
+        .hc-gallery-preview h2 {
+          font-size: 8.6rem;
+        }
+
+        .hc-gallery-preview__readout strong {
+          font-size: 5.8rem;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .hc-gallery-preview {
+          grid-template-columns: 1fr;
+          min-height: auto;
+          padding-top: 6rem;
+          padding-bottom: 5rem;
+        }
+
+        .hc-gallery-preview__frame {
+          min-height: 34rem;
+        }
+
+        .hc-gallery-preview__filmstrip {
+          display: flex;
+          overflow-x: auto;
+          padding-bottom: 0.2rem;
+          scroll-snap-type: x mandatory;
+        }
+
+        .hc-gallery-preview__thumb {
+          min-width: 7rem;
+          scroll-snap-align: start;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .hc-gallery-preview h2 {
+          font-size: 3.6rem;
+        }
+
+        .hc-gallery-preview__readout strong {
+          font-size: 3rem;
+        }
+
+        .hc-gallery-preview__frame {
+          min-height: 32rem;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hc-gallery-preview *,
+        .hc-gallery-preview *::before,
+        .hc-gallery-preview *::after {
+          animation-duration: 1ms !important;
+          transition-duration: 1ms !important;
+        }
+      }
+
+      /* Stage 2H - Gallery Preview QA + visual tuning */
+
+      .hc-gallery-preview,
+      .hc-gallery-preview__field,
+      .hc-gallery-preview__frame {
+        min-width: 0;
+      }
+
+      .hc-gallery-preview {
+        overflow-x: clip;
+      }
+
+      .hc-gallery-preview__frame {
+        isolation: isolate;
+      }
+
+      .hc-gallery-preview__frame > img {
+        object-position: center center;
+      }
+
+      .hc-gallery-preview__copy p {
+        color: rgba(255, 250, 242, 0.68);
+      }
+
+      .hc-gallery-preview__readout strong {
+        text-shadow: 0 18px 70px rgba(0, 0, 0, 0.34);
+      }
+
+      .hc-gallery-preview__thumb {
+        min-width: 0;
+      }
+
+      .hc-gallery-preview__thumb:focus-visible,
+      .hc-gallery-preview__nav button:focus-visible,
+      .hc-gallery-preview__button:focus-visible {
+        outline: 2px solid rgba(255, 250, 242, 0.82);
+        outline-offset: 3px;
+      }
+
+      @media (max-width: 1180px) {
+        .hc-gallery-preview {
+          gap: clamp(1.4rem, 4vw, 3rem);
+        }
+
+        .hc-gallery-preview h2 {
+          font-size: 5.8rem;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .hc-gallery-preview {
+          width: 100%;
+          left: auto;
+          right: auto;
+          margin-left: 0;
+          margin-right: 0;
+        }
+
+        .hc-gallery-preview__frame {
+          min-height: 32rem;
+        }
+
+        .hc-gallery-preview__filmstrip {
+          scrollbar-width: none;
+        }
+
+        .hc-gallery-preview__filmstrip::-webkit-scrollbar {
+          display: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .hc-gallery-preview {
+          padding-inline: 1rem;
+        }
+
+        .hc-gallery-preview h2 {
+          max-width: 10ch;
+          font-size: 3.3rem;
+          line-height: 0.9;
+        }
+
+        .hc-gallery-preview__copy p {
+          font-size: 0.94rem;
+          line-height: 1.72;
+        }
+
+        .hc-gallery-preview__frame {
+          min-height: 30rem;
+        }
+
+        .hc-gallery-preview__readout {
+          left: 1rem;
+          right: 1rem;
+          bottom: 1rem;
+        }
+
+        .hc-gallery-preview__readout strong {
+          font-size: 2.7rem;
+          line-height: 0.9;
+        }
+
+        .hc-gallery-preview__counter {
+          font-size: 0.56rem;
+          letter-spacing: 0;
+        }
+
+        .hc-gallery-preview__nav button {
+          height: 2.4rem;
+          width: 2.4rem;
+        }
+      }
+
+      @supports not (overflow: clip) {
+        .hc-gallery-preview {
+          overflow-x: hidden;
+        }
+      }
+    </style>
+
+    <script is:inline define:vars={{ previewId: id, previewPayload: archiveItems }}>
+      (() => {
+        const root = document.querySelector(`[data-hc-gallery-preview="${previewId}"]`);
+        if (!root || !Array.isArray(previewPayload) || previewPayload.length === 0) return;
+
+        const field = root.querySelector("[data-preview-field]");
+        const img = root.querySelector("[data-preview-image]");
+        const titleNode = root.querySelector("[data-preview-title]");
+        const sectionNode = root.querySelector("[data-preview-section]");
+        const signalNode = root.querySelector("[data-preview-signal]");
+        const countNode = root.querySelector("[data-preview-count]");
+        const prevBtn = root.querySelector("[data-preview-prev]");
+        const nextBtn = root.querySelector("[data-preview-next]");
+        const thumbs = Array.from(root.querySelectorAll("[data-preview-thumb]"));
+
+        let activeIndex = 0;
+        let wheelCooldown = 0;
+        let switchTimer = 0;
+
+        const pad = (n) => String(n).padStart(2, "0");
+
+        const render = (nextIndex, direction = 1) => {
+          const total = previewPayload.length;
+          const index = ((nextIndex % total) + total) % total;
+          const item = previewPayload[index];
+
+          activeIndex = index;
+          root.dataset.direction = direction >= 0 ? "1" : "-1";
+
+          if (img) {
+            img.src = item.src;
+            img.alt = item.alt || item.title || "";
+          }
+
+          if (titleNode) titleNode.textContent = item.title || "";
+          if (sectionNode) sectionNode.textContent = item.section || "";
+          if (signalNode) signalNode.textContent = item.signal || item.mood || "";
+          if (countNode) countNode.textContent = `${pad(index + 1)} / ${pad(total)}`;
+
+          thumbs.forEach((button, i) => {
+            const active = i === index;
+            button.classList.toggle("is-active", active);
+            if (active) button.setAttribute("aria-current", "true");
+            else button.removeAttribute("aria-current");
+          });
+
+          root.classList.remove("is-switching");
+          window.clearTimeout(switchTimer);
+          void root.offsetWidth;
+          root.classList.add("is-switching");
+          switchTimer = window.setTimeout(() => root.classList.remove("is-switching"), 900);
+        };
+
+        const goTo = (index) => {
+          if (index === activeIndex) return;
+          render(index, index > activeIndex ? 1 : -1);
+        };
+
+        const goDelta = (delta) => {
+          render(activeIndex + delta, delta);
+        };
+
+        thumbs.forEach((button) => {
+          button.addEventListener("click", () => {
+            const index = Number(button.getAttribute("data-preview-thumb"));
+            if (Number.isFinite(index)) goTo(index);
+          });
+        });
+
+        if (prevBtn) prevBtn.addEventListener("click", () => goDelta(-1));
+        if (nextBtn) nextBtn.addEventListener("click", () => goDelta(1));
+
+        if (field) {
+          field.addEventListener(
+            "wheel",
+            (event) => {
+              if (window.matchMedia("(max-width: 760px)").matches) return;
+              if (Math.abs(event.deltaY) < 16) return;
+
+              event.preventDefault();
+
+              const now = window.performance.now();
+              if (now - wheelCooldown < 760) return;
+              wheelCooldown = now;
+
+              goDelta(event.deltaY > 0 ? 1 : -1);
+            },
+            { passive: false }
+          );
+
+          field.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+              event.preventDefault();
+              goDelta(1);
+            }
+
+            if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+              event.preventDefault();
+              goDelta(-1);
+            }
+          });
+        }
+      })();
+    </script>
+  </section>
+) : null}

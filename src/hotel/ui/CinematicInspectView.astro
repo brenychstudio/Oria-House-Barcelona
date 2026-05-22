@@ -1,0 +1,688 @@
+---
+type InspectItem = {
+  id: string;
+  title: string;
+  src: string;
+  section: string;
+  mood: string;
+  signal?: string;
+  alt?: string;
+};
+
+type Props = {
+  id: string;
+  items: InspectItem[];
+  returnLabel?: string;
+  previousLabel?: string;
+  nextLabel?: string;
+};
+
+const {
+  id,
+  items,
+  returnLabel = "Return",
+  previousLabel = "Previous",
+  nextLabel = "Next",
+} = Astro.props as Props;
+
+const inspectItems = (items ?? [])
+  .filter((item) => item?.src?.trim())
+  .map((item, index) => ({
+    ...item,
+    id: item.id || `inspect-${index + 1}`,
+    alt: item.alt || item.title || "",
+    signal: item.signal || item.mood || "Visual memory",
+  }));
+
+const first = inspectItems[0];
+const total = inspectItems.length;
+---
+
+{first ? (
+  <>
+    <section
+      class="hc-cinematic-inspect"
+      data-cinematic-inspect={id}
+      data-open="false"
+      data-direction="1"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Cinematic image inspection"
+      tabindex="-1"
+    >
+      <button
+        type="button"
+        class="hc-cinematic-inspect__veil"
+        data-inspect-close
+        aria-label={returnLabel}
+      ></button>
+
+      <div class="hc-cinematic-inspect__shell">
+        <div class="hc-cinematic-inspect__scene" data-inspect-scene>
+          <img
+            data-inspect-image
+            src={first.src}
+            alt={first.alt}
+            loading="eager"
+            decoding="async"
+          />
+
+          <div class="hc-cinematic-inspect__scene-veil" aria-hidden="true"></div>
+          <div class="hc-cinematic-inspect__sweep" aria-hidden="true"></div>
+
+          <button
+            type="button"
+            class="hc-cinematic-inspect__return"
+            data-inspect-close
+            aria-label={returnLabel}
+          >
+            {returnLabel}
+          </button>
+
+          <div class="hc-cinematic-inspect__nav">
+            <button type="button" data-inspect-prev aria-label={previousLabel}>←</button>
+            <button type="button" data-inspect-next aria-label={nextLabel}>→</button>
+          </div>
+
+          <div class="hc-cinematic-inspect__readout">
+            <div>
+              <span data-inspect-section>{first.section}</span>
+              <strong data-inspect-title>{first.title}</strong>
+            </div>
+
+            <div class="hc-cinematic-inspect__meta">
+              <span data-inspect-mood>{first.mood}</span>
+              <span data-inspect-signal>{first.signal}</span>
+              <span data-inspect-count>{`01 / ${String(total).padStart(2, "0")}`}</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="hc-cinematic-inspect__panel">
+          <div>
+            <div class="hc-cinematic-inspect__label">Inspect layer</div>
+            <h2 data-inspect-panel-title>{first.title}</h2>
+            <p data-inspect-panel-signal>{first.signal}</p>
+          </div>
+
+          <div class="hc-cinematic-inspect__filmstrip">
+            {inspectItems.map((item, index) => (
+              <button
+                type="button"
+                data-inspect-thumb={index}
+                class:list={["hc-cinematic-inspect__thumb", index === 0 && "is-active"]}
+                aria-label={`Show ${item.title}`}
+                aria-current={index === 0 ? "true" : undefined}
+              >
+                <img src={item.src} alt="" loading="lazy" decoding="async" />
+                <span>{item.section}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <style>
+      .hc-cinematic-inspect {
+        position: fixed;
+        inset: 0;
+        z-index: 140;
+        opacity: 0;
+        pointer-events: none;
+        color: #fffaf2;
+        transition: opacity 560ms cubic-bezier(0.16, 1, 0.3, 1);
+        isolation: isolate;
+      }
+
+      .hc-cinematic-inspect[data-open="true"] {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .hc-cinematic-inspect__veil {
+        position: absolute;
+        inset: 0;
+        border: 0;
+        background:
+          radial-gradient(circle at 72% 22%, rgba(226, 188, 136, 0.16), transparent 34rem),
+          rgba(8, 7, 5, 0.82);
+        cursor: default;
+      }
+
+      .hc-cinematic-inspect__shell {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.32fr);
+        gap: clamp(1rem, 3vw, 2rem);
+        width: min(100% - clamp(1rem, 4vw, 4rem), 1500px);
+        height: min(100svh - clamp(2rem, 8vh, 6rem), 920px);
+        margin: clamp(1rem, 4vh, 3rem) auto;
+        transform: translate3d(0, 18px, 0) scale(0.975);
+        border: 1px solid rgba(255, 250, 242, 0.11);
+        background:
+          linear-gradient(180deg, rgba(255, 250, 242, 0.035), rgba(255, 250, 242, 0.01)),
+          rgba(12, 10, 8, 0.72);
+        box-shadow: 0 54px 160px rgba(0, 0, 0, 0.44);
+        transition:
+          transform 760ms cubic-bezier(0.16, 1, 0.3, 1),
+          border-radius 760ms cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+        contain: layout paint;
+      }
+
+      .hc-cinematic-inspect[data-open="true"] .hc-cinematic-inspect__shell {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+
+      .hc-cinematic-inspect__scene {
+        position: relative;
+        min-width: 0;
+        overflow: hidden;
+        background: #15120f;
+        cursor: ns-resize;
+      }
+
+      .hc-cinematic-inspect__scene img[data-inspect-image] {
+        position: absolute;
+        inset: 0;
+        height: 100%;
+        width: 100%;
+        object-fit: contain;
+        background: #0f0d0b;
+        filter: brightness(1.08) contrast(1.045) saturate(1.02);
+        transform: scale(1.005);
+      }
+
+      .hc-cinematic-inspect__scene-veil {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 74% 18%, rgba(255, 240, 210, 0.12), transparent 30rem),
+          linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.12) 52%, rgba(0, 0, 0, 0.72));
+      }
+
+      .hc-cinematic-inspect__sweep {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        background: linear-gradient(
+          105deg,
+          transparent 0%,
+          rgba(255, 250, 242, 0.18) 42%,
+          transparent 58%
+        );
+        transform: translateX(-120%);
+      }
+
+      .hc-cinematic-inspect.is-switching .hc-cinematic-inspect__sweep {
+        animation: hcInspectSweep 820ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .hc-cinematic-inspect.is-switching img[data-inspect-image] {
+        animation: hcInspectImageIn 820ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .hc-cinematic-inspect.is-switching[data-direction="-1"] img[data-inspect-image] {
+        animation-name: hcInspectImageInReverse;
+      }
+
+      .hc-cinematic-inspect__return {
+        position: absolute;
+        left: clamp(1rem, 2vw, 1.4rem);
+        top: clamp(1rem, 2vw, 1.4rem);
+        z-index: 5;
+        min-height: 2.55rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 250, 242, 0.2);
+        background: rgba(0, 0, 0, 0.28);
+        color: #fffaf2;
+        padding-inline: 1rem;
+        font-size: 0.78rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      .hc-cinematic-inspect__nav {
+        position: absolute;
+        right: clamp(1rem, 2vw, 1.4rem);
+        top: clamp(1rem, 2vw, 1.4rem);
+        z-index: 5;
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .hc-cinematic-inspect__nav button {
+        display: grid;
+        height: 2.55rem;
+        width: 2.55rem;
+        place-items: center;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 250, 242, 0.2);
+        background: rgba(0, 0, 0, 0.28);
+        color: #fffaf2;
+        cursor: pointer;
+      }
+
+      .hc-cinematic-inspect__readout {
+        position: absolute;
+        left: clamp(1.2rem, 3vw, 2.2rem);
+        right: clamp(1.2rem, 3vw, 2.2rem);
+        bottom: clamp(1.2rem, 3vw, 2.2rem);
+        z-index: 4;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.34fr);
+        gap: 1.2rem;
+        align-items: end;
+        border-top: 1px solid rgba(255, 250, 242, 0.22);
+        padding-top: 1rem;
+      }
+
+      .hc-cinematic-inspect__readout span,
+      .hc-cinematic-inspect__meta span,
+      .hc-cinematic-inspect__label {
+        display: block;
+        font-size: 0.62rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: rgba(255, 250, 242, 0.5);
+      }
+
+      .hc-cinematic-inspect__readout strong {
+        margin-top: 0.75rem;
+        display: block;
+        max-width: 10ch;
+        font-size: clamp(3rem, 6.8vw, 6.8rem);
+        line-height: 0.86;
+        letter-spacing: -0.075em;
+        font-weight: 400;
+        text-shadow: 0 18px 70px rgba(0, 0, 0, 0.36);
+      }
+
+      .hc-cinematic-inspect__meta {
+        display: grid;
+        gap: 0.7rem;
+        justify-items: end;
+        text-align: right;
+      }
+
+      .hc-cinematic-inspect__panel {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 1.5rem;
+        min-width: 0;
+        border-left: 1px solid rgba(255, 250, 242, 0.1);
+        padding: clamp(1rem, 2vw, 1.4rem);
+        background:
+          linear-gradient(180deg, rgba(255, 250, 242, 0.045), transparent),
+          rgba(10, 8, 7, 0.56);
+      }
+
+      .hc-cinematic-inspect__panel h2 {
+        margin-top: 0.9rem;
+        max-width: 9ch;
+        font-size: clamp(2.4rem, 4vw, 4.6rem);
+        line-height: 0.9;
+        letter-spacing: -0.075em;
+        font-weight: 400;
+      }
+
+      .hc-cinematic-inspect__panel p {
+        margin-top: 1rem;
+        max-width: 24rem;
+        color: rgba(255, 250, 242, 0.64);
+        line-height: 1.65;
+      }
+
+      .hc-cinematic-inspect__filmstrip {
+        align-self: end;
+        display: grid;
+        gap: 0.55rem;
+      }
+
+      .hc-cinematic-inspect__thumb {
+        display: grid;
+        grid-template-columns: 5.2rem minmax(0, 1fr);
+        gap: 0.65rem;
+        align-items: center;
+        min-height: 5.2rem;
+        border: 1px solid rgba(255, 250, 242, 0.1);
+        background: rgba(255, 250, 242, 0.04);
+        color: rgba(255, 250, 242, 0.58);
+        padding: 0.45rem;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .hc-cinematic-inspect__thumb img {
+        height: 4.25rem;
+        width: 5.2rem;
+        object-fit: cover;
+        filter: brightness(0.92) contrast(1.04);
+      }
+
+      .hc-cinematic-inspect__thumb span {
+        font-size: 0.58rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+
+      .hc-cinematic-inspect__thumb.is-active {
+        border-color: rgba(255, 250, 242, 0.42);
+        background: rgba(255, 250, 242, 0.1);
+        color: #fffaf2;
+      }
+
+      @keyframes hcInspectImageIn {
+        from {
+          opacity: 0.28;
+          transform: translate3d(32px, 0, 0) scale(1.035);
+          filter: blur(12px) brightness(1.06) contrast(1.04);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scale(1.005);
+          filter: blur(0) brightness(1.08) contrast(1.045) saturate(1.02);
+        }
+      }
+
+      @keyframes hcInspectImageInReverse {
+        from {
+          opacity: 0.28;
+          transform: translate3d(-32px, 0, 0) scale(1.035);
+          filter: blur(12px) brightness(1.06) contrast(1.04);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scale(1.005);
+          filter: blur(0) brightness(1.08) contrast(1.045) saturate(1.02);
+        }
+      }
+
+      @keyframes hcInspectSweep {
+        0% {
+          opacity: 0;
+          transform: translateX(-120%);
+        }
+        34% {
+          opacity: 0.42;
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(120%);
+        }
+      }
+
+      @media (max-width: 980px) {
+        .hc-cinematic-inspect__shell {
+          grid-template-columns: 1fr;
+          height: calc(100svh - 1.4rem);
+          margin: 0.7rem auto;
+        }
+
+        .hc-cinematic-inspect__scene {
+          cursor: default;
+        }
+
+        .hc-cinematic-inspect__panel {
+          border-left: 0;
+          border-top: 1px solid rgba(255, 250, 242, 0.1);
+        }
+
+        .hc-cinematic-inspect__filmstrip {
+          display: flex;
+          overflow-x: auto;
+          padding-bottom: 0.2rem;
+        }
+
+        .hc-cinematic-inspect__thumb {
+          min-width: 13rem;
+        }
+
+        .hc-cinematic-inspect__readout {
+          grid-template-columns: 1fr;
+        }
+
+        .hc-cinematic-inspect__meta {
+          justify-items: start;
+          text-align: left;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .hc-cinematic-inspect__shell {
+          width: calc(100% - 0.8rem);
+        }
+
+        .hc-cinematic-inspect__scene {
+          min-height: 60svh;
+        }
+
+        .hc-cinematic-inspect__readout strong {
+          font-size: clamp(2.8rem, 12vw, 5.2rem);
+        }
+
+        .hc-cinematic-inspect__panel h2 {
+          font-size: clamp(2.2rem, 10vw, 4rem);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hc-cinematic-inspect,
+        .hc-cinematic-inspect *,
+        .hc-cinematic-inspect *::before,
+        .hc-cinematic-inspect *::after {
+          animation-duration: 1ms !important;
+          transition-duration: 1ms !important;
+        }
+      }
+    </style>
+
+    <script is:inline define:vars={{ inspectId: id, inspectPayload: inspectItems }}>
+      (() => {
+        const root = document.querySelector(`[data-cinematic-inspect="${inspectId}"]`);
+        if (!root || !Array.isArray(inspectPayload) || inspectPayload.length === 0) return;
+
+        const image = root.querySelector("[data-inspect-image]");
+        const scene = root.querySelector("[data-inspect-scene]");
+        const section = root.querySelector("[data-inspect-section]");
+        const title = root.querySelector("[data-inspect-title]");
+        const mood = root.querySelector("[data-inspect-mood]");
+        const signal = root.querySelector("[data-inspect-signal]");
+        const count = root.querySelector("[data-inspect-count]");
+        const panelTitle = root.querySelector("[data-inspect-panel-title]");
+        const panelSignal = root.querySelector("[data-inspect-panel-signal]");
+        const prevBtn = root.querySelector("[data-inspect-prev]");
+        const nextBtn = root.querySelector("[data-inspect-next]");
+        const closeButtons = Array.from(root.querySelectorAll("[data-inspect-close]"));
+        const thumbs = Array.from(root.querySelectorAll("[data-inspect-thumb]"));
+
+        let activeIndex = 0;
+        let isOpen = false;
+        let lastFocus = null;
+        let switchTimer = 0;
+        let lockedScrollY = 0;
+        let wheelCooldown = 0;
+        let wheelAccumulator = 0;
+
+        const pad = (n) => String(n).padStart(2, "0");
+        const normalize = (index) => ((index % inspectPayload.length) + inspectPayload.length) % inspectPayload.length;
+
+        const lockScroll = () => {
+          lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+          const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+
+          document.body.style.position = "fixed";
+          document.body.style.top = `-${lockedScrollY}px`;
+          document.body.style.left = "0";
+          document.body.style.right = "0";
+          document.body.style.width = "100%";
+
+          if (scrollbar > 0) {
+            document.body.style.paddingRight = `${scrollbar}px`;
+          }
+        };
+
+        const unlockScroll = () => {
+          document.body.style.position = "";
+          document.body.style.top = "";
+          document.body.style.left = "";
+          document.body.style.right = "";
+          document.body.style.width = "";
+          document.body.style.paddingRight = "";
+
+          window.scrollTo(0, lockedScrollY);
+        };
+
+        const render = (nextIndex, direction = 1) => {
+          activeIndex = normalize(nextIndex);
+          const item = inspectPayload[activeIndex];
+
+          root.dataset.direction = direction >= 0 ? "1" : "-1";
+
+          if (image) {
+            image.src = item.src;
+            image.alt = item.alt || item.title || "";
+          }
+
+          if (section) section.textContent = item.section || "";
+          if (title) title.textContent = item.title || "";
+          if (mood) mood.textContent = item.mood || "";
+          if (signal) signal.textContent = item.signal || item.mood || "";
+          if (count) count.textContent = `${pad(activeIndex + 1)} / ${pad(inspectPayload.length)}`;
+          if (panelTitle) panelTitle.textContent = item.title || "";
+          if (panelSignal) panelSignal.textContent = item.signal || item.mood || "";
+
+          thumbs.forEach((button, index) => {
+            const active = index === activeIndex;
+            button.classList.toggle("is-active", active);
+            if (active) button.setAttribute("aria-current", "true");
+            else button.removeAttribute("aria-current");
+          });
+
+          root.classList.remove("is-switching");
+          window.clearTimeout(switchTimer);
+          void root.offsetWidth;
+          root.classList.add("is-switching");
+          switchTimer = window.setTimeout(() => root.classList.remove("is-switching"), 860);
+        };
+
+        const open = (index = 0) => {
+          if (isOpen) {
+            render(index, index > activeIndex ? 1 : -1);
+            return;
+          }
+
+          lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          isOpen = true;
+          wheelAccumulator = 0;
+          wheelCooldown = 0;
+
+          render(index, index > activeIndex ? 1 : -1);
+
+          root.dataset.open = "true";
+          document.documentElement.setAttribute("data-cinematic-inspect", "open");
+          lockScroll();
+
+          window.setTimeout(() => root.focus(), 30);
+        };
+
+        const close = () => {
+          if (!isOpen) return;
+
+          isOpen = false;
+          wheelAccumulator = 0;
+          root.dataset.open = "false";
+          document.documentElement.removeAttribute("data-cinematic-inspect");
+          unlockScroll();
+
+          if (lastFocus) {
+            window.setTimeout(() => lastFocus.focus({ preventScroll: true }), 80);
+          }
+        };
+
+        const goDelta = (delta) => {
+          render(activeIndex + delta, delta);
+        };
+
+        closeButtons.forEach((button) => {
+          button.addEventListener("click", close);
+        });
+
+        if (prevBtn) prevBtn.addEventListener("click", () => goDelta(-1));
+        if (nextBtn) nextBtn.addEventListener("click", () => goDelta(1));
+
+        if (scene) {
+          scene.addEventListener(
+            "wheel",
+            (event) => {
+              if (!isOpen) return;
+              if (window.matchMedia("(max-width: 760px)").matches) return;
+
+              const delta = event.deltaY || event.deltaX || 0;
+              if (Math.abs(delta) < 10) return;
+
+              event.preventDefault();
+
+              wheelAccumulator += delta;
+
+              const now = window.performance.now();
+              const threshold = 70;
+              const cooldownMs = 620;
+
+              if (Math.abs(wheelAccumulator) < threshold) return;
+              if (now - wheelCooldown < cooldownMs) return;
+
+              const direction = wheelAccumulator > 0 ? 1 : -1;
+
+              wheelCooldown = now;
+              wheelAccumulator = 0;
+
+              goDelta(direction);
+            },
+            { passive: false }
+          );
+        }
+
+        thumbs.forEach((button) => {
+          button.addEventListener("click", () => {
+            const index = Number(button.getAttribute("data-inspect-thumb"));
+            if (Number.isFinite(index)) {
+              render(index, index > activeIndex ? 1 : -1);
+            }
+          });
+        });
+
+        root.addEventListener("keydown", (event) => {
+          if (!isOpen) return;
+
+          if (event.key === "Escape") {
+            event.preventDefault();
+            close();
+          }
+
+          if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+            event.preventDefault();
+            goDelta(-1);
+          }
+
+          if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+            event.preventDefault();
+            goDelta(1);
+          }
+        });
+
+        window.addEventListener("hotel:cinematic-inspect:open", (event) => {
+          const detail = event.detail || {};
+          if (detail.id !== inspectId) return;
+
+          open(Number(detail.index) || 0);
+        });
+      })();
+    </script>
+  </>
+) : null}

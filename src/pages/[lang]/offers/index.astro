@@ -1,10 +1,9 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { LANGS, type Lang, isLang } from "../../../content/languages";
-import { getOffers } from "../../../cms/sheets";
+import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { getOffers, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
-import Card from "../../../core/ui/Card.astro";
-import { getHotelLabels } from "../../../vertical/content/labels";
+import { OFFER_COVER_BY_SLUG } from "../../../hotel/data/demoAssets";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -14,43 +13,1536 @@ const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
-const L = getHotelLabels(lang);
+const s = await getSettings();
 
 const offers = await getOffers();
-const title = L.offers;
+const visibleOffers = offers.filter((offer) =>
+  Boolean(OFFER_COVER_BY_SLUG[offer.slug] ?? (offer.cover_image ?? "").trim())
+);
+
+const siteName = t(lang, s.hotel_name_en, s.hotel_name_es);
+const pageTitle = `${siteName} — ${t(lang, "Offers", "Ofertas")}`;
+const bookingUrl = String((s as any).booking_url || "").trim();
+
+const optionalOfferField = (offer: any, key: string) =>
+  t(
+    lang,
+    String(offer?.[`${key}_en`] || ""),
+    String(offer?.[`${key}_es`] || "")
+  ).trim();
+
+const resolveOfferSales = (offer: any, index: number) => {
+  const slug = String(offer?.slug || "").toLowerCase();
+
+  const explicitMood = optionalOfferField(offer, "mood");
+  const explicitBestFor = optionalOfferField(offer, "best_for");
+  const explicitBookingLogic = optionalOfferField(offer, "booking_logic");
+  const explicitWhy = optionalOfferField(offer, "why_choose");
+
+  const profile = (() => {
+    if (slug.includes("stay") || slug.includes("pay")) {
+      return {
+        mood: t(lang, "Longer weekend rhythm", "Ritmo de fin de semana largo"),
+        bestFor: t(lang, "Guests who want one more quiet night in the city", "Huéspedes que quieren una noche tranquila más en la ciudad"),
+        bookingLogic: t(lang, "Extend the stay without making the trip feel heavier", "Alargar la estancia sin que el viaje se sienta más pesado"),
+        whyChoose: t(
+          lang,
+          "Choose this offer when the best part of Barcelona is having enough time to slow down.",
+          "Elija esta oferta cuando lo mejor de Barcelona es tener tiempo suficiente para bajar el ritmo."
+        ),
+      };
+    }
+
+    if (slug.includes("romance")) {
+      return {
+        mood: t(lang, "Private evening stay", "Estancia privada de noche"),
+        bestFor: t(lang, "Couples, slower arrivals and quiet celebrations", "Parejas, llegadas pausadas y celebraciones tranquilas"),
+        bookingLogic: t(lang, "A softer package around arrival, breakfast and privacy", "Un paquete más suave alrededor de llegada, desayuno y privacidad"),
+        whyChoose: t(
+          lang,
+          "Choose this offer when the room, table and timing should feel prepared before arrival.",
+          "Elija esta oferta cuando la habitación, la mesa y el ritmo deben sentirse preparados antes de llegar."
+        ),
+      };
+    }
+
+    if (slug.includes("culture")) {
+      return {
+        mood: t(lang, "Curated city days", "Días urbanos curados"),
+        bestFor: t(lang, "Guests who want culture without planning every step", "Huéspedes que quieren cultura sin planificar cada paso"),
+        bookingLogic: t(lang, "Pair the room with a quieter cultural route", "Combinar la habitación con una ruta cultural más tranquila"),
+        whyChoose: t(
+          lang,
+          "Choose this offer when Barcelona should feel guided, close and less crowded.",
+          "Elija esta oferta cuando Barcelona debe sentirse guiada, cercana y menos concurrida."
+        ),
+      };
+    }
+
+    return {
+      mood: t(lang, "Direct booking value", "Valor de reserva directa"),
+      bestFor: t(lang, "Guests who want clarity before booking", "Huéspedes que quieren claridad antes de reservar"),
+      bookingLogic: t(lang, "A package built around a specific reason to stay", "Un paquete construido alrededor de una razón específica para alojarse"),
+      whyChoose: t(
+        lang,
+        "Choose this offer when the hotel should shape more of the stay before you arrive.",
+        "Elija esta oferta cuando el hotel debe dar más forma a la estancia antes de su llegada."
+      ),
+    };
+  })();
+
+  return {
+    mood: explicitMood || profile.mood,
+    bestFor: explicitBestFor || profile.bestFor,
+    bookingLogic: explicitBookingLogic || profile.bookingLogic,
+    whyChoose: explicitWhy || profile.whyChoose,
+  };
+};
+
+const offerItems = visibleOffers.map((offer, index) => {
+  const title = pickLang(lang, offer, "title");
+  const period = pickLang(lang, offer, "period");
+  const included = pickLang(lang, offer, "included");
+  const terms = pickLang(lang, offer, "terms");
+  const highlights = splitPipe(pickLang(lang, offer, "highlights")).slice(0, 4);
+  const includedItems = splitPipe(included).slice(0, 4);
+  const sales = resolveOfferSales(offer, index);
+
+  return {
+    id: (offer as any).id || offer.slug || `offer-${index + 1}`,
+    slug: offer.slug,
+    href: `/${lang}/offers/${offer.slug}/`,
+    title,
+    period,
+    included,
+    terms,
+    includedItems,
+    highlights,
+    image: OFFER_COVER_BY_SLUG[offer.slug] ?? offer.cover_image,
+    index,
+    mood: sales.mood,
+    bestFor: sales.bestFor,
+    bookingLogic: sales.bookingLogic,
+    whyChoose: sales.whyChoose,
+  };
+});
+
+const firstOffer = offerItems[0];
+
+const heroOffer =
+  offerItems.find((offer) =>
+    ["stay", "romance", "culture"].some((key) =>
+      String(offer.slug || "").includes(key)
+    )
+  ) ?? firstOffer;
+
+const heroEyebrow = t(lang, "Offers / Direct booking", "Ofertas / Reserva directa");
+const heroTitle = t(
+  lang,
+  "Packages built around time, rhythm and direct value.",
+  "Paquetes pensados alrededor del tiempo, el ritmo y el valor directo."
+);
+const heroText = t(
+  lang,
+  "Move through seasonal stays, cultural days and slower arrivals as direct-booking reasons, not generic discounts.",
+  "Recorra estancias de temporada, días culturales y llegadas pausadas como razones de reserva directa, no como descuentos genéricos."
+);
+
+const fieldEyebrow = t(lang, "Offer theatre", "Teatro de ofertas");
+const fieldTitle = t(
+  lang,
+  "Choose the package by intention, not only by price.",
+  "Elija el paquete por intención, no solo por precio."
+);
+const fieldText = t(
+  lang,
+  "Each offer is framed as a stay scenario: extra time, private arrival, culture route, table, room and direct booking clarity.",
+  "Cada oferta se presenta como un escenario de estancia: más tiempo, llegada privada, ruta cultural, mesa, habitación y claridad de reserva directa."
+);
+
+const activeLabel = t(lang, "Active offer", "Oferta activa");
+const openOfferLabel = t(lang, "Open offer", "Abrir oferta");
+const bookDirectLabel = t(lang, "Book direct", "Reservar directo");
+const contactHotelLabel = t(lang, "Contact hotel", "Contactar hotel");
+const previousOfferLabel = t(lang, "Previous offer", "Oferta anterior");
+const nextOfferLabel = t(lang, "Next offer", "Siguiente oferta");
+
+const moodLabel = t(lang, "Mood", "Atmósfera");
+const bestForLabel = t(lang, "Best for", "Ideal para");
+const bookingLogicLabel = t(lang, "Booking logic", "Lógica de reserva");
+const whyChooseLabel = t(lang, "Why choose it", "Por qué elegirla");
+const periodLabel = t(lang, "Period", "Periodo");
+const includedLabel = t(lang, "Included", "Incluido");
+
+const archiveLabel = t(lang, "Offer archive", "Archivo de ofertas");
+const archiveTitle = t(
+  lang,
+  "All packages, kept clear.",
+  "Todos los paquetes, mantenidos claros."
+);
+const archiveText = t(
+  lang,
+  "Use the visual theatre to understand the offer, then use the archive to compare every package directly.",
+  "Use el teatro visual para entender la oferta y el archivo para comparar cada paquete directamente."
+);
+
+const emptyTitle = t(lang, "Offers are being prepared.", "Las ofertas se están preparando.");
+const emptyText = t(
+  lang,
+  "Published offers with cover images will appear here.",
+  "Las ofertas publicadas con imagen aparecerán aquí."
+);
+
+const browseLabel = t(lang, "Offer browser", "Explorador de ofertas");
+const browseTitle = t(
+  lang,
+  "Compare packages by value, timing and included details.",
+  "Compare paquetes por valor, momento y detalles incluidos."
+);
+const browseText = t(
+  lang,
+  "A calmer offer index: see the reason to book, the useful period, included notes and the next action without opening a large visual theatre.",
+  "Un indice de ofertas mas claro: razon de reserva, periodo util, detalles incluidos y siguiente accion sin abrir un teatro visual grande."
+);
+const offersAvailableLabel = t(lang, "Offers available", "Ofertas disponibles");
+const offerReasonLabel = t(lang, "Reason to book", "Razon para reservar");
 ---
 
-<BaseLayout lang={lang} title={title}>
-  <h1 class="text-2xl tracking-tight">{title}</h1>
+<BaseLayout lang={lang} title={pageTitle} fullBleed>
+  {firstOffer ? (
+    <>
+      <section class="offers-hero" data-dock-section>
+        <img
+          src={heroOffer?.image ?? firstOffer.image}
+          alt=""
+          class="offers-hero__image"
+          loading="eager"
+          decoding="async"
+        />
 
-  <div class="mt-6 grid gap-6 sm:grid-cols-2">
-    {offers.map((o) => (
-      <Card href={`/${lang}/offers/${o.slug}/`} class="active:scale-[0.99] transition">
-        <div class="aspect-[4/3] bg-black/5">
-          {o.cover_image ? (
-            <img
-              src={o.cover_image}
-              alt=""
-              class="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : null}
-        </div>
+        <div class="offers-hero__veil" aria-hidden="true"></div>
 
-        <div class="p-4">
-          <h2 class="text-lg">{pickLang(lang, o, "title")}</h2>
-          <p class="mt-2 text-sm opacity-80">{pickLang(lang, o, "period")}</p>
+        <div class="offers-hero__inner">
+          <div class="offers-hero__top">
+            <span>{heroEyebrow}</span>
+            <span>{t(lang, "Opening package", "Paquete inicial")} / {heroOffer?.title ?? firstOffer.title}</span>
+          </div>
 
-          <div class="mt-3 flex flex-wrap gap-2">
-            {splitPipe(pickLang(lang, o, "included"))
-              .slice(0, 2)
-              .map((x) => (
-                <span class="text-xs rounded-full px-3 py-1 bg-black/5">{x}</span>
-              ))}
+          <div class="offers-hero__content">
+            <h1>{heroTitle}</h1>
+
+            <aside>
+              <p>{heroText}</p>
+
+              <div class="offers-hero__actions">
+                <a href="#offers-browser">
+                  {t(lang, "Explore offers", "Explorar ofertas")}
+                </a>
+
+                {bookingUrl ? (
+                  <a href={bookingUrl} target="_blank" rel="noreferrer">
+                    {bookDirectLabel}
+                  </a>
+                ) : null}
+              </div>
+            </aside>
+          </div>
+
+          <div class="offers-hero__rail" aria-hidden="true">
+            {offerItems.slice(0, 4).map((offer, index) => (
+              <span>{String(index + 1).padStart(2, "0")} / {offer.title}</span>
+            ))}
           </div>
         </div>
-      </Card>
-    ))}
-  </div>
+      </section>
+
+      <section id="offers-browser" class="offers-browser" data-dock-section>
+        <div class="offers-browser__head">
+          <div>
+            <div class="offers-kicker">{browseLabel}</div>
+            <h2>{browseTitle}</h2>
+            <p>{browseText}</p>
+          </div>
+
+          <aside class="offers-browser__summary">
+            <span>{offersAvailableLabel}</span>
+            <strong>{offerItems.length}</strong>
+            <p>{fieldText}</p>
+          </aside>
+        </div>
+
+        <div class="offers-browser__list">
+          {offerItems.map((offer, index) => (
+            <article class="offer-row">
+              <a href={offer.href} class="offer-row__media" aria-label={`${openOfferLabel}: ${offer.title}`}>
+                <img src={offer.image} alt="" loading={index < 2 ? "eager" : "lazy"} decoding="async" />
+                <span>{String(index + 1).padStart(2, "0")}</span>
+              </a>
+
+              <div class="offer-row__main">
+                <div class="offer-row__eyebrow">{offer.mood}</div>
+                <h3>
+                  <a href={offer.href}>{offer.title}</a>
+                </h3>
+                <p>{offer.whyChoose}</p>
+
+                <div class="offer-row__chips">
+                  {offer.period ? <span>{periodLabel}: {offer.period}</span> : null}
+                  <span>{offer.bookingLogic}</span>
+                  {offer.includedItems.slice(0, 2).map((item) => (
+                    <span>{item}</span>
+                  ))}
+                </div>
+              </div>
+
+              <aside class="offer-row__side">
+                <span>{offerReasonLabel}</span>
+                <strong>{offer.bestFor}</strong>
+                <div class="offer-row__actions">
+                  <a href={offer.href}>{openOfferLabel}</a>
+                  {bookingUrl ? (
+                    <a
+                      href={bookingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-booking-trigger="true"
+                      data-booking-context="offer"
+                      data-booking-slug={offer.slug}
+                      data-booking-title={offer.title}
+                    >
+                      {bookDirectLabel}
+                    </a>
+                  ) : null}
+                </div>
+              </aside>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="offer-field" class="offers-field" data-offer-index-field data-dock-section>
+        <div class="offers-field__intro">
+          <div>
+            <div class="offers-kicker">{fieldEyebrow}</div>
+            <h2>{fieldTitle}</h2>
+          </div>
+
+          <p>{fieldText}</p>
+        </div>
+
+        <div class="offers-theatre">
+          <div
+            class="offers-theatre__visual"
+            data-offer-stage
+            tabindex="0"
+            role="group"
+            aria-label={fieldTitle}
+          >
+            <img
+              data-offer-active-image
+              src={firstOffer.image}
+              alt=""
+              loading="eager"
+              decoding="async"
+            />
+
+            <div class="offers-theatre__shade" aria-hidden="true"></div>
+            <div class="offers-theatre__sweep" aria-hidden="true"></div>
+
+            <div class="offers-theatre__readout">
+              <span data-offer-active-count>
+                01 / {String(offerItems.length).padStart(2, "0")}
+              </span>
+              <small data-offer-active-period>{firstOffer.period}</small>
+              <strong data-offer-active-title>{firstOffer.title}</strong>
+              <p data-offer-active-mood>{firstOffer.mood}</p>
+            </div>
+
+            <div class="offers-theatre__nav">
+              <button type="button" data-offer-prev aria-label={previousOfferLabel}>←</button>
+              <button type="button" data-offer-next aria-label={nextOfferLabel}>→</button>
+            </div>
+          </div>
+
+          <aside class="offers-theatre__panel">
+            <div>
+              <div class="offers-kicker">{activeLabel}</div>
+
+              <h3 data-offer-panel-title>{firstOffer.title}</h3>
+              <p data-offer-panel-period>{firstOffer.period}</p>
+
+              <dl class="offers-theatre__decision">
+                <div>
+                  <dt>{moodLabel}</dt>
+                  <dd data-offer-mood>{firstOffer.mood}</dd>
+                </div>
+
+                <div>
+                  <dt>{bestForLabel}</dt>
+                  <dd data-offer-best-for>{firstOffer.bestFor}</dd>
+                </div>
+
+                <div>
+                  <dt>{bookingLogicLabel}</dt>
+                  <dd data-offer-booking-logic>{firstOffer.bookingLogic}</dd>
+                </div>
+
+                <div>
+                  <dt>{whyChooseLabel}</dt>
+                  <dd data-offer-why-choose>{firstOffer.whyChoose}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div class="offers-theatre__bottom">
+              <div class="offers-theatre__included">
+                <span>{includedLabel}</span>
+                <strong data-offer-included>
+                  {firstOffer.includedItems.length ? firstOffer.includedItems.join(" / ") : "—"}
+                </strong>
+              </div>
+
+              <div class="offers-theatre__actions">
+                <a href={firstOffer.href} data-offer-open-link>{openOfferLabel}</a>
+
+                {bookingUrl ? (
+                  <a
+                    href={bookingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-offer-booking-link
+                    data-booking-trigger="true"
+                    data-booking-context="offer"
+                    data-booking-slug={firstOffer.slug}
+                    data-booking-title={firstOffer.title}
+                  >
+                    {bookDirectLabel}
+                  </a>
+                ) : (
+                  <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
+                )}
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="offers-rail" aria-label={t(lang, "Offer selector", "Selector de ofertas")}>
+          {offerItems.map((offer, index) => (
+            <button
+              type="button"
+              data-offer-thumb={index}
+              class:list={["offers-rail__item", index === 0 && "is-active"]}
+              aria-current={index === 0 ? "true" : undefined}
+            >
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <em>{offer.mood}</em>
+              <strong>{offer.title}</strong>
+              <small>{offer.period || offer.bestFor}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section class="offers-archive" data-dock-section>
+        <div class="offers-archive__intro">
+          <div class="offers-kicker">{archiveLabel}</div>
+          <h2>{archiveTitle}</h2>
+          <p>{archiveText}</p>
+        </div>
+
+        <div class="offers-archive__list">
+          {offerItems.map((offer, index) => (
+            <a href={offer.href} class="offers-archive__row">
+              <div class="offers-archive__index">{String(index + 1).padStart(2, "0")}</div>
+
+              <div>
+                <h3>{offer.title}</h3>
+                <p>{offer.period || offer.bestFor}</p>
+              </div>
+
+              <div class="offers-archive__meta">
+                <span>{offer.bestFor}</span>
+                <span>{offer.bookingLogic}</span>
+                {offer.includedItems[0] ? <span>{offer.includedItems[0]}</span> : null}
+              </div>
+
+              <div class="offers-archive__open">{openOfferLabel}</div>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="offers-direct" data-dock-section>
+        <div>
+          <div class="offers-kicker">{t(lang, "Direct package request", "Solicitud directa de paquete")}</div>
+          <h2>
+            {t(
+              lang,
+              "Ask the hotel to prepare the right offer for your dates.",
+              "Pida al hotel que prepare la oferta adecuada para sus fechas."
+            )}
+          </h2>
+        </div>
+
+        <div>
+          <p>
+            {t(
+              lang,
+              "Offers work best when room choice, arrival time, included details and booking rhythm are aligned before the stay begins.",
+              "Las ofertas funcionan mejor cuando habitación, hora de llegada, detalles incluidos y ritmo de reserva se alinean antes de empezar la estancia."
+            )}
+          </p>
+
+          <div class="offers-direct__actions">
+            {bookingUrl ? (
+              <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+            ) : null}
+            <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
+          </div>
+        </div>
+      </section>
+
+      <script is:inline define:vars={{ offerPayload: offerItems }}>
+        (() => {
+          const root = document.querySelector("[data-offer-index-field]");
+          if (!root || !Array.isArray(offerPayload) || offerPayload.length === 0) return;
+
+          const stage = root.querySelector("[data-offer-stage]");
+          const activeImage = root.querySelector("[data-offer-active-image]");
+          const activeCount = root.querySelector("[data-offer-active-count]");
+          const activePeriod = root.querySelector("[data-offer-active-period]");
+          const activeTitle = root.querySelector("[data-offer-active-title]");
+          const activeMood = root.querySelector("[data-offer-active-mood]");
+          const panelTitle = root.querySelector("[data-offer-panel-title]");
+          const panelPeriod = root.querySelector("[data-offer-panel-period]");
+          const offerMood = root.querySelector("[data-offer-mood]");
+          const offerBestFor = root.querySelector("[data-offer-best-for]");
+          const offerBookingLogic = root.querySelector("[data-offer-booking-logic]");
+          const offerWhyChoose = root.querySelector("[data-offer-why-choose]");
+          const offerIncluded = root.querySelector("[data-offer-included]");
+          const openLink = root.querySelector("[data-offer-open-link]");
+          const bookingLink = root.querySelector("[data-offer-booking-link]");
+          const prevBtn = root.querySelector("[data-offer-prev]");
+          const nextBtn = root.querySelector("[data-offer-next]");
+          const thumbs = Array.from(root.querySelectorAll("[data-offer-thumb]"));
+
+          let activeIndex = 0;
+          let switchTimer = 0;
+
+          const pad = (n) => String(n).padStart(2, "0");
+          const normalize = (index) => ((index % offerPayload.length) + offerPayload.length) % offerPayload.length;
+
+          const render = (nextIndex, direction = 1) => {
+            activeIndex = normalize(nextIndex);
+            const offer = offerPayload[activeIndex];
+
+            root.dataset.direction = direction >= 0 ? "1" : "-1";
+
+            if (activeImage) {
+              activeImage.src = offer.image;
+              activeImage.alt = offer.title || "";
+            }
+
+            if (activeCount) activeCount.textContent = `${pad(activeIndex + 1)} / ${pad(offerPayload.length)}`;
+            if (activePeriod) activePeriod.textContent = offer.period || "";
+            if (activeTitle) activeTitle.textContent = offer.title || "";
+            if (activeMood) activeMood.textContent = offer.mood || "";
+            if (panelTitle) panelTitle.textContent = offer.title || "";
+            if (panelPeriod) panelPeriod.textContent = offer.period || "";
+            if (offerMood) offerMood.textContent = offer.mood || "—";
+            if (offerBestFor) offerBestFor.textContent = offer.bestFor || "—";
+            if (offerBookingLogic) offerBookingLogic.textContent = offer.bookingLogic || "—";
+            if (offerWhyChoose) offerWhyChoose.textContent = offer.whyChoose || "—";
+            if (offerIncluded) {
+              offerIncluded.textContent = offer.includedItems?.length
+                ? offer.includedItems.join(" / ")
+                : "—";
+            }
+            if (openLink) openLink.setAttribute("href", offer.href);
+
+            if (bookingLink) {
+              bookingLink.setAttribute("data-booking-context", "offer");
+              bookingLink.setAttribute("data-booking-slug", offer.slug || "");
+              bookingLink.setAttribute("data-booking-title", offer.title || "");
+            }
+
+            thumbs.forEach((button, index) => {
+              const active = index === activeIndex;
+              button.classList.toggle("is-active", active);
+              if (active) button.setAttribute("aria-current", "true");
+              else button.removeAttribute("aria-current");
+            });
+
+            root.classList.remove("is-switching");
+            window.clearTimeout(switchTimer);
+            void root.offsetWidth;
+            root.classList.add("is-switching");
+            switchTimer = window.setTimeout(() => root.classList.remove("is-switching"), 780);
+          };
+
+          thumbs.forEach((button) => {
+            button.addEventListener("click", () => {
+              const index = Number(button.getAttribute("data-offer-thumb"));
+              if (Number.isFinite(index)) render(index, index > activeIndex ? 1 : -1);
+            });
+          });
+
+          if (prevBtn) prevBtn.addEventListener("click", () => render(activeIndex - 1, -1));
+          if (nextBtn) nextBtn.addEventListener("click", () => render(activeIndex + 1, 1));
+
+          if (stage) {
+            stage.addEventListener("keydown", (event) => {
+              if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                event.preventDefault();
+                render(activeIndex - 1, -1);
+              }
+
+              if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                event.preventDefault();
+                render(activeIndex + 1, 1);
+              }
+
+              if (event.key === "Enter" && openLink instanceof HTMLAnchorElement) {
+                event.preventDefault();
+                openLink.click();
+              }
+            });
+
+            stage.addEventListener(
+              "wheel",
+              (event) => {
+                if (window.matchMedia("(max-width: 760px)").matches) return;
+                if (Math.abs(event.deltaY) < 16) return;
+
+                event.preventDefault();
+
+                const direction = event.deltaY > 0 ? 1 : -1;
+                render(activeIndex + direction, direction);
+              },
+              { passive: false }
+            );
+          }
+
+          render(0, 1);
+        })();
+      </script>
+    </>
+  ) : (
+    <section class="offers-empty">
+      <div class="offers-kicker">{t(lang, "Offers", "Ofertas")}</div>
+      <h1>{emptyTitle}</h1>
+      <p>{emptyText}</p>
+    </section>
+  )}
+
+  <style>
+    .offers-hero {
+      position: relative;
+      min-height: 100svh;
+      margin-top: -5.2rem;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offers-hero__image {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.03);
+      transform: scale(1.015);
+    }
+
+    .offers-hero__veil {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 70% 20%, rgba(255, 232, 196, 0.2), transparent 34rem),
+        linear-gradient(90deg, rgba(5, 5, 4, 0.62), rgba(5, 5, 4, 0.14) 48%, rgba(5, 5, 4, 0.54)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.14), rgba(5, 5, 4, 0.1) 42%, rgba(5, 5, 4, 0.76));
+    }
+
+    .offers-hero__inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      min-height: 100svh;
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1680px);
+      margin-inline: auto;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(7.8rem, 13vh, 10.5rem) 0 clamp(1.4rem, 4vh, 2.8rem);
+    }
+
+    .offers-hero__top,
+    .offers-hero__rail {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .offers-hero__top span,
+    .offers-hero__rail span,
+    .offers-kicker {
+      font-size: 0.64rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    .offers-hero__top span {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.62rem 0.86rem;
+      border-radius: 999px;
+      backdrop-filter: blur(18px);
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .offers-hero__content {
+      display: grid;
+      grid-template-columns: minmax(0, 0.98fr) minmax(18rem, 0.42fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: end;
+    }
+
+    .offers-hero h1 {
+      max-width: 11ch;
+      font-size: clamp(4.8rem, 9vw, 10.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .offers-hero aside {
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      padding-top: 1.1rem;
+    }
+
+    .offers-hero aside p {
+      max-width: 30rem;
+      font-size: 1rem;
+      line-height: 1.78;
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .offers-hero__actions,
+    .offers-direct__actions,
+    .offers-theatre__actions {
+      margin-top: 1.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .offers-hero__actions a,
+    .offers-direct__actions a,
+    .offers-theatre__actions a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.1rem;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+
+    .offers-hero__actions a:first-child,
+    .offers-theatre__actions a:first-child,
+    .offers-direct__actions a:first-child {
+      background: #fffaf2;
+      color: #15120f;
+    }
+
+    .offers-hero__actions a:last-child,
+    .offers-theatre__actions a:last-child,
+    .offers-direct__actions a:last-child {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fffaf2;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .offers-hero__rail {
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 0.8rem;
+      color: rgba(255, 255, 255, 0.52);
+    }
+
+    .offers-browser {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin: clamp(3.2rem, 6vw, 5.5rem) auto 0;
+      scroll-margin-top: 6.5rem;
+    }
+
+    .offers-browser__head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(18rem, 0.38fr);
+      gap: clamp(1.4rem, 5vw, 5rem);
+      align-items: end;
+      border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+      padding-bottom: clamp(1.5rem, 3vw, 2.4rem);
+    }
+
+    .offers-browser__head h2 {
+      margin-top: 0.75rem;
+      max-width: 13ch;
+      font-size: clamp(2.8rem, 5.6vw, 6.4rem);
+      line-height: 0.94;
+      letter-spacing: 0;
+      font-weight: 400;
+      text-wrap: balance;
+    }
+
+    .offers-browser__head p,
+    .offers-browser__summary p,
+    .offer-row__main p {
+      color: rgba(21, 18, 15, 0.64);
+      line-height: 1.68;
+    }
+
+    .offers-browser__head > div > p {
+      margin-top: 1rem;
+      max-width: 40rem;
+    }
+
+    .offers-browser__summary {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.48);
+      padding: clamp(1rem, 2vw, 1.35rem);
+    }
+
+    .offers-browser__summary span,
+    .offer-row__eyebrow,
+    .offer-row__media span,
+    .offer-row__side span,
+    .offer-row__chips span {
+      display: block;
+      color: rgba(21, 18, 15, 0.48);
+      font-size: 0.62rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .offers-browser__summary strong {
+      display: block;
+      margin-top: 0.8rem;
+      font-size: clamp(3.2rem, 6vw, 6.4rem);
+      line-height: 0.9;
+      font-weight: 400;
+    }
+
+    .offers-browser__summary p {
+      margin-top: 1rem;
+      font-size: 0.94rem;
+    }
+
+    .offers-browser__list {
+      margin-top: clamp(1rem, 2.4vw, 1.8rem);
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .offer-row {
+      display: grid;
+      grid-template-columns: minmax(11rem, 0.25fr) minmax(0, 1fr) minmax(16rem, 0.34fr);
+      gap: clamp(1rem, 2.2vw, 1.5rem);
+      align-items: stretch;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.45);
+      padding: 0.75rem;
+    }
+
+    .offer-row__media {
+      position: relative;
+      display: block;
+      min-height: 13rem;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offer-row__media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.04) saturate(1.03);
+      transition: transform 420ms ease;
+    }
+
+    .offer-row:hover .offer-row__media img {
+      transform: scale(1.035);
+    }
+
+    .offer-row__media span {
+      position: absolute;
+      left: 0.8rem;
+      top: 0.8rem;
+      color: rgba(255, 250, 242, 0.74);
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.34);
+    }
+
+    .offer-row__main {
+      display: grid;
+      align-content: center;
+      padding-block: 0.35rem;
+    }
+
+    .offer-row__main h3 {
+      margin-top: 0.55rem;
+      max-width: 13ch;
+      font-size: clamp(2rem, 3.8vw, 4rem);
+      line-height: 0.96;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .offer-row__main h3 a {
+      color: #15120f;
+      text-decoration: none;
+    }
+
+    .offer-row__main p {
+      margin-top: 0.8rem;
+      max-width: 38rem;
+      font-size: 0.95rem;
+    }
+
+    .offer-row__chips {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .offer-row__chips span {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 255, 255, 0.34);
+      padding: 0.55rem 0.65rem;
+      line-height: 1.28;
+      text-transform: none;
+      letter-spacing: 0;
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .offer-row__side {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      justify-content: space-between;
+      border-left: 1px solid rgba(21, 18, 15, 0.1);
+      padding: 0.35rem 0.25rem 0.35rem clamp(0.9rem, 2vw, 1.25rem);
+    }
+
+    .offer-row__side strong {
+      display: block;
+      margin-top: 0.75rem;
+      color: rgba(21, 18, 15, 0.78);
+      font-size: 1.02rem;
+      line-height: 1.4;
+      font-weight: 400;
+    }
+
+    .offer-row__actions {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .offer-row__actions a {
+      display: inline-flex;
+      min-height: 2.45rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 0.95rem;
+      font-size: 0.84rem;
+      text-decoration: none;
+    }
+
+    .offer-row__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offer-row__actions a:last-child {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .offers-field,
+    .offers-archive,
+    .offers-direct,
+    .offers-empty {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-inline: auto;
+      margin-top: clamp(6rem, 11vw, 10rem);
+    }
+
+    .offers-kicker {
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .offers-field__intro {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 0.52fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      align-items: end;
+    }
+
+    .offers-field__intro h2,
+    .offers-archive__intro h2,
+    .offers-direct h2,
+    .offers-empty h1 {
+      margin-top: 1.1rem;
+      max-width: 11ch;
+      font-size: clamp(3.8rem, 8vw, 8.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .offers-field__intro p,
+    .offers-archive__intro p,
+    .offers-direct p,
+    .offers-empty p {
+      max-width: 34rem;
+      font-size: 1rem;
+      line-height: 1.82;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .offers-theatre {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.42fr);
+      gap: clamp(1.2rem, 4vw, 4rem);
+      align-items: stretch;
+    }
+
+    .offers-theatre__visual {
+      position: relative;
+      min-height: clamp(38rem, 58vw, 56rem);
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+      outline: none;
+      box-shadow: 0 42px 130px rgba(21, 18, 15, 0.14);
+    }
+
+    .offers-theatre__visual img {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.03);
+      transform: scale(1.015);
+    }
+
+    .offers-field.is-switching .offers-theatre__visual img {
+      animation: offersImageIn 780ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .offers-field.is-switching[data-direction="-1"] .offers-theatre__visual img {
+      animation-name: offersImageInReverse;
+    }
+
+    .offers-theatre__shade {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 72% 20%, rgba(255, 245, 220, 0.18), transparent 30rem),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.2) 48%, rgba(0, 0, 0, 0.78));
+    }
+
+    .offers-theatre__sweep {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: linear-gradient(
+        105deg,
+        transparent 0%,
+        rgba(255, 250, 242, 0.18) 42%,
+        transparent 58%
+      );
+      transform: translateX(-120%);
+    }
+
+    .offers-field.is-switching .offers-theatre__sweep {
+      animation: offersSweep 780ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .offers-theatre__readout {
+      position: absolute;
+      left: clamp(1.2rem, 3vw, 2.4rem);
+      right: clamp(1.2rem, 3vw, 2.4rem);
+      bottom: clamp(1.2rem, 3vw, 2.4rem);
+      border-top: 1px solid rgba(255, 250, 242, 0.24);
+      padding-top: 1rem;
+      z-index: 2;
+    }
+
+    .offers-theatre__readout span,
+    .offers-theatre__readout small {
+      display: block;
+      font-size: 0.64rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(255, 250, 242, 0.48);
+    }
+
+    .offers-theatre__readout small {
+      margin-top: 1rem;
+    }
+
+    .offers-theatre__readout strong {
+      margin-top: 0.8rem;
+      display: block;
+      max-width: 10ch;
+      font-size: clamp(3rem, 7vw, 7rem);
+      line-height: 0.86;
+      letter-spacing: -0.08em;
+      font-weight: 400;
+      text-shadow: 0 18px 80px rgba(0, 0, 0, 0.34);
+    }
+
+    .offers-theatre__readout p {
+      margin-top: 1rem;
+      max-width: 34rem;
+      color: rgba(255, 250, 242, 0.72);
+    }
+
+    .offers-theatre__nav {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      z-index: 3;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .offers-theatre__nav button {
+      display: grid;
+      height: 2.7rem;
+      width: 2.7rem;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(0, 0, 0, 0.24);
+      color: #fffaf2;
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+    }
+
+    .offers-theatre__panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: clamp(1.4rem, 4vw, 3rem);
+      border-top: 1px solid rgba(21, 18, 15, 0.14);
+      padding-top: 1rem;
+    }
+
+    .offers-theatre__panel h3 {
+      margin-top: 1.1rem;
+      max-width: 9ch;
+      font-size: clamp(2.8rem, 5vw, 5.6rem);
+      line-height: 0.88;
+      letter-spacing: -0.078em;
+      font-weight: 400;
+    }
+
+    .offers-theatre__panel p {
+      margin-top: 1.1rem;
+      max-width: 30rem;
+      font-size: 0.96rem;
+      line-height: 1.76;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .offers-theatre__decision {
+      margin-top: 2rem;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .offers-theatre__decision div {
+      display: grid;
+      grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+      gap: 1rem;
+      border-top: 1px solid rgba(21, 18, 15, 0.1);
+      padding-top: 0.72rem;
+    }
+
+    .offers-theatre__decision dt {
+      font-size: 0.58rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .offers-theatre__decision dd {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: rgba(21, 18, 15, 0.68);
+    }
+
+    .offers-theatre__bottom {
+      align-self: end;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1.2rem;
+    }
+
+    .offers-theatre__included {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.42);
+      padding: 1rem;
+    }
+
+    .offers-theatre__included span {
+      display: block;
+      font-size: 0.58rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .offers-theatre__included strong {
+      margin-top: 0.6rem;
+      display: block;
+      font-size: 1.05rem;
+      line-height: 1.5;
+      font-weight: 400;
+    }
+
+    .offers-theatre__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offers-theatre__actions a:last-child {
+      border-color: rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .offers-rail {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+      gap: 0.65rem;
+    }
+
+    .offers-rail__item {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.38);
+      padding: 1rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .offers-rail__item span,
+    .offers-rail__item small {
+      display: block;
+      font-size: 0.58rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .offers-rail__item em {
+      margin-top: 0.7rem;
+      display: block;
+      font-style: normal;
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.48);
+    }
+
+    .offers-rail__item strong {
+      margin-top: 0.62rem;
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 400;
+      letter-spacing: -0.04em;
+    }
+
+    .offers-rail__item small {
+      margin-top: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: none;
+    }
+
+    .offers-rail__item.is-active {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offers-rail__item.is-active span,
+    .offers-rail__item.is-active small,
+    .offers-rail__item.is-active em {
+      color: rgba(255, 250, 242, 0.58);
+    }
+
+    .offers-archive {
+      display: grid;
+      grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.9fr);
+      gap: clamp(2rem, 6vw, 6rem);
+      align-items: start;
+    }
+
+    .offers-archive__list {
+      display: grid;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+    }
+
+    .offers-archive__row {
+      display: grid;
+      grid-template-columns: 4rem minmax(0, 1fr) minmax(14rem, 0.48fr) auto;
+      gap: 1rem;
+      align-items: center;
+      border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+      padding: 1.2rem 0;
+      color: #15120f;
+      text-decoration: none;
+    }
+
+    .offers-archive__index,
+    .offers-archive__meta,
+    .offers-archive__open {
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.44);
+    }
+
+    .offers-archive__row h3 {
+      font-size: clamp(1.6rem, 2.8vw, 3rem);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      font-weight: 400;
+    }
+
+    .offers-archive__row p {
+      margin-top: 0.5rem;
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .offers-archive__meta {
+      display: grid;
+      gap: 0.5rem;
+      justify-content: stretch;
+      text-align: left;
+    }
+
+    .offers-archive__meta span,
+    .offers-archive__meta span:first-child {
+      max-width: none;
+      flex-basis: auto;
+      text-align: left;
+      line-height: 1.45;
+      text-transform: none;
+      letter-spacing: 0;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .offers-archive__open {
+      text-align: right;
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
+    }
+
+    .offers-direct {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.56fr);
+      gap: clamp(2rem, 6vw, 6rem);
+      align-items: end;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: clamp(2rem, 4vw, 3rem);
+      padding-bottom: clamp(5rem, 8vw, 7rem);
+    }
+
+    .offers-direct__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offers-direct__actions a:last-child {
+      border-color: rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .offers-empty {
+      min-height: 80svh;
+      display: grid;
+      place-content: center;
+    }
+
+    @keyframes offersImageIn {
+      from {
+        opacity: 0.32;
+        transform: translate3d(30px, 0, 0) scale(1.04);
+        filter: blur(12px) brightness(1.06) contrast(1.04);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1.015);
+        filter: blur(0) brightness(1.08) contrast(1.05) saturate(1.03);
+      }
+    }
+
+    @keyframes offersImageInReverse {
+      from {
+        opacity: 0.32;
+        transform: translate3d(-30px, 0, 0) scale(1.04);
+        filter: blur(12px) brightness(1.06) contrast(1.04);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1.015);
+        filter: blur(0) brightness(1.08) contrast(1.05) saturate(1.03);
+      }
+    }
+
+    @keyframes offersSweep {
+      0% {
+        opacity: 0;
+        transform: translateX(-120%);
+      }
+      34% {
+        opacity: 0.5;
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(120%);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .offers-hero__content,
+      .offers-browser__head,
+      .offer-row,
+      .offers-field__intro,
+      .offers-theatre,
+      .offers-archive,
+      .offers-direct {
+        grid-template-columns: 1fr;
+      }
+
+      .offers-hero__rail {
+        display: grid;
+      }
+
+      .offers-archive__row {
+        grid-template-columns: 3rem minmax(0, 1fr);
+      }
+
+      .offers-archive__meta,
+      .offers-archive__open {
+        grid-column: 2;
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .offers-theatre__decision div {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+      }
+
+      .offer-row__side {
+        border-left: 0;
+        border-top: 1px solid rgba(21, 18, 15, 0.1);
+        padding: 1rem 0 0;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .offers-hero__inner,
+      .offers-browser,
+      .offers-field,
+      .offers-archive,
+      .offers-direct,
+      .offers-empty {
+        width: min(100% - 1rem, 1480px);
+      }
+
+      .offers-hero h1,
+      .offers-field__intro h2,
+      .offers-archive__intro h2,
+      .offers-direct h2,
+      .offers-empty h1 {
+        font-size: clamp(3.4rem, 15vw, 5.8rem);
+        line-height: 0.9;
+      }
+
+      .offers-theatre__visual {
+        min-height: 34rem;
+      }
+
+      .offers-rail {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 0.3rem;
+      }
+
+      .offers-rail__item {
+        min-width: 15rem;
+      }
+
+      .offers-browser__head h2 {
+        font-size: clamp(2.65rem, 12vw, 4.2rem);
+      }
+
+      .offer-row__media {
+        min-height: 14rem;
+      }
+
+      .offer-row__main h3 {
+        font-size: clamp(2rem, 11vw, 3.6rem);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .offers-field.is-switching .offers-theatre__visual img,
+      .offers-field.is-switching .offers-theatre__sweep {
+        animation: none !important;
+      }
+    }
+
+    .offers-field,
+    .offers-archive {
+      display: none !important;
+    }
+
+    .offers-hero {
+      min-height: clamp(40rem, 78svh, 58rem);
+    }
+
+    .offers-hero__inner {
+      min-height: clamp(40rem, 78svh, 58rem);
+      padding-top: clamp(7rem, 11vh, 9rem);
+    }
+
+    .offers-hero h1 {
+      max-width: 13ch;
+      font-size: clamp(4rem, 7.6vw, 8rem);
+    }
+
+    .offers-direct {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-top: clamp(3.5rem, 6vw, 5.5rem);
+    }
+
+    .offers-direct h2 {
+      max-width: 13ch;
+      font-size: clamp(2.8rem, 5.4vw, 5.8rem);
+    }
+  </style>
 </BaseLayout>

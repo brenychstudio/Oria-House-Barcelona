@@ -15,7 +15,7 @@ export async function getSitemapEntries(ctx: SitemapContext): Promise<SitemapEnt
   const [rooms, offers, exps] = await Promise.all([getRooms(), getOffers(), getExperiences()]);
 
   // vertical-specific static pages (hotel demo)
-  const staticPaths = ["", "rooms", "offers", "experiences", "contact", "location"];
+  const staticPaths = ["", "rooms", "offers", "experiences", "gallery", "contact", "location"];
 
   const entries: SitemapEntry[] = [];
 

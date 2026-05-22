@@ -1,0 +1,1277 @@
+<style is:global>
+  /*
+    Stage 4E - Photo Tonal Lift
+    Purpose:
+    - reduce heavy black veils across editorial photography;
+    - keep localized text contrast with softer image treatment.
+  */
+
+  body .hotel-home-stage__image,
+  body .rooms-hero__image,
+  body .offers-hero__image,
+  body .experiences-hero__image,
+  body .location-hero__image,
+  body .contact-hero__image,
+  body .room-detail-hero__image,
+  body .offer-detail-hero__image,
+  body .experience-detail-hero__image {
+    filter: brightness(1.15) contrast(1.035) saturate(1.045) !important;
+  }
+
+  body .rooms-explorer__visual img,
+  body .offers-theatre__visual img,
+  body .experiences-theatre__visual img,
+  body .hotel-living-path__media img,
+  body .hotel-archive-frame > img,
+  body .hotel-closing__visual img,
+  body [data-preview-image],
+  body .hc-gallery-archive__image,
+  body .hc-inspect-gallery__item img,
+  body .hc-cinematic-inspect__scene img[data-inspect-image] {
+    filter: brightness(1.14) contrast(1.035) saturate(1.045) !important;
+  }
+
+  body .hotel-living-path:hover .hotel-living-path__media img,
+  body .hotel-archive-frame:hover > img,
+  body .hc-inspect-gallery__item:hover img {
+    filter: brightness(1.18) contrast(1.045) saturate(1.055) !important;
+  }
+
+  body .hc-gallery-preview__thumb img,
+  body .hc-gallery-archive__thumb img,
+  body .hc-cinematic-inspect__thumb img {
+    filter: brightness(1.04) contrast(1.025) saturate(1.03) !important;
+  }
+
+  body .hc-gallery-preview__thumb.is-active img,
+  body .hc-gallery-archive__thumb.is-active img,
+  body .hc-cinematic-inspect__thumb.is-active img {
+    filter: brightness(1.12) contrast(1.035) saturate(1.04) !important;
+  }
+
+  body .hotel-home-stage__veil,
+  body .rooms-hero__veil,
+  body .offers-hero__veil,
+  body .experiences-hero__veil,
+  body .location-hero__veil,
+  body .contact-hero__veil,
+  body .room-detail-hero__veil,
+  body .offer-detail-hero__veil,
+  body .experience-detail-hero__veil {
+    background:
+      radial-gradient(circle at 72% 18%, rgba(255, 238, 208, 0.14), transparent 34rem),
+      linear-gradient(90deg, rgba(5, 5, 4, 0.38), rgba(5, 5, 4, 0.07) 48%, rgba(5, 5, 4, 0.34)),
+      linear-gradient(180deg, rgba(5, 5, 4, 0.08), rgba(5, 5, 4, 0.055) 42%, rgba(5, 5, 4, 0.52)) !important;
+  }
+
+  body .rooms-explorer__shade,
+  body .offers-theatre__shade,
+  body .experiences-theatre__shade,
+  body .hotel-stay-object__shade,
+  body .hc-gallery-preview__veil,
+  body .hc-gallery-archive__veil,
+  body .hc-inspect-gallery__veil,
+  body .hc-cinematic-inspect__scene-veil,
+  body .location-route__media::after,
+  body .hotel-living-path__media::after,
+  body .hotel-archive-frame::after,
+  body .hotel-closing__visual::after {
+    background:
+      radial-gradient(circle at 72% 20%, rgba(255, 245, 220, 0.16), transparent 30rem),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.48)) !important;
+  }
+
+  body .hotel-home-display,
+  body .rooms-hero h1,
+  body .offers-hero h1,
+  body .experiences-hero h1,
+  body .location-hero h1,
+  body .contact-hero h1,
+  body .room-detail-hero h1,
+  body .offer-detail-hero h1,
+  body .experience-detail-hero h1,
+  body .rooms-explorer__readout strong,
+  body .offers-theatre__readout strong,
+  body .experiences-theatre__readout strong,
+  body .hotel-stay-object__readout strong,
+  body .hc-gallery-preview__readout strong,
+  body .hc-gallery-archive__readout strong,
+  body .hc-inspect-gallery__readout strong,
+  body .hotel-archive-frame__readout strong,
+  body .hotel-closing__visual-readout strong {
+    text-shadow:
+      0 22px 70px rgba(0, 0, 0, 0.44),
+      0 2px 18px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /*
+    Stage 4D — Typography / Archive / Inspect Metadata Stabilization
+    Purpose:
+    - prevent broken editorial headlines;
+    - improve archive/comparison readability;
+    - stabilize Contact/Location lower sections;
+    - keep the current visual language without changing media or CMS.
+  */
+
+  body .rooms-archive__intro h2,
+  body .offers-archive__intro h2,
+  body .experiences-archive__intro h2,
+  body .location-map__copy h2,
+  body .contact-arrival__copy h2,
+  body .contact-desk__intro h2,
+  body .room-direct h2,
+  body .offer-direct h2,
+  body .experience-direct h2 {
+    max-width: 13.5ch;
+    font-size: clamp(3.15rem, 5.8vw, 7rem);
+    line-height: 0.9;
+    letter-spacing: -0.078em;
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+
+  body .rooms-archive,
+  body .offers-archive,
+  body .experiences-archive {
+    grid-template-columns: minmax(18rem, 0.36fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+  }
+
+  body .rooms-archive__intro p,
+  body .offers-archive__intro p,
+  body .experiences-archive__intro p {
+    max-width: 29rem;
+  }
+
+  body .rooms-archive__row,
+  body .offers-archive__row,
+  body .experiences-archive__row {
+    grid-template-columns: 3.5rem minmax(18rem, 1fr) minmax(16rem, 0.72fr) 6.5rem;
+    gap: clamp(1rem, 2vw, 1.8rem);
+    align-items: start;
+    padding: 1.35rem 0;
+  }
+
+  body .rooms-archive__row h3,
+  body .offers-archive__row h3,
+  body .experiences-archive__row h3 {
+    max-width: 17ch;
+    font-size: clamp(1.75rem, 2.6vw, 2.8rem);
+    line-height: 0.96;
+  }
+
+  body .rooms-archive__row p,
+  body .offers-archive__row p,
+  body .experiences-archive__row p {
+    max-width: 34rem;
+    line-height: 1.45;
+  }
+
+  body .rooms-archive__meta,
+  body .offers-archive__meta,
+  body .experiences-archive__meta {
+    display: grid;
+    gap: 0.48rem;
+    justify-content: stretch;
+    text-align: left;
+  }
+
+  body .rooms-archive__meta span,
+  body .rooms-archive__meta span:first-child,
+  body .offers-archive__meta span,
+  body .offers-archive__meta span:first-child,
+  body .experiences-archive__meta span,
+  body .experiences-archive__meta span:first-child {
+    max-width: none;
+    flex-basis: auto;
+    text-align: left;
+    line-height: 1.42;
+    text-transform: none;
+    letter-spacing: 0;
+    color: rgba(21, 18, 15, 0.64);
+  }
+
+  body .rooms-archive__open,
+  body .offers-archive__open,
+  body .experiences-archive__open {
+    white-space: nowrap;
+    font-size: 0.68rem;
+  }
+
+  body .contact-desk__intro,
+  body .contact-arrival,
+  body .location-map {
+    grid-template-columns: minmax(24rem, 0.48fr) minmax(0, 1fr);
+  }
+
+  body .contact-channel h3 {
+    max-width: 12ch;
+    font-size: clamp(2rem, 3.3vw, 3.7rem);
+    line-height: 0.92;
+  }
+
+  body .contact-channel p {
+    font-size: 0.9rem;
+    line-height: 1.62;
+  }
+
+  body .location-route__copy h3 {
+    max-width: 12ch;
+    font-size: clamp(2.35rem, 4.2vw, 4.6rem);
+  }
+
+  body .location-map__copy p,
+  body .contact-arrival__copy p {
+    max-width: 32rem;
+  }
+
+  body .room-decision__intro h2,
+  body .offer-decision__intro h2,
+  body .experience-sequence__intro h2,
+  body .room-inspection__intro h2,
+  body .offer-inspection__intro h2,
+  body .experience-inspection__intro h2 {
+    max-width: 13ch;
+    font-size: clamp(3.25rem, 6.4vw, 7.2rem);
+    line-height: 0.9;
+  }
+
+  body .room-decision__card h3,
+  body .offer-decision__card h3,
+  body .experience-sequence__card h3 {
+    max-width: 12ch;
+  }
+
+  body .room-details-band__chips span,
+  body .room-details-band__signals span,
+  body .offer-package-band__chips span,
+  body .offer-package-band__terms span,
+  body .experience-planning__signals span {
+    line-height: 1.42;
+  }
+
+  body .hc-inspect-gallery__readout strong {
+    max-width: 12ch;
+  }
+
+  body .hc-cinematic-inspect__panel h2 {
+    max-width: 10.5ch;
+  }
+
+  body .hc-cinematic-inspect__thumb span {
+    line-height: 1.25;
+  }
+
+  @media (max-width: 980px) {
+    body .rooms-archive,
+    body .offers-archive,
+    body .experiences-archive,
+    body .contact-desk__intro,
+    body .contact-arrival,
+    body .location-map {
+      grid-template-columns: 1fr;
+    }
+
+    body .rooms-archive__row,
+    body .offers-archive__row,
+    body .experiences-archive__row {
+      grid-template-columns: 3rem minmax(0, 1fr);
+    }
+
+    body .rooms-archive__meta,
+    body .rooms-archive__open,
+    body .offers-archive__meta,
+    body .offers-archive__open,
+    body .experiences-archive__meta,
+    body .experiences-archive__open {
+      grid-column: 2;
+    }
+  }
+
+  @media (max-width: 640px) {
+    body .rooms-archive__intro h2,
+    body .offers-archive__intro h2,
+    body .experiences-archive__intro h2,
+    body .location-map__copy h2,
+    body .contact-arrival__copy h2,
+    body .contact-desk__intro h2,
+    body .room-direct h2,
+    body .offer-direct h2,
+    body .experience-direct h2,
+    body .room-decision__intro h2,
+    body .offer-decision__intro h2,
+    body .experience-sequence__intro h2,
+    body .room-inspection__intro h2,
+    body .offer-inspection__intro h2,
+    body .experience-inspection__intro h2 {
+      max-width: 11.5ch;
+      font-size: clamp(3.05rem, 13vw, 5.5rem);
+      line-height: 0.92;
+    }
+
+    body .rooms-archive__row,
+    body .offers-archive__row,
+    body .experiences-archive__row {
+      padding: 1.15rem 0;
+    }
+
+    body .rooms-archive__row h3,
+    body .offers-archive__row h3,
+    body .experiences-archive__row h3 {
+      font-size: clamp(1.55rem, 7vw, 2.5rem);
+    }
+  }
+
+  /*
+    Stage 4E-R1 — Mobile / Tablet Responsive Stabilization
+    Scope:
+    - footer mobile stack;
+    - dock mobile safety;
+    - hero density;
+    - inspect mobile usability;
+    - archive/detail mobile readability.
+    No media-path or CMS changes.
+  */
+
+  html[data-cinematic-inspect="open"] body .hotel-global-dock {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(-50%) translateY(12px) scale(0.92) !important;
+  }
+
+  @media (max-width: 980px) {
+    /*
+      Tablet stabilization
+    */
+
+    body .hotel-footer {
+      margin-top: clamp(3rem, 6vw, 4.5rem);
+      padding-top: clamp(3rem, 6vw, 4.5rem);
+      padding-bottom: max(5.8rem, calc(6.5rem + env(safe-area-inset-bottom)));
+    }
+
+    body .hotel-footer__hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.4rem;
+      padding-bottom: 2rem;
+    }
+
+    body .hotel-footer h2 {
+      max-width: 9ch;
+      font-size: clamp(3rem, 8vw, 5.6rem);
+      line-height: 0.9;
+      letter-spacing: -0.078em;
+    }
+
+    body .hotel-footer__statement {
+      max-width: 34rem;
+    }
+
+    body .hotel-footer__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem 2.4rem;
+      padding-block: 2.2rem;
+    }
+
+    body .hotel-footer__bottom {
+      grid-template-columns: 1fr;
+      gap: 0.9rem;
+    }
+
+    body .hotel-footer__legal,
+    body .hotel-footer__social {
+      justify-content: flex-start;
+    }
+
+    body .hc-cinematic-inspect {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    body .hc-cinematic-inspect__shell {
+      grid-template-columns: 1fr;
+      width: calc(100% - 1rem);
+      height: auto;
+      min-height: calc(100svh - 1rem);
+      max-height: none;
+      margin: 0.5rem auto max(4.8rem, calc(5.5rem + env(safe-area-inset-bottom)));
+      overflow: visible;
+    }
+
+    body .hc-cinematic-inspect__scene {
+      min-height: 58svh;
+    }
+
+    body .hc-cinematic-inspect__panel {
+      min-height: auto;
+      border-left: 0;
+      border-top: 1px solid rgba(255, 250, 242, 0.1);
+    }
+
+    body .hc-cinematic-inspect__filmstrip {
+      display: flex;
+      overflow-x: auto;
+      gap: 0.5rem;
+      padding-bottom: 0.25rem;
+      scrollbar-width: none;
+    }
+
+    body .hc-cinematic-inspect__filmstrip::-webkit-scrollbar {
+      display: none;
+    }
+
+    body .hc-cinematic-inspect__thumb {
+      min-width: 13.5rem;
+    }
+
+    body .rooms-archive,
+    body .offers-archive,
+    body .experiences-archive {
+      gap: 2rem;
+    }
+
+    body .rooms-archive__row,
+    body .offers-archive__row,
+    body .experiences-archive__row {
+      grid-template-columns: 2.8rem minmax(0, 1fr);
+      gap: 0.9rem;
+      padding: 1.15rem 0;
+    }
+
+    body .rooms-archive__meta,
+    body .rooms-archive__open,
+    body .offers-archive__meta,
+    body .offers-archive__open,
+    body .experiences-archive__meta,
+    body .experiences-archive__open {
+      grid-column: 2;
+    }
+
+    body .rooms-archive__meta,
+    body .offers-archive__meta,
+    body .experiences-archive__meta {
+      gap: 0.35rem;
+    }
+  }
+
+  @media (max-width: 760px) {
+    /*
+      Phone stabilization: hero density, footer, dock, inspect.
+    */
+
+    body .hotel-global-dock {
+      bottom: calc(0.45rem + env(safe-area-inset-bottom)) !important;
+      gap: 0.14rem !important;
+      padding: 0.18rem !important;
+      background: rgba(251, 247, 240, 0.44) !important;
+      border-color: rgba(21, 18, 15, 0.07) !important;
+      box-shadow: 0 12px 40px rgba(64, 42, 24, 0.12) !important;
+    }
+
+    body .hotel-global-dock[data-idle="true"] {
+      opacity: 0.38 !important;
+      transform: translateX(-50%) translateY(5px) scale(0.94) !important;
+    }
+
+    body .hotel-global-dock__button {
+      height: 2.02rem !important;
+      width: 2.02rem !important;
+      font-size: 0.72rem !important;
+      background: rgba(255, 250, 242, 0.4) !important;
+    }
+
+    body .hotel-home-stage,
+    body .rooms-hero,
+    body .offers-hero,
+    body .experiences-hero,
+    body .location-hero,
+    body .contact-hero,
+    body .room-detail-hero,
+    body .offer-detail-hero,
+    body .experience-detail-hero {
+      min-height: 96svh;
+      overflow-x: clip;
+    }
+
+    body .hotel-home-stage__inner,
+    body .rooms-hero__inner,
+    body .offers-hero__inner,
+    body .experiences-hero__inner,
+    body .location-hero__inner,
+    body .contact-hero__inner,
+    body .room-detail-hero__inner,
+    body .offer-detail-hero__inner,
+    body .experience-detail-hero__inner {
+      width: min(100% - 1rem, 1680px);
+      min-height: 96svh;
+      padding-top: 6.6rem;
+      padding-bottom: 1.2rem;
+    }
+
+    body .hotel-home-display,
+    body .rooms-hero h1,
+    body .offers-hero h1,
+    body .experiences-hero h1,
+    body .location-hero h1,
+    body .contact-hero h1,
+    body .room-detail-hero h1,
+    body .offer-detail-hero h1,
+    body .experience-detail-hero h1 {
+      max-width: 10.8ch;
+      font-size: clamp(2.95rem, 12.4vw, 4.9rem);
+      line-height: 0.92;
+      letter-spacing: -0.074em;
+      word-break: normal;
+      overflow-wrap: normal;
+      hyphens: none;
+    }
+
+    body .hotel-home-stage__content,
+    body .rooms-hero__content,
+    body .offers-hero__content,
+    body .experiences-hero__content,
+    body .location-hero__content,
+    body .contact-hero__content,
+    body .room-detail-hero__content,
+    body .offer-detail-hero__content,
+    body .experience-detail-hero__content {
+      grid-template-columns: 1fr;
+      gap: 1.1rem;
+      align-items: end;
+    }
+
+    body .rooms-hero aside,
+    body .offers-hero aside,
+    body .experiences-hero aside,
+    body .location-hero aside,
+    body .contact-hero aside,
+    body .room-detail-hero__panel,
+    body .offer-detail-hero__panel,
+    body .experience-detail-hero__panel,
+    body .hotel-home-stage__panel {
+      max-width: 100%;
+      padding-top: 0.85rem;
+      background: linear-gradient(180deg, rgba(5, 5, 4, 0.22), rgba(5, 5, 4, 0.08));
+      border-inline: 0;
+    }
+
+    body .rooms-hero aside p,
+    body .offers-hero aside p,
+    body .experiences-hero aside p,
+    body .location-hero aside p,
+    body .contact-hero aside p,
+    body .room-detail-hero__panel p,
+    body .offer-detail-hero__panel p,
+    body .experience-detail-hero__panel p,
+    body .hotel-home-stage__panel p {
+      max-width: 28rem;
+      font-size: 0.9rem;
+      line-height: 1.58;
+    }
+
+    body .room-detail-hero__panel h2,
+    body .offer-detail-hero__panel h2,
+    body .experience-detail-hero__panel h2 {
+      max-width: 12ch;
+      font-size: clamp(1.8rem, 8vw, 3rem);
+      line-height: 0.94;
+    }
+
+    body .rooms-hero__top span:last-child,
+    body .offers-hero__top span:last-child,
+    body .experiences-hero__top span:last-child,
+    body .location-hero__top span:last-child,
+    body .contact-hero__top span:last-child,
+    body .room-detail-hero__top span,
+    body .offer-detail-hero__top span,
+    body .experience-detail-hero__top span {
+      display: none;
+    }
+
+    body .hotel-home-stage__bottom,
+    body .rooms-hero__rail,
+    body .offers-hero__rail,
+    body .experiences-hero__rail,
+    body .location-hero__rail,
+    body .contact-hero__rail,
+    body .room-detail-hero__rail,
+    body .offer-detail-hero__rail,
+    body .experience-detail-hero__rail {
+      display: none;
+    }
+
+    body .rooms-hero__actions,
+    body .offers-hero__actions,
+    body .experiences-hero__actions,
+    body .location-hero__actions,
+    body .contact-hero__actions,
+    body .room-detail-hero__actions,
+    body .offer-detail-hero__actions,
+    body .experience-detail-hero__actions,
+    body .hotel-home-stage__panel .mt-6 {
+      margin-top: 0.85rem;
+      gap: 0.45rem;
+    }
+
+    body .rooms-hero__actions a,
+    body .offers-hero__actions a,
+    body .experiences-hero__actions a,
+    body .location-hero__actions a,
+    body .contact-hero__actions a,
+    body .room-detail-hero__actions a,
+    body .offer-detail-hero__actions a,
+    body .experience-detail-hero__actions a,
+    body .hotel-home-button {
+      min-height: 2.35rem;
+      padding-inline: 0.82rem;
+      font-size: 0.76rem;
+    }
+
+    body .room-detail-hero__specs {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.4rem;
+    }
+
+    body .room-detail-hero__specs div {
+      padding: 0.7rem;
+    }
+
+    body .room-detail-hero__specs strong {
+      font-size: 1rem;
+    }
+
+    body .hotel-footer {
+      margin-top: 3rem;
+      padding: 3rem 0 max(5.5rem, calc(6rem + env(safe-area-inset-bottom)));
+    }
+
+    body .hotel-footer__inner {
+      width: min(100% - 1rem, 1480px);
+    }
+
+    body .hotel-footer__hero {
+      display: block;
+      padding-bottom: 1.6rem;
+    }
+
+    body .hotel-footer h2 {
+      max-width: 8.5ch;
+      font-size: clamp(2.25rem, 11vw, 3.9rem);
+      line-height: 0.92;
+      letter-spacing: -0.074em;
+    }
+
+    body .hotel-footer__statement {
+      margin-top: 1.2rem;
+    }
+
+    body .hotel-footer__statement p,
+    body .hotel-footer__block p {
+      max-width: 100%;
+      font-size: 0.86rem;
+      line-height: 1.58;
+    }
+
+    body .hotel-footer__actions {
+      margin-top: 1rem;
+      gap: 0.5rem;
+    }
+
+    body .hotel-footer__actions a {
+      min-height: 2.35rem;
+      padding-inline: 0.85rem;
+      font-size: 0.76rem;
+    }
+
+    body .hotel-footer__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.55rem;
+      padding-block: 1.65rem;
+    }
+
+    body .hotel-footer__label,
+    body .hotel-footer__kicker {
+      font-size: 0.52rem;
+      letter-spacing: 0.24em;
+    }
+
+    body .hotel-footer__contact-list,
+    body .hotel-footer__links,
+    body .hotel-footer__micro-list {
+      gap: 0.5rem;
+      margin-top: 0.8rem;
+    }
+
+    body .hotel-footer__contact-list a,
+    body .hotel-footer__links a,
+    body .hotel-footer__micro-list span {
+      font-size: 0.78rem;
+      line-height: 1.28;
+    }
+
+    body .hotel-footer__micro-list span {
+      padding-top: 0.45rem;
+    }
+
+    body .hotel-footer__bottom {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.72rem;
+      padding-top: 1rem;
+      font-size: 0.6rem;
+      line-height: 1.35;
+    }
+
+    body .hotel-footer__bottom > div {
+      gap: 0.5rem 0.85rem;
+    }
+
+    body .hotel-footer__legal,
+    body .hotel-footer__social {
+      justify-content: flex-start;
+    }
+
+    body .contact-channels {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    body .contact-channel {
+      min-height: 16rem;
+      padding: 1rem;
+    }
+
+    body .contact-channel h3 {
+      max-width: 12ch;
+      font-size: clamp(1.65rem, 8vw, 2.8rem);
+    }
+
+    body .contact-channel p {
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+
+    body .location-route__item {
+      min-height: 25rem;
+    }
+
+    body .location-route__copy h3 {
+      max-width: 12ch;
+      font-size: clamp(2rem, 9vw, 3.5rem);
+    }
+
+    body .rooms-archive__row,
+    body .offers-archive__row,
+    body .experiences-archive__row {
+      grid-template-columns: 2.4rem minmax(0, 1fr);
+      gap: 0.75rem;
+      padding: 1rem 0;
+    }
+
+    body .rooms-archive__row h3,
+    body .offers-archive__row h3,
+    body .experiences-archive__row h3 {
+      font-size: clamp(1.35rem, 6.6vw, 2.2rem);
+      line-height: 1;
+    }
+
+    body .rooms-archive__row p,
+    body .offers-archive__row p,
+    body .experiences-archive__row p,
+    body .rooms-archive__meta span,
+    body .offers-archive__meta span,
+    body .experiences-archive__meta span {
+      font-size: 0.78rem;
+      line-height: 1.42;
+    }
+  }
+
+  @media (max-width: 480px) {
+    /*
+      Narrow phone final safety.
+    */
+
+    body .hotel-home-display,
+    body .rooms-hero h1,
+    body .offers-hero h1,
+    body .experiences-hero h1,
+    body .location-hero h1,
+    body .contact-hero h1,
+    body .room-detail-hero h1,
+    body .offer-detail-hero h1,
+    body .experience-detail-hero h1 {
+      font-size: clamp(2.55rem, 11.5vw, 4.25rem);
+      line-height: 0.94;
+      max-width: 10.4ch;
+    }
+
+    body .hotel-home-stage__inner,
+    body .rooms-hero__inner,
+    body .offers-hero__inner,
+    body .experiences-hero__inner,
+    body .location-hero__inner,
+    body .contact-hero__inner,
+    body .room-detail-hero__inner,
+    body .offer-detail-hero__inner,
+    body .experience-detail-hero__inner {
+      padding-top: 6rem;
+    }
+
+    body .hotel-home-stage,
+    body .rooms-hero,
+    body .offers-hero,
+    body .experiences-hero,
+    body .location-hero,
+    body .contact-hero,
+    body .room-detail-hero,
+    body .offer-detail-hero,
+    body .experience-detail-hero {
+      min-height: 92svh;
+    }
+
+    body .hotel-home-stage__inner,
+    body .rooms-hero__inner,
+    body .offers-hero__inner,
+    body .experiences-hero__inner,
+    body .location-hero__inner,
+    body .contact-hero__inner,
+    body .room-detail-hero__inner,
+    body .offer-detail-hero__inner,
+    body .experience-detail-hero__inner {
+      min-height: 92svh;
+    }
+
+    body .room-detail-hero__specs {
+      grid-template-columns: 1fr;
+    }
+
+    body .hc-cinematic-inspect__shell {
+      width: calc(100% - 0.45rem);
+      margin-top: 0.25rem;
+    }
+
+    body .hc-cinematic-inspect__scene {
+      min-height: 54svh;
+    }
+
+    body .hc-cinematic-inspect__return {
+      min-height: 2.2rem;
+      padding-inline: 0.75rem;
+      font-size: 0.68rem;
+    }
+
+    body .hc-cinematic-inspect__nav button {
+      height: 2.2rem;
+      width: 2.2rem;
+    }
+
+    body .hc-cinematic-inspect__readout {
+      left: 0.85rem;
+      right: 0.85rem;
+      bottom: 0.85rem;
+    }
+
+    body .hc-cinematic-inspect__readout strong {
+      font-size: clamp(2.2rem, 11vw, 4rem);
+      line-height: 0.92;
+    }
+
+    body .hc-cinematic-inspect__panel {
+      padding: 0.9rem;
+    }
+
+    body .hc-cinematic-inspect__panel h2 {
+      font-size: clamp(1.9rem, 9vw, 3.3rem);
+      line-height: 0.94;
+    }
+
+    body .hc-cinematic-inspect__panel p {
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    body .hc-cinematic-inspect__thumb {
+      min-width: 11.8rem;
+      grid-template-columns: 4.4rem minmax(0, 1fr);
+    }
+
+    body .hc-cinematic-inspect__thumb img {
+      width: 4.4rem;
+    }
+
+    body .hotel-global-dock__button {
+      height: 1.95rem !important;
+      width: 1.95rem !important;
+    }
+  }
+
+  /*
+    Stage 4E-R2 - Critical Mobile Layout Fix
+    Hard overrides for phone layout.
+    Goal: stop broken vertical text, footer overlap, menu transparency, hero crowding.
+  */
+
+  @media (max-width: 760px) {
+    html,
+    body {
+      overflow-x: clip !important;
+    }
+
+    /*
+      HOME HERO emergency reset
+    */
+
+    body .hotel-home-stage__top {
+      display: flex !important;
+      align-items: flex-start !important;
+      justify-content: space-between !important;
+      gap: 0.7rem !important;
+      min-width: 0 !important;
+    }
+
+    body .hotel-home-stage__top > :not(:first-child),
+    body .hotel-home-presence,
+    body .hotel-home-meta,
+    body .hotel-home-scroll-cue,
+    body .hotel-home-stage__bottom,
+    body .hotel-home-route {
+      display: none !important;
+    }
+
+    body .hotel-home-stage [class*="brand"],
+    body .hotel-home-stage [class*="source"],
+    body .hotel-home-stage [class*="credit"],
+    body .hotel-home-stage [class*="nameplate"],
+    body .hotel-home-stage [class*="microbrand"] {
+      display: none !important;
+    }
+
+    body .hotel-home-kicker {
+      width: fit-content !important;
+      max-width: calc(100vw - 2rem) !important;
+      min-width: 0 !important;
+      white-space: nowrap !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      writing-mode: horizontal-tb !important;
+      text-orientation: mixed !important;
+      letter-spacing: 0.16em !important;
+      font-size: 0.56rem !important;
+      padding: 0.58rem 0.7rem !important;
+    }
+
+    body .hotel-home-stage__content {
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: flex-end !important;
+      gap: 1rem !important;
+      min-width: 0 !important;
+    }
+
+    body .hotel-home-display {
+      max-width: 8.8ch !important;
+      font-size: clamp(2.35rem, 10.8vw, 3.9rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: -0.068em !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+      transform: none !important;
+    }
+
+    body .hotel-home-display span,
+    body .hotel-home-display span + span {
+      display: inline !important;
+      text-indent: 0 !important;
+    }
+
+    body .hotel-home-stage__panel {
+      position: relative !important;
+      z-index: 3 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      justify-self: stretch !important;
+      margin: 0 !important;
+      padding: 0.95rem !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.24) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+      background:
+        linear-gradient(180deg, rgba(70, 60, 48, 0.62), rgba(25, 20, 15, 0.42)) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+    }
+
+    body .hotel-home-stage__panel-label {
+      margin-bottom: 0.5rem !important;
+      font-size: 0.54rem !important;
+      letter-spacing: 0.18em !important;
+    }
+
+    body .hotel-home-stage__panel p {
+      max-width: 100% !important;
+      font-size: 0.88rem !important;
+      line-height: 1.55 !important;
+    }
+
+    /*
+      Generic mobile hero safety for all non-home hero sections
+    */
+
+    body .rooms-hero__rail,
+    body .offers-hero__rail,
+    body .experiences-hero__rail,
+    body .location-hero__rail,
+    body .contact-hero__rail,
+    body .room-detail-hero__rail,
+    body .offer-detail-hero__rail,
+    body .experience-detail-hero__rail {
+      display: none !important;
+    }
+
+    body .rooms-hero__top span:last-child,
+    body .offers-hero__top span:last-child,
+    body .experiences-hero__top span:last-child,
+    body .location-hero__top span:last-child,
+    body .contact-hero__top span:last-child,
+    body .room-detail-hero__top span,
+    body .offer-detail-hero__top span,
+    body .experience-detail-hero__top span {
+      display: none !important;
+    }
+
+    body .rooms-hero h1,
+    body .offers-hero h1,
+    body .experiences-hero h1,
+    body .location-hero h1,
+    body .contact-hero h1,
+    body .room-detail-hero h1,
+    body .offer-detail-hero h1,
+    body .experience-detail-hero h1 {
+      max-width: 9.6ch !important;
+      font-size: clamp(2.5rem, 11.2vw, 4.05rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: -0.068em !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+    }
+
+    /*
+      FOOTER hard reset: force single-column mobile.
+    */
+
+    body .hotel-footer {
+      overflow: hidden !important;
+      margin-top: 3rem !important;
+      padding-top: 2.9rem !important;
+      padding-bottom: calc(6.4rem + env(safe-area-inset-bottom)) !important;
+    }
+
+    body .hotel-footer__inner {
+      width: min(100% - 1rem, 1480px) !important;
+      max-width: none !important;
+    }
+
+    body .hotel-footer__hero {
+      display: block !important;
+      grid-template-columns: none !important;
+      gap: 0 !important;
+      padding-bottom: 1.5rem !important;
+    }
+
+    body .hotel-footer__statement {
+      display: block !important;
+      margin-top: 1.2rem !important;
+      max-width: 100% !important;
+      position: relative !important;
+      z-index: 2 !important;
+    }
+
+    body .hotel-footer h2 {
+      max-width: 8.3ch !important;
+      font-size: clamp(2.15rem, 10.4vw, 3.55rem) !important;
+      line-height: 0.92 !important;
+      letter-spacing: -0.068em !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+    }
+
+    body .hotel-footer__statement p,
+    body .hotel-footer__block p {
+      max-width: 100% !important;
+      font-size: 0.84rem !important;
+      line-height: 1.55 !important;
+    }
+
+    body .hotel-footer__actions {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      margin-top: 0.9rem !important;
+      gap: 0.45rem !important;
+    }
+
+    body .hotel-footer__actions a {
+      min-height: 2.25rem !important;
+      padding-inline: 0.78rem !important;
+      font-size: 0.72rem !important;
+      white-space: nowrap !important;
+    }
+
+    body .hotel-footer__grid {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 1.35rem !important;
+      padding-block: 1.45rem !important;
+    }
+
+    body .hotel-footer__block,
+    body .hotel-footer__block--large {
+      min-width: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    body .hotel-footer__label,
+    body .hotel-footer__kicker {
+      font-size: 0.5rem !important;
+      letter-spacing: 0.22em !important;
+    }
+
+    body .hotel-footer__contact-list,
+    body .hotel-footer__links,
+    body .hotel-footer__micro-list {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.45rem !important;
+      margin-top: 0.72rem !important;
+    }
+
+    body .hotel-footer__contact-list a,
+    body .hotel-footer__links a,
+    body .hotel-footer__micro-list span {
+      width: auto !important;
+      max-width: 100% !important;
+      font-size: 0.76rem !important;
+      line-height: 1.3 !important;
+      word-break: normal !important;
+      overflow-wrap: anywhere !important;
+    }
+
+    body .hotel-footer__micro-list span {
+      padding-top: 0.45rem !important;
+    }
+
+    body .hotel-footer__bottom {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.65rem !important;
+      padding-top: 1rem !important;
+      font-size: 0.58rem !important;
+      line-height: 1.35 !important;
+    }
+
+    body .hotel-footer__bottom > div,
+    body .hotel-footer__legal,
+    body .hotel-footer__social {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: flex-start !important;
+      gap: 0.45rem 0.75rem !important;
+      max-width: 100% !important;
+    }
+
+    /*
+      Mobile menu hard layer.
+      These selectors intentionally cover the possible header drawer wrappers.
+    */
+
+    body [aria-label="Direct booking navigation"],
+    body [data-mobile-menu],
+    body [data-hotel-mobile-menu],
+    body .hotel-mobile-menu,
+    body .hotel-header__mobile-menu,
+    body .hotel-header__drawer,
+    body .hotel-header__panel,
+    body .hc-mobile-menu {
+      z-index: 260 !important;
+      background: rgba(251, 247, 240, 0.96) !important;
+      color: #15120f !important;
+      border: 1px solid rgba(21, 18, 15, 0.12) !important;
+      box-shadow: 0 26px 100px rgba(21, 18, 15, 0.22) !important;
+      backdrop-filter: blur(24px) !important;
+      -webkit-backdrop-filter: blur(24px) !important;
+    }
+
+    body [aria-label="Direct booking navigation"] a,
+    body [data-mobile-menu] a,
+    body [data-hotel-mobile-menu] a,
+    body .hotel-mobile-menu a,
+    body .hotel-header__mobile-menu a,
+    body .hotel-header__drawer a,
+    body .hotel-header__panel a,
+    body .hc-mobile-menu a {
+      color: #15120f !important;
+      text-decoration: none !important;
+    }
+
+    /*
+      Dock phone safety.
+    */
+
+    body .hotel-global-dock {
+      bottom: calc(0.35rem + env(safe-area-inset-bottom)) !important;
+    }
+
+    body .hotel-global-dock__button {
+      height: 1.95rem !important;
+      width: 1.95rem !important;
+      font-size: 0.7rem !important;
+    }
+  }
+
+  @media (max-width: 430px) {
+    body .hotel-home-display {
+      max-width: 8.4ch !important;
+      font-size: clamp(2.25rem, 10.2vw, 3.65rem) !important;
+    }
+
+    body .hotel-home-stage__inner,
+    body .rooms-hero__inner,
+    body .offers-hero__inner,
+    body .experiences-hero__inner,
+    body .location-hero__inner,
+    body .contact-hero__inner,
+    body .room-detail-hero__inner,
+    body .offer-detail-hero__inner,
+    body .experience-detail-hero__inner {
+      padding-top: 5.8rem !important;
+    }
+
+    body .hotel-home-stage,
+    body .rooms-hero,
+    body .offers-hero,
+    body .experiences-hero,
+    body .location-hero,
+    body .contact-hero,
+    body .room-detail-hero,
+    body .offer-detail-hero,
+    body .experience-detail-hero {
+      min-height: 92svh !important;
+    }
+
+    body .hotel-home-stage__inner,
+    body .rooms-hero__inner,
+    body .offers-hero__inner,
+    body .experiences-hero__inner,
+    body .location-hero__inner,
+    body .contact-hero__inner,
+    body .room-detail-hero__inner,
+    body .offer-detail-hero__inner,
+    body .experience-detail-hero__inner {
+      min-height: 92svh !important;
+    }
+  }
+</style>

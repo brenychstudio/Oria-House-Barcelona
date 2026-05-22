@@ -1,34 +1,364 @@
 ---
-import CoreHeader from "../../core/ui/CoreHeader.astro";
-import { LANGS, type Lang, isLang, t } from "../../content/languages";
+import { LANGS, t, type Lang } from "../../content/languages";
 import { getSettings } from "../../cms/sheets";
-import { getHotelNav, getHotelCtaLabel } from "../content/nav";
 
-const { lang, pathname = "/" } = Astro.props as { lang: string; pathname?: string };
+type Props = {
+  lang: Lang;
+  pathname: string;
+};
 
-const langParam = lang ?? "en";
-if (!isLang(langParam)) throw new Error("Invalid lang");
-const L = langParam as Lang;
+const { lang, pathname } = Astro.props as Props;
 
 const s = await getSettings();
-const siteName = t(L, s.hotel_name_en, s.hotel_name_es);
 
-// ✅ nav і CTA label тепер беруться з одного джерела (src/hotel/content/nav.ts)
-const nav = getHotelNav(L);
+const siteName = t(lang, s.hotel_name_en, s.hotel_name_es);
+const bookingUrl = String((s as any).booking_url || "").trim();
 
-const cta = {
-  href: s.booking_url,
-  label: getHotelCtaLabel(L),
-  target: "_blank",
-  rel: "noreferrer",
-};
+const cleanPath = pathname.endsWith("/") ? pathname : `${pathname}/`;
+
+function switchLangPath(targetLang: Lang) {
+  const parts = cleanPath.split("/").filter(Boolean);
+
+  if (parts.length === 0) return `/${targetLang}/`;
+
+  if (LANGS.includes(parts[0] as Lang)) {
+    parts[0] = targetLang;
+    return `/${parts.join("/")}/`;
+  }
+
+  return `/${targetLang}/${parts.join("/")}/`;
+}
+
+function isActive(href: string) {
+  if (href === `/${lang}/`) return cleanPath === href;
+  return cleanPath.startsWith(href);
+}
+
+const navItems = [
+  {
+    href: `/${lang}/rooms/`,
+    label: t(lang, "Rooms", "Habitaciones"),
+    key: "rooms",
+  },
+  {
+    href: `/${lang}/offers/`,
+    label: t(lang, "Offers", "Ofertas"),
+    key: "offers",
+  },
+  {
+    href: `/${lang}/experiences/`,
+    label: t(lang, "Experiences", "Experiencias"),
+    key: "experiences",
+  },
+  {
+    href: `/${lang}/gallery/`,
+    label: t(lang, "Gallery", "Galería"),
+    key: "gallery",
+  },
+  {
+    href: `/${lang}/location/`,
+    label: t(lang, "Location", "Ubicación"),
+    key: "location",
+  },
+  {
+    href: `/${lang}/contact/`,
+    label: t(lang, "Contact", "Contacto"),
+    key: "contact",
+  },
+];
+
+const bookLabel = t(lang, "Book direct", "Reservar directo");
+const menuLabel = t(lang, "Menu", "Menú");
+const closeLabel = t(lang, "Close", "Cerrar");
+const homeLabel = t(lang, "Home", "Inicio");
+const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
 ---
 
-<CoreHeader
-  siteName={siteName}
-  nav={nav}
-  cta={cta}
-  lang={L}
-  langs={LANGS}
-  pathname={pathname}
-/>
+<header class="hotel-header sticky top-0 z-50 px-3 pt-3 sm:px-4" data-hotel-header>
+  <div class="hotel-header__inner mx-auto">
+    <a
+      href={`/${lang}/`}
+      class="hotel-header__brand group flex min-w-0 items-center gap-3 rounded-full border border-black/10 bg-[#fbf7f0]/76 py-3 pl-3 pr-5 shadow-[0_18px_60px_rgba(64,42,24,0.10)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[#fbf7f0]/62"
+      aria-label={homeLabel}
+      data-header-part="brand"
+    >
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#171410] text-[11px] uppercase text-white shadow-[0_10px_26px_rgba(23,20,16,0.18)]">
+        HC
+      </span>
+
+      <span class="hidden min-w-0 sm:block">
+        <span class="block truncate text-sm">{siteName}</span>
+        <span class="mt-0.5 block text-[10px] uppercase opacity-45">
+          {brandSubline}
+        </span>
+      </span>
+    </a>
+
+    <nav
+      class="hotel-header__nav hidden items-center rounded-full border border-black/10 bg-[#fbf7f0]/68 p-1 shadow-[0_18px_60px_rgba(64,42,24,0.08)] backdrop-blur-2xl lg:flex supports-[backdrop-filter]:bg-[#fbf7f0]/52"
+      aria-label="Primary navigation"
+      data-header-part="nav"
+    >
+      {navItems.map((item) => {
+        const active = isActive(item.href);
+
+        return (
+          <a
+            href={item.href}
+            class:list={[
+              "rounded-full px-3.5 py-2 text-xs transition",
+              active
+                ? "bg-[#171410] text-white shadow-[0_10px_26px_rgba(23,20,16,0.14)]"
+                : "opacity-62 hover:bg-white hover:opacity-100",
+            ]}
+            aria-current={active ? "page" : undefined}
+          >
+            {item.label}
+          </a>
+        );
+      })}
+    </nav>
+
+    <div
+      class="hotel-header__actions hidden items-center gap-2 rounded-full border border-black/10 bg-[#fbf7f0]/76 p-1.5 shadow-[0_18px_60px_rgba(64,42,24,0.10)] backdrop-blur-2xl lg:flex supports-[backdrop-filter]:bg-[#fbf7f0]/62"
+      data-header-part="actions"
+    >
+      <div class="flex rounded-full border border-black/10 bg-white/44 p-1">
+        {LANGS.map((l) => {
+          const active = l === lang;
+
+          return (
+            <a
+              href={switchLangPath(l)}
+              class:list={[
+                "rounded-full px-3 py-2 text-[11px] uppercase",
+                active ? "bg-[#171410] text-white" : "opacity-55 hover:bg-white hover:opacity-100",
+              ]}
+              aria-current={active ? "page" : undefined}
+            >
+              {l}
+            </a>
+          );
+        })}
+      </div>
+
+      {bookingUrl ? (
+        <a
+          href={bookingUrl}
+          target="_blank"
+          rel="noreferrer"
+          class="inline-flex min-h-10 items-center justify-center rounded-full bg-[#171410] px-5 text-sm text-white shadow-[0_14px_34px_rgba(23,20,16,0.20)] hover:-translate-y-0.5"
+        >
+          {bookLabel}
+        </a>
+      ) : (
+        <a
+          href={`/${lang}/contact/`}
+          class="inline-flex min-h-10 items-center justify-center rounded-full bg-[#171410] px-5 text-sm text-white shadow-[0_14px_34px_rgba(23,20,16,0.20)] hover:-translate-y-0.5"
+        >
+          {bookLabel}
+        </a>
+      )}
+    </div>
+
+    <details class="hotel-header__mobile group relative lg:hidden">
+      <summary class="list-none">
+        <span class="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-black/10 bg-[#fbf7f0]/78 px-4 text-sm shadow-[0_18px_60px_rgba(64,42,24,0.10)] backdrop-blur-2xl">
+          <span class="group-open:hidden">{menuLabel}</span>
+          <span class="hidden group-open:inline">{closeLabel}</span>
+        </span>
+      </summary>
+
+      <div class="absolute right-0 top-14 w-[min(86vw,360px)] overflow-hidden rounded-[1.5rem] border border-black/10 bg-[#fbf7f0]/95 p-3 shadow-[0_28px_80px_rgba(64,42,24,0.18)] backdrop-blur-2xl">
+        <div class="border-b border-black/10 px-2 pb-3">
+          <div class="text-xs uppercase opacity-45">{siteName}</div>
+          <div class="mt-2 text-sm opacity-65">
+            {t(lang, "Direct booking navigation", "Navegación de reserva directa")}
+          </div>
+        </div>
+
+        <nav class="mt-3 grid gap-1" aria-label="Mobile navigation">
+          {navItems.map((item) => {
+            const active = isActive(item.href);
+
+            return (
+              <a
+                href={item.href}
+                class:list={[
+                  "rounded-2xl px-4 py-3 text-sm",
+                  active ? "bg-[#171410] text-white" : "hover:bg-white/75",
+                ]}
+                aria-current={active ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            );
+          })}
+        </nav>
+
+        <div class="mt-3 flex items-center justify-between gap-3 border-t border-black/10 pt-3">
+          <div class="flex rounded-full border border-black/10 bg-white/50 p-1">
+            {LANGS.map((l) => {
+              const active = l === lang;
+
+              return (
+                <a
+                  href={switchLangPath(l)}
+                  class:list={[
+                    "rounded-full px-3 py-2 text-[11px] uppercase",
+                    active ? "bg-[#171410] text-white" : "opacity-55",
+                  ]}
+                >
+                  {l}
+                </a>
+              );
+            })}
+          </div>
+
+          {bookingUrl ? (
+            <a
+              href={bookingUrl}
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#171410] px-4 text-sm text-white"
+            >
+              {bookLabel}
+            </a>
+          ) : (
+            <a
+              href={`/${lang}/contact/`}
+              class="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#171410] px-4 text-sm text-white"
+            >
+              {bookLabel}
+            </a>
+          )}
+        </div>
+      </div>
+    </details>
+  </div>
+</header>
+
+<style>
+  .hotel-header {
+    --header-split: 0;
+  }
+
+  .hotel-header__inner {
+    display: grid;
+    grid-template-columns: minmax(13rem, 1fr) auto minmax(13rem, 1fr);
+    width: min(100% - 1rem, 1680px);
+    align-items: start;
+    gap: 1rem;
+  }
+
+  .hotel-header__brand,
+  .hotel-header__actions,
+  .hotel-header__nav,
+  .hotel-header__mobile {
+    will-change: transform, opacity;
+    transition:
+      box-shadow 260ms ease,
+      border-color 260ms ease,
+      background-color 260ms ease;
+  }
+
+  .hotel-header__brand {
+    justify-self: start;
+    transform:
+      translate3d(calc(var(--header-split) * -7.8rem), calc(var(--header-split) * -0.18rem), 0)
+      scale(calc(1 - (var(--header-split) * 0.018)));
+  }
+
+  .hotel-header__nav {
+    justify-self: center;
+    transform:
+      translate3d(0, calc(var(--header-split) * -0.28rem), 0)
+      scale(calc(1 - (var(--header-split) * 0.012)));
+  }
+
+  .hotel-header__actions {
+    justify-self: end;
+    transform:
+      translate3d(calc(var(--header-split) * 7.8rem), calc(var(--header-split) * -0.18rem), 0)
+      scale(calc(1 - (var(--header-split) * 0.018)));
+  }
+
+  .hotel-header[data-scrolled="true"] .hotel-header__brand,
+  .hotel-header[data-scrolled="true"] .hotel-header__actions,
+  .hotel-header[data-scrolled="true"] .hotel-header__nav {
+    border-color: rgba(21, 18, 15, 0.08);
+  }
+
+  @media (min-width: 1500px) {
+    .hotel-header__brand {
+      transform:
+        translate3d(calc(var(--header-split) * -11rem), calc(var(--header-split) * -0.18rem), 0)
+        scale(calc(1 - (var(--header-split) * 0.018)));
+    }
+
+    .hotel-header__actions {
+      transform:
+        translate3d(calc(var(--header-split) * 11rem), calc(var(--header-split) * -0.18rem), 0)
+        scale(calc(1 - (var(--header-split) * 0.018)));
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .hotel-header__inner {
+      display: flex;
+      justify-content: space-between;
+      width: min(100% - 0.25rem, 1680px);
+    }
+
+    .hotel-header__brand,
+    .hotel-header__mobile {
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hotel-header__brand,
+    .hotel-header__actions,
+    .hotel-header__nav,
+    .hotel-header__mobile {
+      transform: none !important;
+      transition-duration: 1ms !important;
+    }
+  }
+</style>
+
+<script is:inline>
+  (() => {
+    const header = document.querySelector("[data-hotel-header]");
+    if (!header) return;
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reduced.matches) return;
+
+    let ticking = false;
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const ease = (value) => value * value * (3 - 2 * value);
+
+    const render = () => {
+      ticking = false;
+
+      const raw = clamp(window.scrollY / 520, 0, 1);
+      const split = ease(raw);
+
+      header.style.setProperty("--header-split", split.toFixed(4));
+      header.setAttribute("data-scrolled", split > 0.04 ? "true" : "false");
+    };
+
+    const requestRender = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(render);
+    };
+
+    window.addEventListener("scroll", requestRender, { passive: true });
+    window.addEventListener("resize", requestRender);
+
+    render();
+  })();
+</script>

@@ -1,10 +1,9 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { LANGS, type Lang, isLang } from "../../../content/languages";
-import { getExperiences } from "../../../cms/sheets";
+import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { getExperiences, getSettings } from "../../../cms/sheets";
 import { pickLang } from "../../../cms/types";
-import Card from "../../../core/ui/Card.astro";
-import { getHotelLabels } from "../../../vertical/content/labels";
+import { EXPERIENCE_COVER_BY_SLUG } from "../../../hotel/data/demoAssets";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -14,36 +13,1685 @@ const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
-const L = getHotelLabels(lang);
+const s = await getSettings();
 
-const exps = await getExperiences();
-const title = L.experiences;
+const experiences = await getExperiences();
+const visibleExperiences = experiences.filter((experience) =>
+  Boolean(EXPERIENCE_COVER_BY_SLUG[experience.slug] ?? (experience.cover_image ?? "").trim())
+);
+
+const siteName = t(lang, s.hotel_name_en, s.hotel_name_es);
+const pageTitle = `${siteName} - ${t(lang, "Experiences", "Experiencias")}`;
+const bookingUrl = String((s as any).booking_url || "").trim();
+
+const optionalExperienceField = (experience: any, key: string) =>
+  t(
+    lang,
+    String(experience?.[`${key}_en`] || ""),
+    String(experience?.[`${key}_es`] || "")
+  ).trim();
+
+const resolveExperienceSales = (experience: any, index: number) => {
+  const slug = String(experience?.slug || "").toLowerCase();
+  const category = String(experience?.category || "").toLowerCase();
+
+  const explicitMood = optionalExperienceField(experience, "mood");
+  const explicitBestFor = optionalExperienceField(experience, "best_for");
+  const explicitTiming = optionalExperienceField(experience, "timing");
+  const explicitWhy = optionalExperienceField(experience, "why_choose");
+
+  const profile = (() => {
+    if (slug.includes("rooftop") || category.includes("event")) {
+      return {
+        mood: t(lang, "Golden-hour city pause", "Pausa urbana de hora dorada"),
+        bestFor: t(lang, "Guests who want the city without rushing into it", "Huéspedes que quieren la ciudad sin prisa"),
+        timing: t(lang, "Late afternoon / sunset", "Tarde / atardecer"),
+        whyChoose: t(
+          lang,
+          "Choose this moment when the stay needs a private transition between city energy and hotel calm.",
+          "Elija este momento cuando la estancia necesite una transición privada entre la energía de la ciudad y la calma del hotel."
+        ),
+      };
+    }
+
+    if (slug.includes("spa") || category.includes("spa")) {
+      return {
+        mood: t(lang, "Recovery calm", "Calma de recuperación"),
+        bestFor: t(lang, "Slow mornings, reset days and quieter arrivals", "Mañanas lentas, días de pausa y llegadas tranquilas"),
+        timing: t(lang, "Morning or early evening", "Mañana o primera noche"),
+        whyChoose: t(
+          lang,
+          "Choose this ritual when the hotel should feel like a pause before the next city route.",
+          "Elija este ritual cuando el hotel deba sentirse como una pausa antes de la siguiente ruta urbana."
+        ),
+      };
+    }
+
+    if (slug.includes("breakfast") || category.includes("breakfast")) {
+      return {
+        mood: t(lang, "Slow morning table", "Mesa de mañana pausada"),
+        bestFor: t(lang, "Guests who want the day to start inside the hotel", "Huéspedes que quieren empezar el día dentro del hotel"),
+        timing: t(lang, "Morning", "Mañana"),
+        whyChoose: t(
+          lang,
+          "Choose this experience when breakfast becomes part of the stay, not just a service.",
+          "Elija esta experiencia cuando el desayuno se convierte en parte de la estancia, no solo en un servicio."
+        ),
+      };
+    }
+
+    if (slug.includes("wine") || category.includes("dining")) {
+      return {
+        mood: t(lang, "Evening tasting", "Cata de noche"),
+        bestFor: t(lang, "Small evenings, local partners and slower conversations", "Noches pequeñas, colaboradores locales y conversaciones pausadas"),
+        timing: t(lang, "Evening", "Noche"),
+        whyChoose: t(
+          lang,
+          "Choose this moment when the stay should end with a quiet table rather than a crowded plan.",
+          "Elija este momento cuando la estancia debe terminar con una mesa tranquila y no con un plan lleno de ruido."
+        ),
+      };
+    }
+
+    if (slug.includes("gaudi") || category.includes("tour")) {
+      return {
+        mood: t(lang, "Early city route", "Ruta temprana por la ciudad"),
+        bestFor: t(lang, "Guests who want culture before the crowds", "Huéspedes que buscan cultura antes de las multitudes"),
+        timing: t(lang, "Early morning", "Primera hora de la mañana"),
+        whyChoose: t(
+          lang,
+          "Choose this route when Barcelona should feel curated, quiet and close to the hotel.",
+          "Elija esta ruta cuando Barcelona debe sentirse curada, tranquila y cercana al hotel."
+        ),
+      };
+    }
+
+    if (slug.includes("beach") || category.includes("culture")) {
+      return {
+        mood: t(lang, "Sea-air reset", "Pausa de aire marino"),
+        bestFor: t(lang, "Light travel days and softer Barcelona plans", "Días ligeros y planes más suaves en Barcelona"),
+        timing: t(lang, "Late morning / afternoon", "Media mañana / tarde"),
+        whyChoose: t(
+          lang,
+          "Choose this experience when the stay needs a simple open-air escape.",
+          "Elija esta experiencia cuando la estancia necesita una escapada sencilla al aire libre."
+        ),
+      };
+    }
+
+    return {
+      mood: t(lang, "Curated hotel moment", "Momento curado del hotel"),
+      bestFor: t(lang, "Guests who want the stay to extend beyond the room", "Huéspedes que quieren que la estancia vaya más allá de la habitación"),
+      timing: t(lang, "By request", "Bajo petición"),
+      whyChoose: t(
+        lang,
+        "Choose this experience when the hotel should shape more of the day around your rhythm.",
+        "Elija esta experiencia cuando el hotel debe dar más forma al día según su ritmo."
+      ),
+    };
+  })();
+
+  return {
+    mood: explicitMood || profile.mood,
+    bestFor: explicitBestFor || profile.bestFor,
+    timing: explicitTiming || profile.timing,
+    whyChoose: explicitWhy || profile.whyChoose,
+  };
+};
+
+const experienceItems = visibleExperiences.map((experience, index) => {
+  const title = pickLang(lang, experience, "title");
+  const description = pickLang(lang, experience, "description");
+
+  const category = t(
+    lang,
+    String((experience as any).category_en || (experience as any).category || ""),
+    String((experience as any).category_es || (experience as any).category || "")
+  ).trim();
+
+  const sales = resolveExperienceSales(experience, index);
+
+  return {
+    id: (experience as any).id || experience.slug || `experience-${index + 1}`,
+    slug: experience.slug,
+    href: `/${lang}/experiences/${experience.slug}/`,
+    title,
+    description,
+    category: category || t(lang, "Hotel moment", "Momento del hotel"),
+    image: EXPERIENCE_COVER_BY_SLUG[experience.slug] ?? experience.cover_image,
+    index,
+    mood: sales.mood,
+    bestFor: sales.bestFor,
+    timing: sales.timing,
+    whyChoose: sales.whyChoose,
+  };
+});
+
+const firstExperience = experienceItems[0];
+
+const heroExperience =
+  experienceItems.find((experience) =>
+    ["rooftop", "wine", "spa", "breakfast"].some((key) =>
+      String(experience.slug || "").includes(key)
+    )
+  ) ?? firstExperience;
+
+const heroEyebrow = t(lang, "Experiences / Stay rituals", "Experiencias / Rituales de estancia");
+const heroTitle = t(
+  lang,
+  "Rituals, views and local moments beyond the room.",
+  "Rituales, vistas y momentos locales más allá de la habitación."
+);
+const heroText = t(
+  lang,
+  "Move through terraces, tables, recovery rituals and early city routes as part of one slower Barcelona stay.",
+  "Recorra terrazas, mesas, rituales de calma y rutas tempranas por la ciudad como parte de una estancia más pausada en Barcelona."
+);
+
+const fieldEyebrow = t(lang, "Experience field", "Campo de experiencias");
+const fieldTitle = t(
+  lang,
+  "Choose the moment by rhythm, not by category.",
+  "Elija el momento por ritmo, no por categoría."
+);
+const fieldText = t(
+  lang,
+  "Each experience is framed as a state of the stay: morning, recovery, city route, table, sunset and return.",
+  "Cada experiencia se presenta como un estado de la estancia: mañana, recuperación, ruta urbana, mesa, atardecer y regreso."
+);
+
+const activeLabel = t(lang, "Active experience", "Experiencia activa");
+const openExperienceLabel = t(lang, "Open experience", "Abrir experiencia");
+const bookDirectLabel = t(lang, "Book direct", "Reservar directo");
+const contactHotelLabel = t(lang, "Contact hotel", "Contactar hotel");
+const previousExperienceLabel = t(lang, "Previous experience", "Experiencia anterior");
+const nextExperienceLabel = t(lang, "Next experience", "Siguiente experiencia");
+
+const moodLabel = t(lang, "Mood", "Atmósfera");
+const bestForLabel = t(lang, "Best for", "Ideal para");
+const timingLabel = t(lang, "Best moment", "Mejor momento");
+const whyChooseLabel = t(lang, "Why choose it", "Por qué elegirla");
+
+const archiveLabel = t(lang, "Experience archive", "Archivo de experiencias");
+const archiveTitle = t(
+  lang,
+  "All moments, kept in sequence.",
+  "Todos los momentos, mantenidos en secuencia."
+);
+const archiveText = t(
+  lang,
+  "Use the visual field to feel the rhythm, then use the archive to compare every experience directly.",
+  "Use el campo visual para sentir el ritmo y el archivo para comparar cada experiencia directamente."
+);
+
+const emptyTitle = t(lang, "Experiences are being prepared.", "Las experiencias se están preparando.");
+const emptyText = t(
+  lang,
+  "Published experiences with cover images will appear here.",
+  "Las experiencias publicadas con imagen aparecerán aquí."
+);
+
+const browseLabel = t(lang, "Experience browser", "Explorador de experiencias");
+const browseTitle = t(
+  lang,
+  "Find the right moment by time, mood and energy.",
+  "Encuentre el momento adecuado por hora, ambiente y energia."
+);
+const browseText = t(
+  lang,
+  "A compact planner for rituals, tables, routes and quiet returns, built for scanning instead of theatrical browsing.",
+  "Un planificador compacto para rituales, mesas, rutas y regresos tranquilos, pensado para escanear sin teatro visual grande."
+);
+const experiencesAvailableLabel = t(lang, "Experiences available", "Experiencias disponibles");
+const experienceMomentLabel = t(lang, "Stay moment", "Momento de estancia");
 ---
 
-<BaseLayout lang={lang} title={title}>
-  <h1 class="text-2xl tracking-tight">{title}</h1>
+<BaseLayout lang={lang} title={pageTitle} fullBleed>
+  {firstExperience ? (
+    <>
+      <section class="experiences-hero" data-dock-section>
+        <img
+          src={heroExperience?.image ?? firstExperience.image}
+          alt=""
+          class="experiences-hero__image"
+          loading="eager"
+          decoding="async"
+        />
 
-  <div class="mt-6 grid gap-6 sm:grid-cols-2">
-    {exps.map((x) => (
-      <Card href={`/${lang}/experiences/${x.slug}/`} class="active:scale-[0.99] transition">
-        <div class="aspect-[16/10] bg-black/5">
-          {x.cover_image ? (
+        <div class="experiences-hero__veil" aria-hidden="true"></div>
+
+        <div class="experiences-hero__inner">
+          <div class="experiences-hero__top">
+            <span>{heroEyebrow}</span>
+            <span>{t(lang, "Opening moment", "Momento inicial")} / {heroExperience?.title ?? firstExperience.title}</span>
+          </div>
+
+          <div class="experiences-hero__content">
+            <h1>{heroTitle}</h1>
+
+            <aside>
+              <p>{heroText}</p>
+
+              <div class="experiences-hero__actions">
+                <a href="#experiences-browser">
+                  {t(lang, "Explore experiences", "Explorar experiencias")}
+                </a>
+
+                {bookingUrl ? (
+                  <a href={bookingUrl} target="_blank" rel="noreferrer">
+                    {bookDirectLabel}
+                  </a>
+                ) : null}
+              </div>
+            </aside>
+          </div>
+
+          <div class="experiences-hero__rail" aria-hidden="true">
+            {experienceItems.slice(0, 4).map((experience, index) => (
+              <span>{String(index + 1).padStart(2, "0")} / {experience.title}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="experiences-browser" class="experiences-browser" data-dock-section>
+        <div class="experiences-browser__head">
+          <div>
+            <div class="experiences-kicker">{browseLabel}</div>
+            <h2>{browseTitle}</h2>
+            <p>{browseText}</p>
+          </div>
+
+          <aside class="experiences-browser__summary">
+            <span>{experiencesAvailableLabel}</span>
+            <strong>{experienceItems.length}</strong>
+            <p>{fieldText}</p>
+          </aside>
+        </div>
+
+        <div class="experiences-browser__grid">
+          {experienceItems.map((experience, index) => (
+            <article class="experience-card">
+              <a href={experience.href} class="experience-card__media" aria-label={`${openExperienceLabel}: ${experience.title}`}>
+                <img src={experience.image} alt="" loading={index < 4 ? "eager" : "lazy"} decoding="async" />
+                <span>{String(index + 1).padStart(2, "0")}</span>
+              </a>
+
+              <div class="experience-card__body">
+                <div>
+                  <div class="experience-card__eyebrow">{experience.category}</div>
+                  <h3>
+                    <a href={experience.href}>{experience.title}</a>
+                  </h3>
+                  <p>{experience.description || experience.whyChoose}</p>
+                </div>
+
+                <div class="experience-card__meta">
+                  <span>{timingLabel}: {experience.timing}</span>
+                  <span>{experience.mood}</span>
+                </div>
+
+                <div class="experience-card__signal">
+                  <span>{experienceMomentLabel}</span>
+                  <strong>{experience.bestFor}</strong>
+                </div>
+
+                <div class="experience-card__actions">
+                  <a class="experience-card__open" href={experience.href}>{openExperienceLabel}</a>
+                  {bookingUrl ? (
+                    <a
+                      class="experience-card__book"
+                      href={bookingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-booking-trigger="true"
+                      data-booking-context="experience"
+                      data-booking-slug={experience.slug}
+                      data-booking-title={experience.title}
+                    >
+                      {bookDirectLabel}
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="experience-field" class="experiences-field" data-experience-index-field data-dock-section>
+        <div class="experiences-field__intro">
+          <div>
+            <div class="experiences-kicker">{fieldEyebrow}</div>
+            <h2>{fieldTitle}</h2>
+          </div>
+
+          <p>{fieldText}</p>
+        </div>
+
+        <div class="experiences-theatre">
+          <div
+            class="experiences-theatre__visual"
+            data-experience-stage
+            tabindex="0"
+            role="group"
+            aria-label={fieldTitle}
+          >
             <img
-              src={x.cover_image}
+              data-experience-active-image
+              src={firstExperience.image}
               alt=""
-              class="h-full w-full object-cover"
-              loading="lazy"
+              loading="eager"
               decoding="async"
             />
-          ) : null}
+
+            <div class="experiences-theatre__shade" aria-hidden="true"></div>
+            <div class="experiences-theatre__sweep" aria-hidden="true"></div>
+
+            <div class="experiences-theatre__readout">
+              <span data-experience-active-count>
+                01 / {String(experienceItems.length).padStart(2, "0")}
+              </span>
+              <small data-experience-active-category>{firstExperience.category}</small>
+              <strong data-experience-active-title>{firstExperience.title}</strong>
+              <p data-experience-active-description>{firstExperience.description}</p>
+            </div>
+
+            <div class="experiences-theatre__nav">
+              <button type="button" data-experience-prev aria-label={previousExperienceLabel}>←</button>
+              <button type="button" data-experience-next aria-label={nextExperienceLabel}>→</button>
+            </div>
+          </div>
+
+          <aside class="experiences-theatre__panel">
+            <div>
+              <div class="experiences-kicker">{activeLabel}</div>
+
+              <h3 data-experience-panel-title>{firstExperience.title}</h3>
+              <p data-experience-panel-description>{firstExperience.description}</p>
+
+              <dl class="experiences-theatre__decision">
+                <div>
+                  <dt>{moodLabel}</dt>
+                  <dd data-experience-mood>{firstExperience.mood}</dd>
+                </div>
+
+                <div>
+                  <dt>{bestForLabel}</dt>
+                  <dd data-experience-best-for>{firstExperience.bestFor}</dd>
+                </div>
+
+                <div>
+                  <dt>{timingLabel}</dt>
+                  <dd data-experience-timing>{firstExperience.timing}</dd>
+                </div>
+
+                <div>
+                  <dt>{whyChooseLabel}</dt>
+                  <dd data-experience-why-choose>{firstExperience.whyChoose}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div class="experiences-theatre__bottom">
+              <div class="experiences-theatre__category">
+                <span>{t(lang, "Experience type", "Tipo de experiencia")}</span>
+                <strong data-experience-category>{firstExperience.category}</strong>
+              </div>
+
+              <div class="experiences-theatre__actions">
+                <a href={firstExperience.href} data-experience-open-link>{openExperienceLabel}</a>
+
+                {bookingUrl ? (
+                  <a
+                    href={bookingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-experience-booking-link
+                    data-booking-trigger="true"
+                    data-booking-context="experience"
+                    data-booking-slug={firstExperience.slug}
+                    data-booking-title={firstExperience.title}
+                  >
+                    {bookDirectLabel}
+                  </a>
+                ) : (
+                  <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
+                )}
+              </div>
+            </div>
+          </aside>
         </div>
 
-        <div class="p-4">
-          <div class="text-xs opacity-60">{x.category}</div>
-          <h2 class="mt-1 text-lg">{pickLang(lang, x, "title")}</h2>
-          <p class="mt-2 text-sm opacity-80 line-clamp-2">{pickLang(lang, x, "description")}</p>
+        <div class="experiences-rail" aria-label={t(lang, "Experience selector", "Selector de experiencias")}>
+          {experienceItems.map((experience, index) => (
+            <button
+              type="button"
+              data-experience-thumb={index}
+              class:list={["experiences-rail__item", index === 0 && "is-active"]}
+              aria-current={index === 0 ? "true" : undefined}
+            >
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <em>{experience.mood}</em>
+              <strong>{experience.title}</strong>
+              <small>{experience.timing}</small>
+            </button>
+          ))}
         </div>
-      </Card>
-    ))}
-  </div>
+      </section>
+
+      <section class="experiences-archive" data-dock-section>
+        <div class="experiences-archive__intro">
+          <div class="experiences-kicker">{archiveLabel}</div>
+          <h2>{archiveTitle}</h2>
+          <p>{archiveText}</p>
+        </div>
+
+        <div class="experiences-archive__list">
+          {experienceItems.map((experience, index) => (
+            <a href={experience.href} class="experiences-archive__row">
+              <div class="experiences-archive__index">{String(index + 1).padStart(2, "0")}</div>
+
+              <div>
+                <h3>{experience.title}</h3>
+                <p>{experience.description}</p>
+              </div>
+
+              <div class="experiences-archive__meta">
+                <span>{experience.bestFor}</span>
+                <span>{experience.timing}</span>
+                <span>{experience.category}</span>
+              </div>
+
+              <div class="experiences-archive__open">{openExperienceLabel}</div>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="experiences-direct" data-dock-section>
+        <div>
+          <div class="experiences-kicker">{t(lang, "Direct planning", "Planificación directa")}</div>
+          <h2>
+            {t(
+              lang,
+              "Ask the hotel to shape the right moment around your stay.",
+              "Pida al hotel que adapte el momento adecuado a su estancia."
+            )}
+          </h2>
+        </div>
+
+        <div>
+          <p>
+            {t(
+              lang,
+              "Experiences work best when they match your arrival time, room choice, city route and the kind of Barcelona day you want.",
+              "Las experiencias funcionan mejor cuando encajan con su hora de llegada, habitación, ruta urbana y el tipo de día en Barcelona que desea."
+            )}
+          </p>
+
+          <div class="experiences-direct__actions">
+            {bookingUrl ? (
+              <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+            ) : null}
+            <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
+          </div>
+        </div>
+      </section>
+
+      <script is:inline define:vars={{ experiencePayload: experienceItems }}>
+        (() => {
+          const root = document.querySelector("[data-experience-index-field]");
+          if (!root || !Array.isArray(experiencePayload) || experiencePayload.length === 0) return;
+
+          const stage = root.querySelector("[data-experience-stage]");
+          const activeImage = root.querySelector("[data-experience-active-image]");
+          const activeCount = root.querySelector("[data-experience-active-count]");
+          const activeCategory = root.querySelector("[data-experience-active-category]");
+          const activeTitle = root.querySelector("[data-experience-active-title]");
+          const activeDescription = root.querySelector("[data-experience-active-description]");
+          const panelTitle = root.querySelector("[data-experience-panel-title]");
+          const panelDescription = root.querySelector("[data-experience-panel-description]");
+          const experienceMood = root.querySelector("[data-experience-mood]");
+          const experienceBestFor = root.querySelector("[data-experience-best-for]");
+          const experienceTiming = root.querySelector("[data-experience-timing]");
+          const experienceWhyChoose = root.querySelector("[data-experience-why-choose]");
+          const experienceCategory = root.querySelector("[data-experience-category]");
+          const openLink = root.querySelector("[data-experience-open-link]");
+          const bookingLink = root.querySelector("[data-experience-booking-link]");
+          const prevBtn = root.querySelector("[data-experience-prev]");
+          const nextBtn = root.querySelector("[data-experience-next]");
+          const thumbs = Array.from(root.querySelectorAll("[data-experience-thumb]"));
+
+          let activeIndex = 0;
+          let switchTimer = 0;
+          let wheelCooldown = 0;
+
+          const pad = (n) => String(n).padStart(2, "0");
+          const normalize = (index) => ((index % experiencePayload.length) + experiencePayload.length) % experiencePayload.length;
+
+          const render = (nextIndex, direction = 1) => {
+            activeIndex = normalize(nextIndex);
+            const experience = experiencePayload[activeIndex];
+
+            root.dataset.direction = direction >= 0 ? "1" : "-1";
+
+            if (activeImage) {
+              activeImage.src = experience.image;
+              activeImage.alt = experience.title || "";
+            }
+
+            if (activeCount) activeCount.textContent = `${pad(activeIndex + 1)} / ${pad(experiencePayload.length)}`;
+            if (activeCategory) activeCategory.textContent = experience.category || "";
+            if (activeTitle) activeTitle.textContent = experience.title || "";
+            if (activeDescription) activeDescription.textContent = experience.description || "";
+            if (panelTitle) panelTitle.textContent = experience.title || "";
+            if (panelDescription) panelDescription.textContent = experience.description || "";
+            if (experienceMood) experienceMood.textContent = experience.mood || "—";
+            if (experienceBestFor) experienceBestFor.textContent = experience.bestFor || "—";
+            if (experienceTiming) experienceTiming.textContent = experience.timing || "—";
+            if (experienceWhyChoose) experienceWhyChoose.textContent = experience.whyChoose || "—";
+            if (experienceCategory) experienceCategory.textContent = experience.category || "—";
+            if (openLink) openLink.setAttribute("href", experience.href);
+
+            if (bookingLink) {
+              bookingLink.setAttribute("data-booking-context", "experience");
+              bookingLink.setAttribute("data-booking-slug", experience.slug || "");
+              bookingLink.setAttribute("data-booking-title", experience.title || "");
+            }
+
+            thumbs.forEach((button, index) => {
+              const active = index === activeIndex;
+              button.classList.toggle("is-active", active);
+              if (active) button.setAttribute("aria-current", "true");
+              else button.removeAttribute("aria-current");
+            });
+
+            root.classList.remove("is-switching");
+            window.clearTimeout(switchTimer);
+            void root.offsetWidth;
+            root.classList.add("is-switching");
+            switchTimer = window.setTimeout(() => root.classList.remove("is-switching"), 780);
+          };
+
+          thumbs.forEach((button) => {
+            button.addEventListener("click", () => {
+              const index = Number(button.getAttribute("data-experience-thumb"));
+              if (Number.isFinite(index)) render(index, index > activeIndex ? 1 : -1);
+            });
+          });
+
+          if (prevBtn) prevBtn.addEventListener("click", () => render(activeIndex - 1, -1));
+          if (nextBtn) nextBtn.addEventListener("click", () => render(activeIndex + 1, 1));
+
+          if (stage) {
+            stage.addEventListener("keydown", (event) => {
+              if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                event.preventDefault();
+                render(activeIndex - 1, -1);
+              }
+
+              if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                event.preventDefault();
+                render(activeIndex + 1, 1);
+              }
+
+              if (event.key === "Enter" && openLink instanceof HTMLAnchorElement) {
+                event.preventDefault();
+                openLink.click();
+              }
+            });
+
+            stage.addEventListener(
+              "wheel",
+              (event) => {
+                if (window.matchMedia("(max-width: 760px)").matches) return;
+                if (Math.abs(event.deltaY) < 16) return;
+
+                event.preventDefault();
+
+                const now = window.performance.now();
+                if (now - wheelCooldown < 720) return;
+                wheelCooldown = now;
+
+                const direction = event.deltaY > 0 ? 1 : -1;
+                render(activeIndex + direction, direction);
+              },
+              { passive: false }
+            );
+          }
+
+          render(0, 1);
+        })();
+      </script>
+    </>
+  ) : (
+    <section class="experiences-empty">
+      <div class="experiences-kicker">{t(lang, "Experiences", "Experiencias")}</div>
+      <h1>{emptyTitle}</h1>
+      <p>{emptyText}</p>
+    </section>
+  )}
+
+  <style>
+    .experiences-hero {
+      position: relative;
+      min-height: 100svh;
+      margin-top: -5.2rem;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experiences-hero__image {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      object-position: center center;
+      filter: brightness(1.08) contrast(1.05) saturate(1.03);
+      transform: scale(1.015);
+    }
+
+    .experiences-hero__veil {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(5, 5, 4, 0.62), rgba(5, 5, 4, 0.14) 48%, rgba(5, 5, 4, 0.54)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.14), rgba(5, 5, 4, 0.1) 42%, rgba(5, 5, 4, 0.76));
+    }
+
+    .experiences-hero__inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      min-height: 100svh;
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1680px);
+      margin-inline: auto;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(7.8rem, 13vh, 10.5rem) 0 clamp(1.4rem, 4vh, 2.8rem);
+    }
+
+    .experiences-hero__top,
+    .experiences-hero__rail {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .experiences-hero__top span,
+    .experiences-hero__rail span,
+    .experiences-kicker {
+      font-size: 0.64rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .experiences-hero__top span {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.62rem 0.86rem;
+      border-radius: 999px;
+      backdrop-filter: blur(18px);
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .experiences-hero__content {
+      display: grid;
+      grid-template-columns: minmax(0, 0.98fr) minmax(18rem, 0.42fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: end;
+    }
+
+    .experiences-hero h1 {
+      max-width: 11ch;
+      font-size: 8rem;
+      line-height: 0.86;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .experiences-hero aside {
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      padding-top: 1.1rem;
+    }
+
+    .experiences-hero aside p {
+      max-width: 30rem;
+      font-size: 1rem;
+      line-height: 1.78;
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .experiences-hero__actions,
+    .experiences-direct__actions,
+    .experiences-theatre__actions {
+      margin-top: 1.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .experiences-hero__actions a,
+    .experiences-direct__actions a,
+    .experiences-theatre__actions a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.1rem;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+
+    .experiences-hero__actions a:first-child,
+    .experiences-theatre__actions a:first-child,
+    .experiences-direct__actions a:first-child {
+      background: #fffaf2;
+      color: #15120f;
+    }
+
+    .experiences-hero__actions a:last-child,
+    .experiences-theatre__actions a:last-child,
+    .experiences-direct__actions a:last-child {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fffaf2;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .experiences-hero__rail {
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 0.8rem;
+      color: rgba(255, 255, 255, 0.52);
+    }
+
+    .experiences-browser {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin: clamp(3.2rem, 6vw, 5.5rem) auto 0;
+      scroll-margin-top: 6.5rem;
+    }
+
+    .experiences-browser__head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(18rem, 0.38fr);
+      gap: clamp(1.4rem, 5vw, 5rem);
+      align-items: end;
+      border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+      padding-bottom: clamp(1.5rem, 3vw, 2.4rem);
+    }
+
+    .experiences-browser__head h2 {
+      margin-top: 0.75rem;
+      max-width: 13ch;
+      font-size: clamp(2.8rem, 5.6vw, 6.4rem);
+      line-height: 0.94;
+      letter-spacing: 0;
+      font-weight: 400;
+      text-wrap: balance;
+    }
+
+    .experiences-browser__head p,
+    .experiences-browser__summary p,
+    .experience-card__body p {
+      color: rgba(21, 18, 15, 0.64);
+      line-height: 1.68;
+    }
+
+    .experiences-browser__head > div > p {
+      margin-top: 1rem;
+      max-width: 40rem;
+    }
+
+    .experiences-browser__summary {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.48);
+      padding: clamp(1rem, 2vw, 1.35rem);
+    }
+
+    .experiences-browser__summary span,
+    .experience-card__eyebrow,
+    .experience-card__media span,
+    .experience-card__meta span,
+    .experience-card__signal span {
+      display: block;
+      color: rgba(21, 18, 15, 0.48);
+      font-size: 0.62rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .experiences-browser__summary strong {
+      display: block;
+      margin-top: 0.8rem;
+      font-size: clamp(3.2rem, 6vw, 6.4rem);
+      line-height: 0.9;
+      font-weight: 400;
+    }
+
+    .experiences-browser__summary p {
+      margin-top: 1rem;
+      font-size: 0.94rem;
+    }
+
+    .experiences-browser__grid {
+      margin-top: clamp(1rem, 2.4vw, 1.8rem);
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(0.8rem, 1.8vw, 1.2rem);
+    }
+
+    .experience-card {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.45);
+      min-width: 0;
+    }
+
+    .experience-card__media {
+      position: relative;
+      display: block;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experience-card__media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.04) saturate(1.03);
+      transition: transform 420ms ease;
+    }
+
+    .experience-card:hover .experience-card__media img {
+      transform: scale(1.035);
+    }
+
+    .experience-card__media span {
+      position: absolute;
+      left: 0.8rem;
+      top: 0.8rem;
+      color: rgba(255, 250, 242, 0.74);
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.34);
+    }
+
+    .experience-card__body {
+      display: grid;
+      gap: 0.95rem;
+      padding: clamp(1rem, 2vw, 1.25rem);
+    }
+
+    .experience-card h3 {
+      margin-top: 0.55rem;
+      font-size: clamp(1.45rem, 2.1vw, 2.15rem);
+      line-height: 1;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .experience-card h3 a {
+      color: #15120f;
+      text-decoration: none;
+    }
+
+    .experience-card__body p {
+      margin-top: 0.65rem;
+      min-height: 4.9em;
+      font-size: 0.92rem;
+    }
+
+    .experience-card__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .experience-card__meta span {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 255, 255, 0.34);
+      padding: 0.55rem 0.65rem;
+      line-height: 1.28;
+      text-transform: none;
+      letter-spacing: 0;
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .experience-card__signal {
+      border-top: 1px solid rgba(21, 18, 15, 0.1);
+      padding-top: 0.85rem;
+    }
+
+    .experience-card__signal strong {
+      display: block;
+      margin-top: 0.55rem;
+      color: rgba(21, 18, 15, 0.76);
+      font-size: 0.96rem;
+      line-height: 1.4;
+      font-weight: 400;
+    }
+
+    .experience-card__actions {
+      align-self: end;
+      justify-self: start;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .experience-card__open,
+    .experience-card__book {
+      display: inline-flex;
+      min-height: 2.45rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 0.95rem;
+      font-size: 0.84rem;
+      text-decoration: none;
+    }
+
+    .experience-card__open {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experience-card__book {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      background: rgba(255, 250, 242, 0.42);
+      color: #15120f;
+    }
+
+    .experiences-field,
+    .experiences-archive,
+    .experiences-direct,
+    .experiences-empty {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-inline: auto;
+      margin-top: clamp(6rem, 11vw, 10rem);
+    }
+
+    .experiences-kicker {
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .experiences-field__intro {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 0.52fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      align-items: end;
+    }
+
+    .experiences-field__intro h2,
+    .experiences-archive__intro h2,
+    .experiences-direct h2,
+    .experiences-empty h1 {
+      margin-top: 1.1rem;
+      max-width: 11ch;
+      font-size: 7rem;
+      line-height: 0.88;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .experiences-field__intro p,
+    .experiences-archive__intro p,
+    .experiences-direct p,
+    .experiences-empty p {
+      max-width: 34rem;
+      font-size: 1rem;
+      line-height: 1.82;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .experiences-theatre {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.42fr);
+      gap: clamp(1.2rem, 4vw, 4rem);
+      align-items: stretch;
+    }
+
+    .experiences-theatre__visual {
+      position: relative;
+      min-height: clamp(38rem, 58vw, 56rem);
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+      outline: none;
+      box-shadow: 0 42px 130px rgba(21, 18, 15, 0.14);
+    }
+
+    .experiences-theatre__visual img {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.03);
+      transform: scale(1.015);
+    }
+
+    .experiences-field.is-switching .experiences-theatre__visual img {
+      animation: experiencesImageIn 780ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .experiences-field.is-switching[data-direction="-1"] .experiences-theatre__visual img {
+      animation-name: experiencesImageInReverse;
+    }
+
+    .experiences-theatre__shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.08), transparent 46%, rgba(0, 0, 0, 0.22)),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.2) 48%, rgba(0, 0, 0, 0.78));
+    }
+
+    .experiences-theatre__sweep {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: linear-gradient(
+        105deg,
+        transparent 0%,
+        rgba(255, 250, 242, 0.18) 42%,
+        transparent 58%
+      );
+      transform: translateX(-120%);
+    }
+
+    .experiences-field.is-switching .experiences-theatre__sweep {
+      animation: experiencesSweep 780ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .experiences-theatre__readout {
+      position: absolute;
+      left: clamp(1.2rem, 3vw, 2.4rem);
+      right: clamp(1.2rem, 3vw, 2.4rem);
+      bottom: clamp(1.2rem, 3vw, 2.4rem);
+      border-top: 1px solid rgba(255, 250, 242, 0.24);
+      padding-top: 1rem;
+      z-index: 2;
+    }
+
+    .experiences-theatre__readout span,
+    .experiences-theatre__readout small {
+      display: block;
+      font-size: 0.64rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(255, 250, 242, 0.48);
+    }
+
+    .experiences-theatre__readout small {
+      margin-top: 1rem;
+    }
+
+    .experiences-theatre__readout strong {
+      margin-top: 0.8rem;
+      display: block;
+      max-width: 10ch;
+      font-size: 5.8rem;
+      line-height: 0.88;
+      letter-spacing: 0;
+      font-weight: 400;
+      text-shadow: 0 18px 80px rgba(0, 0, 0, 0.34);
+    }
+
+    .experiences-theatre__readout p {
+      margin-top: 1rem;
+      max-width: 34rem;
+      color: rgba(255, 250, 242, 0.72);
+    }
+
+    .experiences-theatre__nav {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      z-index: 3;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .experiences-theatre__nav button {
+      display: grid;
+      height: 2.7rem;
+      width: 2.7rem;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(0, 0, 0, 0.24);
+      color: #fffaf2;
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+    }
+
+    .experiences-theatre__panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: clamp(1.4rem, 4vw, 3rem);
+      border-top: 1px solid rgba(21, 18, 15, 0.14);
+      padding-top: 1rem;
+    }
+
+    .experiences-theatre__panel h3 {
+      margin-top: 1.1rem;
+      max-width: 9ch;
+      font-size: 4.6rem;
+      line-height: 0.9;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .experiences-theatre__panel p {
+      margin-top: 1.1rem;
+      max-width: 30rem;
+      font-size: 0.96rem;
+      line-height: 1.76;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .experiences-theatre__decision {
+      margin-top: 2rem;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .experiences-theatre__decision div {
+      display: grid;
+      grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+      gap: 1rem;
+      border-top: 1px solid rgba(21, 18, 15, 0.1);
+      padding-top: 0.72rem;
+    }
+
+    .experiences-theatre__decision dt {
+      font-size: 0.58rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .experiences-theatre__decision dd {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: rgba(21, 18, 15, 0.68);
+    }
+
+    .experiences-theatre__bottom {
+      align-self: end;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1.2rem;
+    }
+
+    .experiences-theatre__category {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.42);
+      padding: 1rem;
+    }
+
+    .experiences-theatre__category span {
+      display: block;
+      font-size: 0.58rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .experiences-theatre__category strong {
+      margin-top: 0.6rem;
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 400;
+    }
+
+    .experiences-theatre__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experiences-theatre__actions a:last-child {
+      border-color: rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .experiences-rail {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+      gap: 0.65rem;
+    }
+
+    .experiences-rail__item {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.38);
+      padding: 1rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .experiences-rail__item span,
+    .experiences-rail__item small {
+      display: block;
+      font-size: 0.58rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .experiences-rail__item em {
+      margin-top: 0.7rem;
+      display: block;
+      font-style: normal;
+      font-size: 0.58rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.48);
+    }
+
+    .experiences-rail__item strong {
+      margin-top: 0.62rem;
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .experiences-rail__item small {
+      margin-top: 0.8rem;
+      text-transform: none;
+    }
+
+    .experiences-rail__item.is-active {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experiences-rail__item.is-active span,
+    .experiences-rail__item.is-active small,
+    .experiences-rail__item.is-active em {
+      color: rgba(255, 250, 242, 0.58);
+    }
+
+    .experiences-archive {
+      display: grid;
+      grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.9fr);
+      gap: clamp(2rem, 6vw, 6rem);
+      align-items: start;
+    }
+
+    .experiences-archive__list {
+      display: grid;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+    }
+
+    .experiences-archive__row {
+      display: grid;
+      grid-template-columns: 4rem minmax(0, 1fr) minmax(14rem, 0.48fr) auto;
+      gap: 1rem;
+      align-items: center;
+      border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+      padding: 1.2rem 0;
+      color: #15120f;
+      text-decoration: none;
+    }
+
+    .experiences-archive__index,
+    .experiences-archive__meta,
+    .experiences-archive__open {
+      font-size: 0.72rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.44);
+    }
+
+    .experiences-archive__row h3 {
+      font-size: 2.4rem;
+      line-height: 1;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .experiences-archive__row p {
+      margin-top: 0.5rem;
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .experiences-archive__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      justify-content: flex-end;
+    }
+
+    .experiences-archive__meta span:first-child {
+      flex-basis: 100%;
+      max-width: 20rem;
+      text-align: right;
+      text-transform: none;
+      letter-spacing: 0;
+      line-height: 1.35;
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .experiences-archive__open {
+      text-align: right;
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
+    }
+
+    .experiences-direct {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.56fr);
+      gap: clamp(2rem, 6vw, 6rem);
+      align-items: end;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: clamp(2rem, 4vw, 3rem);
+      padding-bottom: clamp(5rem, 8vw, 7rem);
+    }
+
+    .experiences-direct__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experiences-direct__actions a:last-child {
+      border-color: rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .experiences-empty {
+      min-height: 80svh;
+      display: grid;
+      place-content: center;
+    }
+
+    @keyframes experiencesImageIn {
+      from {
+        opacity: 0.32;
+        transform: translate3d(30px, 0, 0) scale(1.04);
+        filter: blur(12px) brightness(1.06) contrast(1.04);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1.015);
+        filter: blur(0) brightness(1.08) contrast(1.05) saturate(1.03);
+      }
+    }
+
+    @keyframes experiencesImageInReverse {
+      from {
+        opacity: 0.32;
+        transform: translate3d(-30px, 0, 0) scale(1.04);
+        filter: blur(12px) brightness(1.06) contrast(1.04);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1.015);
+        filter: blur(0) brightness(1.08) contrast(1.05) saturate(1.03);
+      }
+    }
+
+    @keyframes experiencesSweep {
+      0% {
+        opacity: 0;
+        transform: translateX(-120%);
+      }
+      34% {
+        opacity: 0.5;
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(120%);
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .experiences-hero h1 {
+        font-size: 6.6rem;
+      }
+
+      .experiences-field__intro h2,
+      .experiences-archive__intro h2,
+      .experiences-direct h2,
+      .experiences-empty h1 {
+        font-size: 5.8rem;
+      }
+
+      .experiences-theatre__readout strong {
+        font-size: 4.8rem;
+      }
+
+      .experiences-theatre__panel h3 {
+        font-size: 3.8rem;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .experiences-hero__content,
+      .experiences-browser__head,
+      .experiences-field__intro,
+      .experiences-theatre,
+      .experiences-archive,
+      .experiences-direct {
+        grid-template-columns: 1fr;
+      }
+
+      .experiences-hero__rail {
+        display: grid;
+      }
+
+      .experiences-archive__row {
+        grid-template-columns: 3rem minmax(0, 1fr);
+      }
+
+      .experiences-archive__meta,
+      .experiences-archive__open {
+        grid-column: 2;
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .experiences-archive__meta span:first-child {
+        text-align: left;
+      }
+
+      .experiences-theatre__decision div {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+      }
+
+      .experiences-browser__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .experiences-hero__inner,
+      .experiences-browser,
+      .experiences-field,
+      .experiences-archive,
+      .experiences-direct,
+      .experiences-empty {
+        width: min(100% - 1rem, 1480px);
+      }
+
+      .experiences-hero h1,
+      .experiences-field__intro h2,
+      .experiences-archive__intro h2,
+      .experiences-direct h2,
+      .experiences-empty h1 {
+        font-size: 3.7rem;
+        line-height: 0.94;
+      }
+
+      .experiences-theatre__visual {
+        min-height: 34rem;
+      }
+
+      .experiences-theatre__readout strong,
+      .experiences-theatre__panel h3 {
+        font-size: 3rem;
+      }
+
+      .experiences-rail {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 0.3rem;
+      }
+
+      .experiences-rail__item {
+        min-width: 15rem;
+      }
+
+      .experiences-browser__head h2 {
+        font-size: clamp(2.65rem, 12vw, 4.2rem);
+      }
+
+      .experiences-browser__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .experience-card__media {
+        aspect-ratio: 16 / 11;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .experiences-field.is-switching .experiences-theatre__visual img,
+      .experiences-field.is-switching .experiences-theatre__sweep {
+        animation: none !important;
+      }
+    }
+
+    /* Stage 3B-R1 - Experiences Text / Layout Fix */
+
+    .experiences-archive {
+      grid-template-columns: minmax(19rem, 0.36fr) minmax(0, 1fr);
+      gap: clamp(2rem, 5vw, 5rem);
+    }
+
+    .experiences-archive__intro h2 {
+      max-width: 12.5ch;
+      font-size: clamp(3.3rem, 6.2vw, 7rem);
+      line-height: 0.88;
+      letter-spacing: -0.08em;
+    }
+
+    .experiences-archive__intro p {
+      max-width: 28rem;
+    }
+
+    .experiences-archive__row {
+      grid-template-columns: 3.5rem minmax(18rem, 1fr) minmax(16rem, 0.72fr) 6rem;
+      gap: clamp(1rem, 2vw, 1.8rem);
+      align-items: start;
+    }
+
+    .experiences-archive__row h3 {
+      max-width: 16ch;
+      font-size: clamp(1.8rem, 2.7vw, 2.8rem);
+    }
+
+    .experiences-archive__row p {
+      max-width: 34rem;
+      line-height: 1.45;
+    }
+
+    .experiences-archive__meta {
+      display: grid;
+      gap: 0.5rem;
+      justify-content: stretch;
+      text-align: left;
+    }
+
+    .experiences-archive__meta span,
+    .experiences-archive__meta span:first-child {
+      max-width: none;
+      flex-basis: auto;
+      text-align: left;
+      line-height: 1.45;
+    }
+
+    .experiences-archive__meta span:first-child {
+      color: rgba(21, 18, 15, 0.68);
+    }
+
+    .experiences-direct h2 {
+      max-width: 12ch;
+      font-size: clamp(3.6rem, 6.8vw, 7.6rem);
+      line-height: 0.88;
+    }
+
+    .experiences-direct p {
+      max-width: 31rem;
+    }
+
+    @media (max-width: 980px) {
+      .experiences-archive {
+        grid-template-columns: 1fr;
+      }
+
+      .experiences-archive__intro h2,
+      .experiences-direct h2 {
+        max-width: 11ch;
+      }
+
+      .experiences-archive__row {
+        grid-template-columns: 3rem minmax(0, 1fr);
+      }
+
+      .experiences-archive__meta,
+      .experiences-archive__open {
+        grid-column: 2;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .experiences-archive__intro h2,
+      .experiences-direct h2 {
+        font-size: clamp(3.2rem, 14vw, 5.5rem);
+        line-height: 0.9;
+      }
+    }
+
+    .experiences-field,
+    .experiences-archive {
+      display: none !important;
+    }
+
+    .experiences-hero {
+      min-height: clamp(40rem, 78svh, 58rem);
+    }
+
+    .experiences-hero__inner {
+      min-height: clamp(40rem, 78svh, 58rem);
+      padding-top: clamp(7rem, 11vh, 9rem);
+    }
+
+    .experiences-hero h1 {
+      max-width: 13ch;
+      font-size: clamp(4rem, 7.6vw, 8rem);
+    }
+
+    .experiences-direct {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-top: clamp(3.5rem, 6vw, 5.5rem);
+    }
+
+    .experiences-direct h2 {
+      max-width: 13ch;
+      font-size: clamp(2.8rem, 5.4vw, 5.8rem);
+      letter-spacing: 0;
+    }
+  </style>
 </BaseLayout>

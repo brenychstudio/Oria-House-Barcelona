@@ -1,135 +1,1456 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { LANGS, type Lang, isLang } from "../../../content/languages";
-import { getExperiences, getExperienceBySlug, getSettings } from "../../../cms/sheets";
+import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { getExperiences, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
-import { getHotelLabels } from "../../../vertical/content/labels";
+import {
+  EXPERIENCE_COVER_BY_SLUG,
+  HOTEL_DEMO_ASSETS,
+} from "../../../hotel/data/demoAssets";
+import CinematicInspectGallery from "../../../hotel/ui/CinematicInspectGallery.astro";
 
 export async function getStaticPaths() {
-  const xs = await getExperiences();
+  const experiences = await getExperiences();
+
   return LANGS.flatMap((lang) =>
-    xs.map((x) => ({ params: { lang, slug: x.slug } }))
+    experiences.map((experience) => ({
+      params: {
+        lang,
+        slug: experience.slug,
+      },
+      props: {
+        experience,
+      },
+    }))
   );
 }
-
-export const prerender = true;
 
 const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
-const L = getHotelLabels(lang);
-
-const slug = Astro.params.slug!;
-const x = await getExperienceBySlug(slug);
-if (!x) throw new Error(`Experience not found: ${slug}`);
-
+const { experience } = Astro.props as any;
 const s = await getSettings();
 
-const title = pickLang(lang, x, "title");
-const desc = pickLang(lang, x, "description");
+const hotelName = t(
+  lang,
+  String((s as any).hotel_name_en || "Hotel Core"),
+  String((s as any).hotel_name_es || (s as any).hotel_name_en || "Hotel Core")
+);
 
-const cover = (x.cover_image ?? "").trim();
-const gallery = splitPipe(x.gallery_images);
+const bookingUrl = String((s as any).booking_url || "").trim();
 
-const images = [
-  ...(cover ? [cover] : []),
-  ...gallery.filter((p) => p && p !== cover),
-].filter(Boolean);
+const experienceTitle = pickLang(lang, experience, "title");
+const experienceDescription = pickLang(lang, experience, "description");
 
-const isContact = String((x as any).cta_type ?? "").toLowerCase() === "contact";
-const ctaLabel = isContact ? L.contactUs : L.book;
+const experienceCategory = t(
+  lang,
+  String((experience as any).category_en || (experience as any).category || ""),
+  String((experience as any).category_es || (experience as any).category || "")
+).trim() || t(lang, "Hotel moment", "Momento del hotel");
 
-const ctaHref = isContact
-  ? `/${lang}/contact/`
-  : ((x as any).cta_url && String((x as any).cta_url).trim())
-    ? String((x as any).cta_url).trim()
-    : s.booking_url;
+const experienceCover =
+  EXPERIENCE_COVER_BY_SLUG[experience.slug] ??
+  (String((experience as any).cover_image || "").trim() ||
+    HOTEL_DEMO_ASSETS.galleryCourtyardArrival);
 
-const cat = String((x as any).category ?? "").trim();
+const splitList = (value: string) =>
+  String(value || "")
+    .split(/[,|\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const experienceHighlights = splitPipe(pickLang(lang, experience, "highlights")).slice(0, 5);
+
+const experienceGalleryBySlug: Record<string, string[]> = {
+  "rooftop-sunset": [
+    HOTEL_DEMO_ASSETS.experienceRooftopSunset,
+    HOTEL_DEMO_ASSETS.galleryCourtyardArrival,
+    HOTEL_DEMO_ASSETS.galleryPoolReflection,
+  ],
+  "spa-ritual": [
+    HOTEL_DEMO_ASSETS.experienceSpaRitual,
+    HOTEL_DEMO_ASSETS.detailBathroom,
+    HOTEL_DEMO_ASSETS.detailWindowLight,
+  ],
+  "signature-breakfast": [
+    HOTEL_DEMO_ASSETS.experienceSignatureBreakfast,
+    HOTEL_DEMO_ASSETS.galleryDiningEvening,
+    HOTEL_DEMO_ASSETS.detailDeskMorning,
+  ],
+  "wine-pairing": [
+    HOTEL_DEMO_ASSETS.galleryDiningEvening,
+    HOTEL_DEMO_ASSETS.experienceSignatureBreakfast,
+    HOTEL_DEMO_ASSETS.galleryCourtyardArrival,
+  ],
+  "design-book-shelf": [
+    HOTEL_DEMO_ASSETS.detailDeskMorning,
+    HOTEL_DEMO_ASSETS.detailWindowLight,
+    HOTEL_DEMO_ASSETS.galleryArchitectureStaircase,
+  ],
+  "gaudi-morning": [
+    HOTEL_DEMO_ASSETS.experienceGaudiMorning,
+    HOTEL_DEMO_ASSETS.galleryArchitectureStaircase,
+    HOTEL_DEMO_ASSETS.detailDeskMorning,
+  ],
+  "private-photo-walk": [
+    HOTEL_DEMO_ASSETS.experiencePrivatePhotoWalk,
+    HOTEL_DEMO_ASSETS.galleryArchitectureStaircase,
+    HOTEL_DEMO_ASSETS.galleryCourtyardArrival,
+  ],
+  "beach-day-kit": [
+    HOTEL_DEMO_ASSETS.experienceBeachDayKit,
+    HOTEL_DEMO_ASSETS.detailLinenSleepingArea,
+    HOTEL_DEMO_ASSETS.detailDeskMorning,
+  ],
+  "beachday-kit": [
+    HOTEL_DEMO_ASSETS.experienceBeachDayKit,
+    HOTEL_DEMO_ASSETS.detailLinenSleepingArea,
+    HOTEL_DEMO_ASSETS.detailDeskMorning,
+  ],
+};
+
+const galleryImages = Array.from(
+  new Set(
+    [
+      experienceCover,
+      ...(experienceGalleryBySlug[experience.slug] ?? []),
+    ].filter(Boolean)
+  )
+);
+
+const optionalExperienceField = (key: string) =>
+  t(
+    lang,
+    String((experience as any)?.[`${key}_en`] || ""),
+    String((experience as any)?.[`${key}_es`] || "")
+  ).trim();
+
+const resolveExperienceSales = () => {
+  const slug = String((experience as any)?.slug || "").toLowerCase();
+  const category = String((experience as any)?.category || "").toLowerCase();
+
+  const explicitMood = optionalExperienceField("mood");
+  const explicitBestFor = optionalExperienceField("best_for");
+  const explicitTiming = optionalExperienceField("timing");
+  const explicitWhy = optionalExperienceField("why_choose");
+  const explicitWhatToExpect = optionalExperienceField("what_to_expect");
+
+  const profile = (() => {
+    if (slug.includes("rooftop") || category.includes("event")) {
+      return {
+        mood: t(lang, "Golden-hour city pause", "Pausa urbana de hora dorada"),
+        bestFor: t(
+          lang,
+          "Guests who want the city without rushing into it",
+          "Huéspedes que quieren la ciudad sin prisa"
+        ),
+        timing: t(lang, "Late afternoon / sunset", "Tarde / atardecer"),
+        whyChoose: t(
+          lang,
+          "Choose this moment when the stay needs a private transition between city energy and hotel calm.",
+          "Elija este momento cuando la estancia necesite una transición privada entre la energía de la ciudad y la calma del hotel."
+        ),
+        whatToExpect: t(
+          lang,
+          "A slower terrace hour, soft light, a small table and the sense of Barcelona held at a distance.",
+          "Una hora de terraza pausada, luz suave, una mesa pequeña y la sensación de Barcelona a distancia."
+        ),
+      };
+    }
+
+    if (slug.includes("spa") || category.includes("spa")) {
+      return {
+        mood: t(lang, "Recovery calm", "Calma de recuperación"),
+        bestFor: t(
+          lang,
+          "Slow mornings, reset days and quieter arrivals",
+          "Mañanas lentas, días de pausa y llegadas tranquilas"
+        ),
+        timing: t(lang, "Morning or early evening", "Mañana o primera noche"),
+        whyChoose: t(
+          lang,
+          "Choose this ritual when the hotel should feel like a pause before the next city route.",
+          "Elija este ritual cuando el hotel deba sentirse como una pausa antes de la siguiente ruta urbana."
+        ),
+        whatToExpect: t(
+          lang,
+          "A quiet wellness rhythm: towels, water, soft materials and a less hurried transition through the day.",
+          "Un ritmo wellness tranquilo: toallas, agua, materiales suaves y una transición menos apresurada por el día."
+        ),
+      };
+    }
+
+    if (slug.includes("breakfast") || category.includes("dining")) {
+      return {
+        mood: t(lang, "Slow morning table", "Mesa de mañana pausada"),
+        bestFor: t(
+          lang,
+          "Guests who want the day to start inside the hotel",
+          "Huéspedes que quieren empezar el día dentro del hotel"
+        ),
+        timing: t(lang, "Morning", "Mañana"),
+        whyChoose: t(
+          lang,
+          "Choose this experience when breakfast becomes part of the stay, not just a service.",
+          "Elija esta experiencia cuando el desayuno se convierte en parte de la estancia, no solo en un servicio."
+        ),
+        whatToExpect: t(
+          lang,
+          "A prepared morning table, local ingredients and a calm first hour before the city gets louder.",
+          "Una mesa de mañana preparada, ingredientes locales y una primera hora tranquila antes de que la ciudad despierte."
+        ),
+      };
+    }
+
+    if (slug.includes("wine") || category.includes("dining")) {
+      return {
+        mood: t(lang, "Evening tasting", "Cata de noche"),
+        bestFor: t(
+          lang,
+          "Small evenings, local partners and slower conversations",
+          "Noches pequeñas, colaboradores locales y conversaciones pausadas"
+        ),
+        timing: t(lang, "Evening", "Noche"),
+        whyChoose: t(
+          lang,
+          "Choose this moment when the stay should end with a quiet table rather than a crowded plan.",
+          "Elija este momento cuando la estancia debe terminar con una mesa tranquila y no con un plan lleno de ruido."
+        ),
+        whatToExpect: t(
+          lang,
+          "A small tasting rhythm: wine, table light, local pairing and a calmer close to the day.",
+          "Un pequeño ritmo de cata: vino, luz de mesa, maridaje local y un cierre más tranquilo del día."
+        ),
+      };
+    }
+
+    if (slug.includes("gaudi") || category.includes("tour")) {
+      return {
+        mood: t(lang, "Early city route", "Ruta temprana por la ciudad"),
+        bestFor: t(
+          lang,
+          "Guests who want culture before the crowds",
+          "Huéspedes que buscan cultura antes de las multitudes"
+        ),
+        timing: t(lang, "Early morning", "Primera hora de la mañana"),
+        whyChoose: t(
+          lang,
+          "Choose this route when Barcelona should feel curated, quiet and close to the hotel.",
+          "Elija esta ruta cuando Barcelona debe sentirse curada, tranquila y cercana al hotel."
+        ),
+        whatToExpect: t(
+          lang,
+          "A compact cultural route designed around softer hours, quieter streets and a clear return to the hotel.",
+          "Una ruta cultural compacta diseñada alrededor de horas suaves, calles más tranquilas y un regreso claro al hotel."
+        ),
+      };
+    }
+
+    if (slug.includes("beach") || category.includes("culture")) {
+      return {
+        mood: t(lang, "Sea-air reset", "Pausa de aire marino"),
+        bestFor: t(
+          lang,
+          "Light travel days and softer Barcelona plans",
+          "Días ligeros y planes más suaves en Barcelona"
+        ),
+        timing: t(lang, "Late morning / afternoon", "Media mañana / tarde"),
+        whyChoose: t(
+          lang,
+          "Choose this experience when the stay needs a simple open-air escape.",
+          "Elija esta experiencia cuando la estancia necesita una escapada sencilla al aire libre."
+        ),
+        whatToExpect: t(
+          lang,
+          "A simple coastal pause: air, light, towel, coffee and a slower return to the hotel.",
+          "Una pausa costera simple: aire, luz, toalla, café y un regreso más pausado al hotel."
+        ),
+      };
+    }
+
+    return {
+      mood: t(lang, "Curated hotel moment", "Momento curado del hotel"),
+      bestFor: t(
+        lang,
+        "Guests who want the stay to extend beyond the room",
+        "Huéspedes que quieren que la estancia vaya más allá de la habitación"
+      ),
+      timing: t(lang, "By request", "Bajo petición"),
+      whyChoose: t(
+        lang,
+        "Choose this experience when the hotel should shape more of the day around your rhythm.",
+        "Elija esta experiencia cuando el hotel debe dar más forma al día según su ritmo."
+      ),
+      whatToExpect: t(
+        lang,
+        "A curated stay moment prepared around timing, atmosphere and direct hotel guidance.",
+        "Un momento curado de estancia preparado alrededor del tiempo, la atmósfera y la guía directa del hotel."
+      ),
+    };
+  })();
+
+  return {
+    mood: explicitMood || profile.mood,
+    bestFor: explicitBestFor || profile.bestFor,
+    timing: explicitTiming || profile.timing,
+    whyChoose: explicitWhy || profile.whyChoose,
+    whatToExpect: explicitWhatToExpect || profile.whatToExpect,
+  };
+};
+
+const sales = resolveExperienceSales();
+
+const pageTitle = `${hotelName} — ${experienceTitle}`;
+
+const backLabel = t(lang, "Back to experiences", "Volver a experiencias");
+const bookDirectLabel = t(lang, "Book direct", "Reservar directo");
+const contactHotelLabel = t(lang, "Contact hotel", "Contactar hotel");
+const openGalleryLabel = t(lang, "Inspect experience images", "Inspeccionar imágenes de experiencia");
+
+const experienceEyebrow = t(lang, "Experience / Stay sequence", "Experiencia / Secuencia de estancia");
+const sequenceLabel = t(lang, "Experience sequence", "Secuencia de experiencia");
+const moodLabel = t(lang, "Mood", "Atmósfera");
+const bestForLabel = t(lang, "Best for", "Ideal para");
+const timingLabel = t(lang, "Best moment", "Mejor momento");
+const whyChooseLabel = t(lang, "Why choose it", "Por qué elegirla");
+const expectLabel = t(lang, "What to expect", "Qué esperar");
+const categoryLabel = t(lang, "Experience type", "Tipo de experiencia");
+const highlightsLabel = t(lang, "Experience signals", "Señales de experiencia");
+const galleryLabel = t(lang, "Experience inspection", "Inspección de experiencia");
+const directLabel = t(lang, "Plan the experience", "Planificar la experiencia");
+
+const sequenceItems = [
+  {
+    index: "01",
+    label: moodLabel,
+    title: sales.mood,
+    text: sales.bestFor,
+    dark: true,
+  },
+  {
+    index: "02",
+    label: timingLabel,
+    title: sales.timing,
+    text: sales.whyChoose,
+    dark: false,
+  },
+  {
+    index: "03",
+    label: expectLabel,
+    title: t(lang, "A moment with a rhythm.", "Un momento con ritmo."),
+    text: sales.whatToExpect,
+    dark: false,
+  },
+];
+
+const resolveExperienceInspectTitle = (src: string, index: number) => {
+  if (index === 0) return experienceTitle;
+
+  const value = src.toLowerCase();
+  const slug = String((experience as any)?.slug || "").toLowerCase();
+
+  if (value.includes("restaurant") || value.includes("dining") || slug.includes("breakfast") || slug.includes("wine")) {
+    return t(lang, "Table moment", "Momento de mesa");
+  }
+
+  if (value.includes("spa") || value.includes("bath") || value.includes("towel")) {
+    return t(lang, "Wellness detail", "Detalle wellness");
+  }
+
+  if (value.includes("terrace") || value.includes("rooftop") || value.includes("sunset")) {
+    return t(lang, "Terrace hour", "Hora de terraza");
+  }
+
+  if (value.includes("street") || value.includes("gaudi") || value.includes("city")) {
+    return t(lang, "City route", "Ruta urbana");
+  }
+
+  if (value.includes("beach") || value.includes("sea")) {
+    return t(lang, "Sea-air pause", "Pausa de aire marino");
+  }
+
+  if (value.includes("courtyard") || value.includes("pool")) {
+    return t(lang, "Hotel return", "Regreso al hotel");
+  }
+
+  return t(lang, "Experience detail", "Detalle de experiencia");
+};
+
+const resolveExperienceInspectSection = (src: string, index: number) => {
+  if (index === 0) return t(lang, "Experience", "Experiencia");
+
+  const value = src.toLowerCase();
+
+  if (value.includes("restaurant") || value.includes("dining")) {
+    return t(lang, "Dining", "Gastronomía");
+  }
+
+  if (value.includes("spa") || value.includes("bath") || value.includes("towel")) {
+    return t(lang, "Wellness", "Wellness");
+  }
+
+  if (value.includes("terrace") || value.includes("rooftop") || value.includes("sunset")) {
+    return t(lang, "Terrace", "Terraza");
+  }
+
+  if (value.includes("street") || value.includes("gaudi") || value.includes("city")) {
+    return t(lang, "City", "Ciudad");
+  }
+
+  if (value.includes("beach") || value.includes("sea")) {
+    return t(lang, "Sea", "Mar");
+  }
+
+  return galleryLabel;
+};
+
+const resolveExperienceInspectSignal = (src: string, index: number) => {
+  if (index === 0) return experienceDescription || sales.whatToExpect;
+
+  const value = src.toLowerCase();
+
+  if (value.includes("restaurant") || value.includes("dining")) {
+    return t(lang, "Table, light and slower conversation.", "Mesa, luz y conversación más pausada.");
+  }
+
+  if (value.includes("spa") || value.includes("bath") || value.includes("towel")) {
+    return t(lang, "Recovery rhythm, water and soft material detail.", "Ritmo de recuperación, agua y detalle material suave.");
+  }
+
+  if (value.includes("terrace") || value.includes("rooftop") || value.includes("sunset")) {
+    return t(lang, "Golden-hour pause between city and hotel calm.", "Pausa de hora dorada entre la ciudad y la calma del hotel.");
+  }
+
+  if (value.includes("street") || value.includes("gaudi") || value.includes("city")) {
+    return t(lang, "A curated route through softer city hours.", "Una ruta curada por horas más suaves de la ciudad.");
+  }
+
+  if (value.includes("beach") || value.includes("sea")) {
+    return t(lang, "Open air, sea light and a simpler return.", "Aire abierto, luz marina y un regreso más simple.");
+  }
+
+  return t(lang, "Atmosphere, timing and stay rhythm.", "Atmósfera, momento y ritmo de estancia.");
+};
+
+const experienceInspectItems = galleryImages.map((src, index) => ({
+  id: `${experience.slug}-${index + 1}`,
+  title: resolveExperienceInspectTitle(src, index),
+  src,
+  section: resolveExperienceInspectSection(src, index),
+  mood: sales.mood,
+  signal: resolveExperienceInspectSignal(src, index),
+  alt: `${experienceTitle} — ${index + 1}`,
+}));
+
+const experienceGuideLabel = t(lang, "Experience guide", "Guia de experiencia");
+const experienceGuideTitle = t(
+  lang,
+  "Plan the moment without losing the stay rhythm.",
+  "Planifique el momento sin perder el ritmo de la estancia."
+);
+const experienceGuideIntro = t(
+  lang,
+  "Check timing, mood, type and the visual sequence in one compact layer before asking the hotel to shape it.",
+  "Revise el momento, ambiente, tipo y secuencia visual en una capa compacta antes de pedir al hotel que lo prepare."
+);
+const usefulDetailsLabel = t(lang, "Useful details", "Detalles utiles");
+const experiencePhotoLabel = t(lang, "Experience photos", "Fotos de experiencia");
+const galleryThumbnailsLabel = t(lang, "Choose experience photo", "Elegir foto de experiencia");
+const previousImageLabel = t(lang, "Previous image", "Imagen anterior");
+const nextImageLabel = t(lang, "Next image", "Siguiente imagen");
+const experienceGuideSignals = (experienceHighlights.length ? experienceHighlights : [
+  sales.mood,
+  sales.timing,
+  sales.bestFor,
+]).slice(0, 4);
 ---
 
-<BaseLayout lang={lang} title={title}>
-  <div class="flex items-center justify-between gap-4">
-    <a class="text-sm opacity-70 hover:opacity-100 underline" href={`/${lang}/experiences/`}>
-      {L.backToExperiences}
-    </a>
+<BaseLayout lang={lang} title={pageTitle} fullBleed>
+  <section class="experience-detail-hero" data-dock-section>
+    <img src={experienceCover} alt="" class="experience-detail-hero__image" loading="eager" decoding="async" />
+    <div class="experience-detail-hero__veil" aria-hidden="true"></div>
 
-    <a
-      class="hidden sm:inline-flex rounded-full px-4 py-2 bg-black text-white active:scale-[0.98] transition"
-      href={ctaHref}
-      target={!isContact ? "_blank" : undefined}
-      rel="noreferrer"
-    >
-      {ctaLabel}
-    </a>
-  </div>
-
-  {cover ? (
-    <section class="mt-6 overflow-hidden rounded-3xl border border-black/10">
-      <div class="aspect-[16/9] bg-black/5">
-        <img src={cover} alt="" class="h-full w-full object-cover" loading="eager" decoding="async" />
-      </div>
-    </section>
-  ) : null}
-
-  <section class="mt-8">
-    <div class="flex flex-wrap items-end justify-between gap-6">
-      <div>
-        {cat ? <div class="text-xs uppercase tracking-widest opacity-60">{cat}</div> : null}
-        <h1 class="mt-2 text-3xl sm:text-4xl tracking-tight">{title}</h1>
-        {desc ? <p class="mt-3 max-w-2xl text-sm sm:text-base opacity-80">{desc}</p> : null}
+    <div class="experience-detail-hero__inner">
+      <div class="experience-detail-hero__top">
+        <a href={`/${lang}/experiences/`}>← {backLabel}</a>
+        <span>{experienceEyebrow}</span>
       </div>
 
-      <a
-        class="sm:hidden inline-flex rounded-full px-5 py-2 bg-black text-white active:scale-[0.98] transition"
-        href={ctaHref}
-        target={!isContact ? "_blank" : undefined}
-        rel="noreferrer"
-      >
-        {ctaLabel}
-      </a>
+      <div class="experience-detail-hero__content">
+        <div>
+          <div class="experience-detail-kicker">{sales.mood}</div>
+          <h1>{experienceTitle}</h1>
+          <p>{experienceDescription}</p>
+        </div>
+
+        <aside class="experience-detail-hero__panel">
+          <div class="experience-detail-kicker">{sequenceLabel}</div>
+
+          <h2>{sales.timing}</h2>
+          <p>{sales.whyChoose}</p>
+
+          <div class="experience-detail-hero__actions">
+            {bookingUrl ? (
+              <a href={bookingUrl} target="_blank" rel="noreferrer">
+                {bookDirectLabel}
+              </a>
+            ) : null}
+
+            <a href={`/${lang}/contact/`}>
+              {contactHotelLabel}
+            </a>
+          </div>
+        </aside>
+      </div>
+
+      <div class="experience-detail-hero__rail" aria-hidden="true">
+        <span>{sales.bestFor}</span>
+        <span>{timingLabel}: {sales.timing}</span>
+        <span>{categoryLabel}: {experienceCategory}</span>
+      </div>
     </div>
   </section>
 
-  {images.length > 1 ? (
-    <section class="mt-10 mb-16">
-      <div class="flex items-end justify-between">
-        <h2 class="text-lg tracking-tight">{L.gallery}</h2>
-        <div class="text-xs opacity-60">{L.tapFull}</div>
+  <section class="experience-guide" id="experience-guide" data-experience-gallery data-dock-section>
+    <div class="experience-guide__copy">
+      <div>
+        <div class="experience-detail-kicker">{experienceGuideLabel}</div>
+        <h2>{experienceGuideTitle}</h2>
+        <p>{experienceGuideIntro}</p>
       </div>
 
-      <div class="mt-5 grid gap-4 sm:grid-cols-2">
-        {images.map((src) => (
-          <a
-            href={src}
-            target="_blank"
-            rel="noreferrer"
-            class="block rounded-2xl overflow-hidden bg-black/5 active:scale-[0.995] transition"
-          >
-            <img src={src} alt="" class="h-full w-full object-cover" loading="lazy" decoding="async" />
-          </a>
+      <div class="experience-guide__facts" aria-label={usefulDetailsLabel}>
+        <article>
+          <span>{timingLabel}</span>
+          <strong>{sales.timing}</strong>
+        </article>
+        <article>
+          <span>{categoryLabel}</span>
+          <strong>{experienceCategory}</strong>
+        </article>
+        <article>
+          <span>{moodLabel}</span>
+          <strong>{sales.mood}</strong>
+        </article>
+        <article>
+          <span>{bestForLabel}</span>
+          <strong>{sales.bestFor}</strong>
+        </article>
+      </div>
+
+      <div class="experience-guide__details">
+        <div>
+          <div class="experience-detail-kicker">{expectLabel}</div>
+          <p>{sales.whatToExpect}</p>
+        </div>
+
+        <div>
+          <div class="experience-detail-kicker">{whyChooseLabel}</div>
+          <p>{sales.whyChoose}</p>
+        </div>
+      </div>
+
+      <div class="experience-guide__signals" aria-label={highlightsLabel}>
+        {experienceGuideSignals.map((item, index) => (
+          <span>{String(index + 1).padStart(2, "0")} / {item}</span>
         ))}
       </div>
+
+      <div class="experience-guide__actions">
+        {bookingUrl ? (
+          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+        ) : null}
+        <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
+      </div>
+    </div>
+
+    {experienceInspectItems.length ? (
+      <div class="experience-guide__gallery" aria-label={openGalleryLabel}>
+        <div class="experience-detail-kicker">{experiencePhotoLabel}</div>
+        <div class="experience-guide__media">
+          {experienceInspectItems.map((item, index) => (
+            <figure
+              class:list={["experience-guide__slide", index === 0 && "is-active"]}
+              data-experience-slide
+              data-title={item.title}
+            >
+              <img src={item.src} alt={item.alt} loading={index === 0 ? "eager" : "lazy"} decoding="async" />
+              <figcaption>
+                <span>{String(index + 1).padStart(2, "0")} / {item.section}</span>
+                <strong>{item.title}</strong>
+                <p>{item.signal}</p>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+
+        <div class="experience-guide__gallery-bar">
+          <div>
+            <span data-experience-count>01 / {String(experienceInspectItems.length).padStart(2, "0")}</span>
+            <strong data-experience-title>{experienceInspectItems[0]?.title}</strong>
+          </div>
+
+          <div class="experience-guide__controls">
+            <button type="button" data-experience-prev aria-label={previousImageLabel}>←</button>
+            <button type="button" data-experience-next aria-label={nextImageLabel}>→</button>
+          </div>
+        </div>
+
+        <div class="experience-guide__thumbs" aria-label={galleryThumbnailsLabel}>
+          {experienceInspectItems.map((item, index) => (
+            <button
+              type="button"
+              class:list={["experience-guide__thumb", index === 0 && "is-active"]}
+              data-experience-thumb
+              aria-label={`${item.title} ${String(index + 1).padStart(2, "0")}`}
+            >
+              <img src={item.src} alt="" loading="lazy" decoding="async" />
+            </button>
+          ))}
+        </div>
+      </div>
+    ) : null}
+  </section>
+
+  <section class="experience-sequence" data-dock-section>
+    <div class="experience-sequence__intro">
+      <div>
+        <div class="experience-detail-kicker">{t(lang, "Decision layer", "Capa de decisión")}</div>
+        <h2>
+          {t(
+            lang,
+            "Choose this moment by rhythm, timing and return.",
+            "Elija este momento por ritmo, tiempo y regreso."
+          )}
+        </h2>
+      </div>
+
+      <p>
+        {t(
+          lang,
+          "This experience is framed as part of the stay sequence: a way to move from room to city, from city to table, or from noise back into hotel calm.",
+          "Esta experiencia se presenta como parte de la secuencia de estancia: una forma de pasar de la habitación a la ciudad, de la ciudad a la mesa, o del ruido de vuelta a la calma del hotel."
+        )}
+      </p>
+    </div>
+
+    <div class="experience-sequence__grid">
+      {sequenceItems.map((item) => (
+        <article class:list={["experience-sequence__card", item.dark && "experience-sequence__card--dark"]}>
+          <small>{item.index}</small>
+          <span>{item.label}</span>
+          <h3>{item.title}</h3>
+          <p>{item.text}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="experience-planning" data-dock-section>
+    <div class="experience-planning__block">
+      <div class="experience-detail-kicker">{categoryLabel}</div>
+      <h2>{experienceCategory}</h2>
+      <p>{sales.whatToExpect}</p>
+    </div>
+
+    <div class="experience-planning__block">
+      <div class="experience-detail-kicker">{highlightsLabel}</div>
+
+      {experienceHighlights.length ? (
+        <div class="experience-planning__signals">
+          {experienceHighlights.map((item, index) => (
+            <span>{String(index + 1).padStart(2, "0")} / {item}</span>
+          ))}
+        </div>
+      ) : (
+        <div class="experience-planning__signals">
+          <span>01 / {sales.mood}</span>
+          <span>02 / {sales.timing}</span>
+          <span>03 / {sales.bestFor}</span>
+        </div>
+      )}
+    </div>
+  </section>
+
+  {experienceInspectItems.length ? (
+    <section class="experience-inspection" data-dock-section>
+      <div class="experience-inspection__intro">
+        <div>
+          <div class="experience-detail-kicker">{galleryLabel}</div>
+          <h2>
+            {t(
+              lang,
+              "Inspect the atmosphere of the experience.",
+              "Inspeccione la atmósfera de la experiencia."
+            )}
+          </h2>
+        </div>
+
+        <p>
+          {t(
+            lang,
+            "Open the experience images as an inspect layer instead of a standard lightbox.",
+            "Abra las imágenes de la experiencia como una capa de inspección, no como un lightbox estándar."
+          )}
+        </p>
+      </div>
+
+      <CinematicInspectGallery
+        id={`experience-${experience.slug}`}
+        items={experienceInspectItems}
+        ariaLabel={openGalleryLabel}
+        returnLabel={t(lang, "Return", "Volver")}
+        previousLabel={t(lang, "Previous image", "Imagen anterior")}
+        nextLabel={t(lang, "Next image", "Siguiente imagen")}
+      />
     </section>
   ) : null}
 
-  <div class="fixed inset-x-0 bottom-0 z-50 sm:hidden">
-    <div class="mx-auto max-w-6xl px-4 pb-4">
-      <div class="rounded-2xl border border-black/10 bg-white/80 backdrop-blur p-3 flex items-center justify-between gap-3">
-        <div class="min-w-0">
-          <div class="text-xs opacity-60">{L.directBooking}</div>
-          <div class="text-sm truncate">{title}</div>
-        </div>
-        <a
-          class="shrink-0 rounded-full px-4 py-2 bg-black text-white active:scale-[0.98] transition"
-          href={ctaHref}
-          target={!isContact ? "_blank" : undefined}
-          rel="noreferrer"
-        >
-          {L.book}
-        </a>
+  <section class="experience-direct" data-dock-section>
+    <div>
+      <div class="experience-detail-kicker">{directLabel}</div>
+      <h2>
+        {t(
+          lang,
+          "Ask the hotel to shape this moment around your stay.",
+          "Pida al hotel que adapte este momento a su estancia."
+        )}
+      </h2>
+    </div>
+
+    <div>
+      <p>
+        {t(
+          lang,
+          "Experience value depends on timing, room choice, weather, arrival rhythm and the kind of Barcelona day you want. Contact the hotel before booking if you want it shaped more personally.",
+          "El valor de la experiencia depende del momento, la habitación, el clima, el ritmo de llegada y el tipo de día en Barcelona que desea. Contacte con el hotel antes de reservar si quiere adaptarla de forma más personal."
+        )}
+      </p>
+
+      <div class="experience-direct__actions">
+        {bookingUrl ? (
+          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+        ) : null}
+        <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
       </div>
     </div>
-  </div>
+  </section>
+
+  <style>
+    .experience-detail-hero {
+      position: relative;
+      min-height: 100svh;
+      margin-top: -5.2rem;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experience-detail-hero__image {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.02);
+      transform: scale(1.015);
+    }
+
+    .experience-detail-hero__veil {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 72% 20%, rgba(255, 238, 208, 0.2), transparent 34rem),
+        linear-gradient(90deg, rgba(5, 5, 4, 0.64), rgba(5, 5, 4, 0.14) 48%, rgba(5, 5, 4, 0.58)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.14), rgba(5, 5, 4, 0.1) 42%, rgba(5, 5, 4, 0.78));
+    }
+
+    .experience-detail-hero__inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      min-height: 100svh;
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1680px);
+      margin-inline: auto;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(7.8rem, 13vh, 10.5rem) 0 clamp(1.4rem, 4vh, 2.8rem);
+    }
+
+    .experience-detail-hero__top,
+    .experience-detail-hero__rail {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .experience-detail-hero__top a,
+    .experience-detail-hero__top span,
+    .experience-detail-hero__rail span,
+    .experience-detail-kicker {
+      font-size: 0.64rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    .experience-detail-hero__top a,
+    .experience-detail-hero__top span {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.62rem 0.86rem;
+      border-radius: 999px;
+      backdrop-filter: blur(18px);
+      color: rgba(255, 255, 255, 0.72);
+      text-decoration: none;
+    }
+
+    .experience-detail-hero__content {
+      display: grid;
+      grid-template-columns: minmax(0, 0.98fr) minmax(20rem, 0.42fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: end;
+    }
+
+    .experience-detail-hero h1 {
+      max-width: 10ch;
+      font-size: clamp(5rem, 10vw, 11rem);
+      line-height: 0.84;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .experience-detail-hero__content > div > p {
+      margin-top: 1.2rem;
+      max-width: 36rem;
+      font-size: 1rem;
+      line-height: 1.78;
+      color: rgba(255, 250, 242, 0.72);
+    }
+
+    .experience-detail-hero__panel {
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      padding-top: 1.1rem;
+    }
+
+    .experience-detail-hero__panel h2 {
+      margin-top: 1rem;
+      max-width: 11ch;
+      font-size: clamp(2.5rem, 4.4vw, 4.8rem);
+      line-height: 0.9;
+      letter-spacing: -0.075em;
+      font-weight: 400;
+    }
+
+    .experience-detail-hero__panel p {
+      margin-top: 1.2rem;
+      max-width: 30rem;
+      color: rgba(255, 250, 242, 0.72);
+      line-height: 1.72;
+    }
+
+    .experience-detail-hero__actions,
+    .experience-direct__actions {
+      margin-top: 1.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .experience-detail-hero__actions a,
+    .experience-direct__actions a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.1rem;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+
+    .experience-detail-hero__actions a:first-child {
+      background: #fffaf2;
+      color: #15120f;
+    }
+
+    .experience-detail-hero__actions a:last-child {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fffaf2;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .experience-detail-hero__rail {
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 0.8rem;
+      color: rgba(255, 255, 255, 0.52);
+    }
+
+    .experience-guide {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1380px);
+      margin: clamp(3.5rem, 6vw, 6rem) auto 0;
+      scroll-margin-top: 6.5rem;
+      display: grid;
+      grid-template-columns: minmax(18rem, 0.82fr) minmax(0, 1.18fr);
+      gap: clamp(1.25rem, 4vw, 4rem);
+      align-items: start;
+    }
+
+    .experience-guide__copy {
+      position: sticky;
+      top: 6.8rem;
+      display: grid;
+      gap: clamp(1.1rem, 2vw, 1.6rem);
+    }
+
+    .experience-guide h2 {
+      margin-top: 0.85rem;
+      max-width: 12ch;
+      font-size: clamp(2.7rem, 5.4vw, 6.1rem);
+      line-height: 0.92;
+      letter-spacing: 0;
+      font-weight: 400;
+      text-wrap: balance;
+    }
+
+    .experience-guide__copy > div:first-child p,
+    .experience-guide__details p {
+      margin-top: 0.95rem;
+      max-width: 34rem;
+      color: rgba(21, 18, 15, 0.64);
+      font-size: 0.98rem;
+      line-height: 1.72;
+    }
+
+    .experience-guide__facts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .experience-guide__facts article {
+      min-height: 7.2rem;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.5);
+      padding: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .experience-guide__facts span,
+    .experience-guide__slide figcaption span,
+    .experience-guide__gallery-bar span {
+      display: block;
+      color: rgba(21, 18, 15, 0.46);
+      font-size: 0.62rem;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+    }
+
+    .experience-guide__facts strong {
+      margin-top: 1rem;
+      color: rgba(21, 18, 15, 0.82);
+      font-size: clamp(1rem, 1.2vw, 1.18rem);
+      line-height: 1.28;
+      font-weight: 400;
+    }
+
+    .experience-guide__details {
+      display: grid;
+      gap: 1rem;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1rem;
+    }
+
+    .experience-guide__signals {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1rem;
+    }
+
+    .experience-guide__signals span {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.56);
+      padding: 0.68rem 0.78rem;
+      color: rgba(21, 18, 15, 0.66);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .experience-guide__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .experience-guide__actions a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.12rem;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+
+    .experience-guide__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experience-guide__actions a:last-child {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .experience-guide__gallery {
+      min-width: 0;
+    }
+
+    .experience-guide__media {
+      position: relative;
+      margin-top: 0.9rem;
+      min-height: clamp(31rem, 52vw, 46rem);
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      border: 1px solid rgba(21, 18, 15, 0.12);
+      background: #15120f;
+    }
+
+    .experience-guide__slide {
+      position: absolute;
+      inset: 0;
+      margin: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 360ms ease;
+    }
+
+    .experience-guide__slide.is-active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .experience-guide__slide::after {
+      position: absolute;
+      inset: 44% 0 0;
+      content: "";
+      background: linear-gradient(180deg, transparent, rgba(18, 14, 11, 0.46));
+      pointer-events: none;
+    }
+
+    .experience-guide__slide img,
+    .experience-guide__thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(1.06) contrast(1.03) saturate(1.03);
+    }
+
+    .experience-guide__slide figcaption {
+      position: absolute;
+      z-index: 1;
+      left: clamp(1rem, 2vw, 1.5rem);
+      right: clamp(1rem, 2vw, 1.5rem);
+      bottom: clamp(1rem, 2vw, 1.5rem);
+      color: #fffaf2;
+    }
+
+    .experience-guide__slide figcaption span {
+      color: rgba(255, 250, 242, 0.58);
+    }
+
+    .experience-guide__slide figcaption strong {
+      display: block;
+      margin-top: 0.6rem;
+      max-width: 12ch;
+      font-size: clamp(2rem, 4vw, 4.2rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .experience-guide__slide figcaption p {
+      margin-top: 0.75rem;
+      max-width: 34rem;
+      color: rgba(255, 250, 242, 0.76);
+      line-height: 1.55;
+    }
+
+    .experience-guide__gallery-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      border-top: 0;
+      background: rgba(255, 250, 242, 0.54);
+      padding: 0.85rem;
+    }
+
+    .experience-guide__gallery-bar strong {
+      display: block;
+      margin-top: 0.3rem;
+      color: rgba(21, 18, 15, 0.82);
+      font-size: 1.05rem;
+      font-weight: 400;
+    }
+
+    .experience-guide__controls {
+      display: flex;
+      gap: 0.45rem;
+      flex: 0 0 auto;
+    }
+
+    .experience-guide__controls button {
+      width: 2.5rem;
+      height: 2.5rem;
+      border: 1px solid rgba(21, 18, 15, 0.12);
+      border-radius: 999px;
+      background: #fffaf2;
+      color: #15120f;
+      cursor: pointer;
+    }
+
+    .experience-guide__thumbs {
+      margin-top: 0.75rem;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .experience-guide__thumb {
+      aspect-ratio: 4 / 3;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.44);
+      padding: 0;
+      overflow: hidden;
+      cursor: pointer;
+      opacity: 0.72;
+    }
+
+    .experience-guide__thumb.is-active {
+      border-color: rgba(21, 18, 15, 0.72);
+      opacity: 1;
+    }
+
+    .experience-sequence,
+    .experience-planning,
+    .experience-inspection,
+    .experience-direct {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-inline: auto;
+      margin-top: clamp(6rem, 11vw, 10rem);
+    }
+
+    .experience-detail-kicker {
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .experience-sequence__intro,
+    .experience-inspection__intro,
+    .experience-direct {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 0.52fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      align-items: end;
+    }
+
+    .experience-sequence__intro h2,
+    .experience-inspection__intro h2,
+    .experience-direct h2 {
+      margin-top: 1.1rem;
+      max-width: 11ch;
+      font-size: clamp(3.8rem, 8vw, 8.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .experience-sequence__intro p,
+    .experience-inspection__intro p,
+    .experience-direct p {
+      max-width: 34rem;
+      font-size: 1rem;
+      line-height: 1.82;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .experience-sequence__grid {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(0.9rem, 2vw, 1.4rem);
+    }
+
+    .experience-sequence__card {
+      min-height: clamp(24rem, 32vw, 34rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.42);
+      padding: clamp(1.2rem, 3vw, 2.2rem);
+    }
+
+    .experience-sequence__card--dark {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experience-sequence__card small,
+    .experience-sequence__card span {
+      display: block;
+      font-size: 0.62rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .experience-sequence__card--dark small,
+    .experience-sequence__card--dark span {
+      color: rgba(255, 250, 242, 0.48);
+    }
+
+    .experience-sequence__card span {
+      margin-top: 1rem;
+    }
+
+    .experience-sequence__card h3 {
+      margin-top: 0.9rem;
+      max-width: 10ch;
+      font-size: clamp(2.3rem, 4.2vw, 4.8rem);
+      line-height: 0.9;
+      letter-spacing: -0.075em;
+      font-weight: 400;
+    }
+
+    .experience-sequence__card p {
+      margin-top: 1rem;
+      max-width: 27rem;
+      color: rgba(21, 18, 15, 0.64);
+      line-height: 1.65;
+    }
+
+    .experience-sequence__card--dark p {
+      color: rgba(255, 250, 242, 0.68);
+    }
+
+    .experience-planning {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+      gap: clamp(1rem, 3vw, 3rem);
+      align-items: start;
+    }
+
+    .experience-planning__block {
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1rem;
+    }
+
+    .experience-planning__block h2 {
+      margin-top: 1rem;
+      max-width: 11ch;
+      font-size: clamp(2.6rem, 5vw, 5.4rem);
+      line-height: 0.9;
+      letter-spacing: -0.075em;
+      font-weight: 400;
+    }
+
+    .experience-planning__block p {
+      margin-top: 1rem;
+      max-width: 34rem;
+      color: rgba(21, 18, 15, 0.64);
+      line-height: 1.72;
+    }
+
+    .experience-planning__signals {
+      margin-top: 1.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+
+    .experience-planning__signals span {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.42);
+      padding: 0.75rem 0.9rem;
+      color: rgba(21, 18, 15, 0.68);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .experience-inspection .hc-inspect-gallery {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+    }
+
+    .experience-direct {
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: clamp(2rem, 4vw, 3rem);
+      padding-bottom: clamp(5rem, 8vw, 7rem);
+    }
+
+    .experience-direct__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .experience-direct__actions a:last-child {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    @media (max-width: 980px) {
+      .experience-detail-hero__content,
+      .experience-guide,
+      .experience-sequence__intro,
+      .experience-inspection__intro,
+      .experience-direct,
+      .experience-planning {
+        grid-template-columns: 1fr;
+      }
+
+      .experience-guide__copy {
+        position: static;
+      }
+
+      .experience-guide__gallery {
+        order: -1;
+      }
+
+      .experience-sequence__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .experience-detail-hero__rail {
+        display: grid;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .experience-detail-hero__inner,
+      .experience-guide,
+      .experience-sequence,
+      .experience-planning,
+      .experience-inspection,
+      .experience-direct {
+        width: min(100% - 1rem, 1480px);
+      }
+
+      .experience-detail-hero h1,
+      .experience-sequence__intro h2,
+      .experience-inspection__intro h2,
+      .experience-direct h2 {
+        font-size: clamp(3.4rem, 15vw, 5.8rem);
+        line-height: 0.9;
+      }
+
+      .experience-sequence__card {
+        min-height: 21rem;
+      }
+
+      .experience-guide {
+        margin-top: 2.4rem;
+      }
+
+      .experience-guide h2 {
+        font-size: clamp(2.8rem, 13vw, 4.8rem);
+      }
+
+      .experience-guide__facts {
+        grid-template-columns: 1fr;
+      }
+
+      .experience-guide__media {
+        min-height: 27rem;
+        aspect-ratio: 4 / 5;
+      }
+
+      .experience-guide__thumbs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .experience-guide__slide figcaption strong {
+        font-size: clamp(2rem, 11vw, 3.4rem);
+      }
+    }
+
+    .experience-sequence,
+    .experience-planning,
+    .experience-inspection {
+      display: none !important;
+    }
+
+    .experience-direct {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1380px) !important;
+      margin-top: clamp(3.5rem, 6vw, 5.5rem) !important;
+      display: grid !important;
+      grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 0.6fr) !important;
+      gap: clamp(1.5rem, 4vw, 4rem) !important;
+      align-items: center !important;
+      padding-top: clamp(2rem, 4vw, 3rem) !important;
+      padding-bottom: clamp(4rem, 7vw, 6rem) !important;
+    }
+
+    .experience-direct h2 {
+      max-width: 13ch !important;
+      font-size: clamp(2.8rem, 5.6vw, 6.2rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: 0 !important;
+    }
+
+    @media (max-width: 980px) {
+      .experience-direct {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+
+  <script>
+    (() => {
+      document.querySelectorAll("[data-experience-gallery]").forEach((root) => {
+        const slides = Array.from(root.querySelectorAll("[data-experience-slide]"));
+        const thumbs = Array.from(root.querySelectorAll("[data-experience-thumb]"));
+        const prev = root.querySelector("[data-experience-prev]");
+        const next = root.querySelector("[data-experience-next]");
+        const count = root.querySelector("[data-experience-count]");
+        const title = root.querySelector("[data-experience-title]");
+
+        if (!slides.length) return;
+
+        let active = 0;
+        const total = String(slides.length).padStart(2, "0");
+
+        const setActive = (index) => {
+          active = (index + slides.length) % slides.length;
+
+          slides.forEach((slide, slideIndex) => {
+            slide.classList.toggle("is-active", slideIndex === active);
+          });
+
+          thumbs.forEach((thumb, thumbIndex) => {
+            thumb.classList.toggle("is-active", thumbIndex === active);
+            thumb.setAttribute("aria-current", thumbIndex === active ? "true" : "false");
+          });
+
+          if (count) count.textContent = `${String(active + 1).padStart(2, "0")} / ${total}`;
+          if (title) title.textContent = slides[active]?.getAttribute("data-title") || "";
+        };
+
+        prev?.addEventListener("click", () => setActive(active - 1));
+        next?.addEventListener("click", () => setActive(active + 1));
+        thumbs.forEach((thumb, index) => {
+          thumb.addEventListener("click", () => setActive(index));
+        });
+
+        setActive(0);
+      });
+    })();
+  </script>
 </BaseLayout>

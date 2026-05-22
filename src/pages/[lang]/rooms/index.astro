@@ -1,10 +1,9 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { LANGS, type Lang, isLang } from "../../../content/languages";
-import { getRooms } from "../../../cms/sheets";
+import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { getRooms, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
-import Card from "../../../core/ui/Card.astro";
-import { getHotelLabels } from "../../../vertical/content/labels";
+import { ROOM_COVER_BY_SLUG } from "../../../hotel/data/demoAssets";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -14,47 +13,1566 @@ const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
-const L = getHotelLabels(lang);
+const s = await getSettings();
 
 const rooms = await getRooms();
-const title = L.rooms;
+const visibleRooms = rooms.filter((room) =>
+  Boolean(ROOM_COVER_BY_SLUG[room.slug] ?? (room.cover_image ?? "").trim())
+);
+
+const bookingUrl = String((s as any).booking_url || "").trim();
+
+const optionalRoomField = (room: any, key: string) =>
+  t(
+    lang,
+    String(room?.[`${key}_en`] || ""),
+    String(room?.[`${key}_es`] || "")
+  ).trim();
+
+const resolveRoomSales = (room: any, index: number) => {
+  const slug = String(room?.slug || "").toLowerCase();
+
+  const explicitMood = optionalRoomField(room, "mood");
+  const explicitBestFor = optionalRoomField(room, "best_for");
+  const explicitView = optionalRoomField(room, "view_signal");
+  const explicitWhy = optionalRoomField(room, "why_choose");
+
+  const profile = (() => {
+    if (slug.includes("terrace")) {
+      return {
+        mood: t(lang, "Terrace air", "Aire de terraza"),
+        bestFor: t(lang, "Private outdoor mornings", "Mañanas privadas al aire libre"),
+        viewSignal: t(lang, "Open air / sunset rhythm", "Aire abierto / ritmo de atardecer"),
+        whyChoose: t(
+          lang,
+          "Choose this room if outside space matters as much as the bed.",
+          "Elija esta habitación si el espacio exterior importa tanto como la cama."
+        ),
+      };
+    }
+
+    if (slug.includes("skyline")) {
+      return {
+        mood: t(lang, "City light", "Luz de ciudad"),
+        bestFor: t(lang, "Guests who want a brighter urban view", "Huéspedes que buscan una vista urbana más luminosa"),
+        viewSignal: t(lang, "Skyline / upper-floor light", "Skyline / luz de planta alta"),
+        whyChoose: t(
+          lang,
+          "Choose this room for a more open sense of Barcelona from inside the stay.",
+          "Elija esta habitación para sentir Barcelona de forma más abierta desde la estancia."
+        ),
+      };
+    }
+
+    if (slug.includes("balcony") || slug.includes("balc")) {
+      return {
+        mood: t(lang, "Balcony pause", "Pausa de balcón"),
+        bestFor: t(lang, "Morning air and short private breaks", "Aire de mañana y pausas privadas"),
+        viewSignal: t(lang, "Balcony / soft exterior moment", "Balcón / momento exterior suave"),
+        whyChoose: t(
+          lang,
+          "Choose this room if you want a small outdoor gesture without moving into a suite.",
+          "Elija esta habitación si quiere un pequeño gesto exterior sin pasar a una suite."
+        ),
+      };
+    }
+
+    if (slug.includes("junior") || slug.includes("suite")) {
+      return {
+        mood: t(lang, "Extended calm", "Calma ampliada"),
+        bestFor: t(lang, "Longer stays and guests who need more space", "Estancias largas y huéspedes que necesitan más espacio"),
+        viewSignal: t(lang, "Lounge / slower rhythm", "Lounge / ritmo más pausado"),
+        whyChoose: t(
+          lang,
+          "Choose this room when the stay needs a little more room to unfold.",
+          "Elija esta habitación cuando la estancia necesite un poco más de espacio para desplegarse."
+        ),
+      };
+    }
+
+    if (slug.includes("family")) {
+      return {
+        mood: t(lang, "Shared quiet", "Tranquilidad compartida"),
+        bestFor: t(lang, "Families or two-zone stays", "Familias o estancias con dos zonas"),
+        viewSignal: t(lang, "Flexible layout / practical comfort", "Distribución flexible / confort práctico"),
+        whyChoose: t(
+          lang,
+          "Choose this room when comfort and practical layout are the priority.",
+          "Elija esta habitación cuando la comodidad y la distribución práctica sean la prioridad."
+        ),
+      };
+    }
+
+    if (slug.includes("accessible")) {
+      return {
+        mood: t(lang, "Easy access", "Acceso fácil"),
+        bestFor: t(lang, "Accessible comfort with quiet design", "Confort accesible con diseño tranquilo"),
+        viewSignal: t(lang, "Barrier-free / calm layout", "Sin barreras / distribución serena"),
+        whyChoose: t(
+          lang,
+          "Choose this room for a more accessible stay without losing the calm hotel atmosphere.",
+          "Elija esta habitación para una estancia más accesible sin perder la atmósfera tranquila del hotel."
+        ),
+      };
+    }
+
+    if (slug.includes("courtyard")) {
+      return {
+        mood: t(lang, "Courtyard calm", "Calma de patio"),
+        bestFor: t(lang, "Quiet mornings and softer light", "Mañanas tranquilas y luz más suave"),
+        viewSignal: t(lang, "Inner courtyard / privacy", "Patio interior / privacidad"),
+        whyChoose: t(
+          lang,
+          "Choose this room for the most silent and grounded version of the stay.",
+          "Elija esta habitación para la versión más silenciosa y serena de la estancia."
+        ),
+      };
+    }
+
+    return {
+      mood: t(lang, "Soft city stay", "Estancia urbana suave"),
+      bestFor: t(lang, "Guests who want calm, clarity and direct booking", "Huéspedes que buscan calma, claridad y reserva directa"),
+      viewSignal: t(lang, "Quiet room / balanced light", "Habitación tranquila / luz equilibrada"),
+      whyChoose: t(
+        lang,
+        "Choose this room as a balanced base for a slower Barcelona stay.",
+        "Elija esta habitación como base equilibrada para una estancia más pausada en Barcelona."
+      ),
+    };
+  })();
+
+  return {
+    mood: explicitMood || profile.mood,
+    bestFor: explicitBestFor || profile.bestFor,
+    viewSignal: explicitView || profile.viewSignal,
+    whyChoose: explicitWhy || profile.whyChoose,
+  };
+};
+
+const roomItems = visibleRooms.map((room, index) => {
+  const title = pickLang(lang, room, "name");
+  const short = pickLang(lang, room, "short");
+  const description = pickLang(lang, room, "description");
+  const highlights = splitPipe(pickLang(lang, room, "highlights")).slice(0, 4);
+
+  const price = String((room as any).price_from || "").trim();
+  const guests = String((room as any).guests || "").trim();
+  const size = String((room as any).size_m2 || (room as any).size_sqm || (room as any).size || "").trim();
+  const beds = pickLang(lang, room, "beds");
+  const sales = resolveRoomSales(room, index);
+
+  return {
+    id: room.id || room.slug || `room-${index + 1}`,
+    slug: room.slug,
+    href: `/${lang}/rooms/${room.slug}/`,
+    title,
+    short,
+    description,
+    image: ROOM_COVER_BY_SLUG[room.slug] ?? room.cover_image,
+    price,
+    guests,
+    size,
+    beds,
+    highlights,
+    index,
+    mood: sales.mood,
+    bestFor: sales.bestFor,
+    viewSignal: sales.viewSignal,
+    whyChoose: sales.whyChoose,
+  };
+});
+
+const firstRoom = roomItems[0];
+
+const heroRoom =
+  roomItems.find((room) =>
+    ["junior-suite", "deluxe-terrace", "studio-skyline", "suite-terrace"].some((key) =>
+      String(room.slug || "").includes(key)
+    )
+  ) ?? roomItems[1] ?? firstRoom;
+
+const pageTitle = t(lang, "Rooms", "Habitaciones");
+
+const heroEyebrow = t(lang, "Rooms / Suites", "Habitaciones / Suites");
+const heroTitle = t(
+  lang,
+  "Rooms shaped by light, privacy and quiet city rhythm.",
+  "Habitaciones definidas por luz, privacidad y un ritmo urbano tranquilo."
+);
+const heroText = t(
+  lang,
+  "Move through the rooms as stay states: courtyard calm, skyline light, terrace air and quieter mornings before Barcelona gets loud.",
+  "Recorra las habitaciones como estados de estancia: calma de patio, luz de ciudad, aire de terraza y mañanas más tranquilas antes de que Barcelona despierte."
+);
+
+const fieldEyebrow = t(lang, "Room field", "Campo de habitaciones");
+const fieldTitle = t(
+  lang,
+  "Choose the room by atmosphere, not only by category.",
+  "Elija la habitación por atmósfera, no solo por categoría."
+);
+const fieldText = t(
+  lang,
+  "Each room is treated as a stay object: light, size, view, materials and the kind of Barcelona day it supports.",
+  "Cada habitación se trata como un objeto de estancia: luz, tamaño, vista, materiales y el tipo de día en Barcelona que acompaña."
+);
+
+const openRoomLabel = t(lang, "Open room", "Abrir habitación");
+const bookDirectLabel = t(lang, "Book direct", "Reservar directo");
+const contactHotelLabel = t(lang, "Contact hotel", "Contactar hotel");
+const previousRoomLabel = t(lang, "Previous room", "Habitación anterior");
+const nextRoomLabel = t(lang, "Next room", "Siguiente habitación");
+
+const fromLabel = t(lang, "From", "Desde");
+const guestsLabel = t(lang, "Guests", "Huéspedes");
+const sizeLabel = t(lang, "Size", "Tamaño");
+const bedsLabel = t(lang, "Beds", "Camas");
+const moodLabel = t(lang, "Mood", "Atmósfera");
+const bestForLabel = t(lang, "Best for", "Ideal para");
+const viewSignalLabel = t(lang, "View / light", "Vista / luz");
+const whyChooseLabel = t(lang, "Why choose it", "Por qué elegirla");
+const compareLabel = t(lang, "Compare stays", "Comparar estancias");
+const archiveLabel = t(lang, "Room archive", "Archivo de habitaciones");
+const archiveTitle = t(
+  lang,
+  "All stays, kept readable.",
+  "Todas las estancias, mantenidas legibles."
+);
+const archiveText = t(
+  lang,
+  "Use the visual room field to feel the atmosphere, then use this index for direct comparison.",
+  "Use el campo visual para sentir la atmósfera y este índice para comparar directamente."
+);
+
+const emptyTitle = t(lang, "Rooms are being prepared.", "Las habitaciones se están preparando.");
+const emptyText = t(
+  lang,
+  "Published rooms with cover images will appear here.",
+  "Las habitaciones publicadas con imagen aparecerán aquí."
+);
+
+const browseLabel = t(lang, "Room browser", "Explorador de habitaciones");
+const browseTitle = t(
+  lang,
+  "Compare rooms quickly, then open the one that fits.",
+  "Compare habitaciones rapido y abra la que encaja."
+);
+const browseText = t(
+  lang,
+  "A compact room index for the practical decision: price, size, guests, light and the reason to choose each stay.",
+  "Un indice compacto para decidir: precio, tamano, huespedes, luz y la razon para elegir cada estancia."
+);
+const roomsAvailableLabel = t(lang, "Rooms available", "Habitaciones disponibles");
+const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
 ---
 
-<BaseLayout lang={lang} title={title}>
-  <h1 class="text-2xl tracking-tight">{title}</h1>
+<BaseLayout lang={lang} title={pageTitle} fullBleed>
+  {firstRoom ? (
+    <>
+      <section class="rooms-hero" data-dock-section>
+        <img
+          src={heroRoom?.image ?? firstRoom.image}
+          alt=""
+          class="rooms-hero__image"
+          loading="eager"
+          decoding="async"
+        />
+        <div class="rooms-hero__veil" aria-hidden="true"></div>
 
-  <div class="mt-6 grid gap-6 sm:grid-cols-2">
-    {rooms.map((r) => (
-      <Card href={`/${lang}/rooms/${r.slug}/`} class="active:scale-[0.99] transition">
-        <div class="aspect-[4/3] bg-black/5">
-          {r.cover_image ? (
-            <img
-              src={r.cover_image}
-              alt=""
-              class="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : null}
-        </div>
-
-        <div class="p-4">
-          <div class="flex items-baseline justify-between gap-3">
-            <h2 class="text-lg">{pickLang(lang, r, "name")}</h2>
-            {r.price_from ? <span class="text-sm opacity-70">€{r.price_from}</span> : null}
+        <div class="rooms-hero__inner">
+          <div class="rooms-hero__top">
+            <span>{heroEyebrow}</span>
+            <span>{t(lang, "Opening room", "Habitación inicial")} / {heroRoom?.title ?? firstRoom.title}</span>
           </div>
 
-          <p class="mt-2 text-sm opacity-80">{pickLang(lang, r, "short")}</p>
+          <div class="rooms-hero__content">
+            <h1>{heroTitle}</h1>
 
-          <div class="mt-3 flex flex-wrap gap-2">
-            {splitPipe(pickLang(lang, r, "highlights"))
-              .slice(0, 3)
-              .map((x) => (
-                <span class="text-xs rounded-full px-3 py-1 bg-black/5">{x}</span>
-              ))}
+            <aside>
+              <p>{heroText}</p>
+
+              <div class="rooms-hero__actions">
+                <a href="#rooms-browser">{t(lang, "Explore rooms", "Explorar habitaciones")}</a>
+                {bookingUrl ? (
+                  <a href={bookingUrl} target="_blank" rel="noreferrer">
+                    {bookDirectLabel}
+                  </a>
+                ) : null}
+              </div>
+            </aside>
+          </div>
+
+          <div class="rooms-hero__rail" aria-hidden="true">
+            {roomItems.slice(0, 4).map((room, index) => (
+              <span>{String(index + 1).padStart(2, "0")} / {room.title}</span>
+            ))}
           </div>
         </div>
-      </Card>
-    ))}
-  </div>
+      </section>
+
+      <section id="rooms-browser" class="rooms-browser" data-dock-section>
+        <div class="rooms-browser__head">
+          <div>
+            <div class="rooms-kicker">{browseLabel}</div>
+            <h2>{browseTitle}</h2>
+            <p>{browseText}</p>
+          </div>
+
+          <aside class="rooms-browser__summary" aria-label={quickSignalsLabel}>
+            <span>{roomsAvailableLabel}</span>
+            <strong>{roomItems.length}</strong>
+            <p>{fieldText}</p>
+          </aside>
+        </div>
+
+        <div class="rooms-browser__grid">
+          {roomItems.map((room, index) => (
+            <article class="rooms-card">
+              <a href={room.href} class="rooms-card__media" aria-label={`${openRoomLabel}: ${room.title}`}>
+                <img src={room.image} alt="" loading={index < 3 ? "eager" : "lazy"} decoding="async" />
+                <span>{String(index + 1).padStart(2, "0")}</span>
+              </a>
+
+              <div class="rooms-card__body">
+                <div>
+                  <div class="rooms-card__eyebrow">{room.mood}</div>
+                  <h3>
+                    <a href={room.href}>{room.title}</a>
+                  </h3>
+                  <p>{room.short || room.bestFor}</p>
+                </div>
+
+                <div class="rooms-card__specs">
+                  <span>{room.price ? `${fromLabel} €${room.price}` : room.viewSignal}</span>
+                  {room.guests ? <span>{guestsLabel}: {room.guests}</span> : null}
+                  {room.size ? <span>{sizeLabel}: {room.size}{room.size.match(/[a-zA-Z]/) ? "" : " m²"}</span> : null}
+                </div>
+
+                <div class="rooms-card__signals">
+                  <span>{room.viewSignal}</span>
+                  <span>{room.bestFor}</span>
+                </div>
+
+                <div class="rooms-card__actions">
+                  <a class="rooms-card__open" href={room.href}>{openRoomLabel}</a>
+                  {bookingUrl ? (
+                    <a
+                      class="rooms-card__book"
+                      href={bookingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-booking-trigger="true"
+                      data-booking-context="room"
+                      data-booking-slug={room.slug}
+                      data-booking-title={room.title}
+                    >
+                      {bookDirectLabel}
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="room-field" class="rooms-field" data-room-index-field data-dock-section>
+        <div class="rooms-field__intro">
+          <div>
+            <div class="rooms-kicker">{fieldEyebrow}</div>
+            <h2>{fieldTitle}</h2>
+          </div>
+
+          <p>{fieldText}</p>
+        </div>
+
+        <div class="rooms-explorer">
+          <div class="rooms-explorer__visual" data-room-stage tabindex="0" role="group" aria-label={fieldTitle}>
+            <img data-room-active-image src={firstRoom.image} alt="" loading="eager" decoding="async" />
+            <div class="rooms-explorer__shade" aria-hidden="true"></div>
+
+            <div class="rooms-explorer__readout">
+              <span data-room-active-count>
+                01 / {String(roomItems.length).padStart(2, "0")}
+              </span>
+              <strong data-room-active-title>{firstRoom.title}</strong>
+              <p data-room-active-short>{firstRoom.short}</p>
+            </div>
+
+            <div class="rooms-explorer__nav">
+              <button type="button" data-room-prev aria-label={previousRoomLabel}>←</button>
+              <button type="button" data-room-next aria-label={nextRoomLabel}>→</button>
+            </div>
+          </div>
+
+          <aside class="rooms-explorer__panel">
+            <div>
+              <div class="rooms-kicker">{t(lang, "Active room", "Habitación activa")}</div>
+
+              <h3 data-room-panel-title>{firstRoom.title}</h3>
+              <p data-room-panel-description>{firstRoom.description || firstRoom.short}</p>
+
+              <dl class="rooms-explorer__decision">
+                <div>
+                  <dt>{moodLabel}</dt>
+                  <dd data-room-mood>{firstRoom.mood}</dd>
+                </div>
+
+                <div>
+                  <dt>{bestForLabel}</dt>
+                  <dd data-room-best-for>{firstRoom.bestFor}</dd>
+                </div>
+
+                <div>
+                  <dt>{viewSignalLabel}</dt>
+                  <dd data-room-view-signal>{firstRoom.viewSignal}</dd>
+                </div>
+
+                <div>
+                  <dt>{whyChooseLabel}</dt>
+                  <dd data-room-why-choose>{firstRoom.whyChoose}</dd>
+                </div>
+              </dl>
+
+              <div class="rooms-explorer__specs">
+                <div>
+                  <span>{fromLabel}</span>
+                  <strong data-room-price>{firstRoom.price ? `€${firstRoom.price}` : "—"}</strong>
+                </div>
+
+                <div>
+                  <span>{guestsLabel}</span>
+                  <strong data-room-guests>{firstRoom.guests || "—"}</strong>
+                </div>
+
+                <div>
+                  <span>{sizeLabel}</span>
+                  <strong data-room-size>
+                    {firstRoom.size ? `${firstRoom.size}${firstRoom.size.match(/[a-zA-Z]/) ? "" : " m²"}` : "—"}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="rooms-explorer__bottom">
+              <div class="rooms-explorer__beds">
+                <span>{bedsLabel}</span>
+                <strong data-room-beds>{firstRoom.beds || "—"}</strong>
+              </div>
+
+              <div class="rooms-explorer__actions">
+                <a href={firstRoom.href} data-room-open-link>{openRoomLabel}</a>
+
+                {bookingUrl ? (
+                  <a
+                    href={bookingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-room-booking-link
+                    data-booking-trigger="true"
+                    data-booking-context="room"
+                    data-booking-slug={firstRoom.slug}
+                    data-booking-title={firstRoom.title}
+                  >
+                    {bookDirectLabel}
+                  </a>
+                ) : (
+                  <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
+                )}
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="rooms-rail" aria-label={t(lang, "Room selector", "Selector de habitaciones")}>
+          {roomItems.map((room, index) => (
+            <button
+              type="button"
+              data-room-thumb={index}
+              class:list={["rooms-rail__item", index === 0 && "is-active"]}
+              aria-current={index === 0 ? "true" : undefined}
+            >
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <em>{room.mood}</em>
+              <strong>{room.title}</strong>
+              <small>{room.price ? `${fromLabel} €${room.price}` : room.bestFor}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section class="rooms-archive" data-dock-section>
+        <div class="rooms-archive__intro">
+          <div class="rooms-kicker">{archiveLabel} / {compareLabel}</div>
+          <h2>{archiveTitle}</h2>
+          <p>{archiveText}</p>
+        </div>
+
+        <div class="rooms-archive__list">
+          {roomItems.map((room, index) => (
+            <a href={room.href} class="rooms-archive__row">
+              <div class="rooms-archive__index">{String(index + 1).padStart(2, "0")}</div>
+
+              <div>
+                <h3>{room.title}</h3>
+                <p>{room.short}</p>
+              </div>
+
+              <div class="rooms-archive__meta">
+                <span>{room.bestFor}</span>
+                {room.price ? <span>{fromLabel} €{room.price}</span> : null}
+                {room.guests ? <span>{guestsLabel} {room.guests}</span> : null}
+                {room.size ? <span>{room.size}{room.size.match(/[a-zA-Z]/) ? "" : " m²"}</span> : null}
+              </div>
+
+              <div class="rooms-archive__open">{openRoomLabel}</div>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="rooms-direct" data-dock-section>
+        <div>
+          <div class="rooms-kicker">{t(lang, "Direct booking", "Reserva directa")}</div>
+          <h2>{t(lang, "Ask the hotel which room fits your stay.", "Pregunte al hotel qué habitación encaja con su estancia.")}</h2>
+        </div>
+
+        <div>
+          <p>
+            {t(
+              lang,
+              "Choose by light, silence, terrace, size or arrival rhythm. The hotel can help match the room to the kind of stay you want.",
+              "Elija por luz, silencio, terraza, tamaño o ritmo de llegada. El hotel puede ayudarle a encontrar la habitación adecuada para su estancia."
+            )}
+          </p>
+
+          <div class="rooms-direct__actions">
+            {bookingUrl ? (
+              <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+            ) : null}
+            <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
+          </div>
+        </div>
+      </section>
+
+      <script is:inline define:vars={{ roomPayload: roomItems }}>
+        (() => {
+          const root = document.querySelector("[data-room-index-field]");
+          if (!root || !Array.isArray(roomPayload) || roomPayload.length === 0) return;
+
+          const stage = root.querySelector("[data-room-stage]");
+          const activeImage = root.querySelector("[data-room-active-image]");
+          const activeCount = root.querySelector("[data-room-active-count]");
+          const activeTitle = root.querySelector("[data-room-active-title]");
+          const activeShort = root.querySelector("[data-room-active-short]");
+          const panelTitle = root.querySelector("[data-room-panel-title]");
+          const panelDescription = root.querySelector("[data-room-panel-description]");
+          const roomPrice = root.querySelector("[data-room-price]");
+          const roomGuests = root.querySelector("[data-room-guests]");
+          const roomSize = root.querySelector("[data-room-size]");
+          const roomBeds = root.querySelector("[data-room-beds]");
+          const roomMood = root.querySelector("[data-room-mood]");
+          const roomBestFor = root.querySelector("[data-room-best-for]");
+          const roomViewSignal = root.querySelector("[data-room-view-signal]");
+          const roomWhyChoose = root.querySelector("[data-room-why-choose]");
+          const openLink = root.querySelector("[data-room-open-link]");
+          const bookingLink = root.querySelector("[data-room-booking-link]");
+          const prevBtn = root.querySelector("[data-room-prev]");
+          const nextBtn = root.querySelector("[data-room-next]");
+          const thumbs = Array.from(root.querySelectorAll("[data-room-thumb]"));
+
+          let activeIndex = 0;
+          let switchTimer = 0;
+
+          const pad = (n) => String(n).padStart(2, "0");
+          const normalize = (index) => ((index % roomPayload.length) + roomPayload.length) % roomPayload.length;
+
+          const formatSize = (value) => {
+            const clean = String(value || "").trim();
+            if (!clean) return "—";
+            return /[a-zA-Z]/.test(clean) ? clean : `${clean} m²`;
+          };
+
+          const render = (nextIndex) => {
+            activeIndex = normalize(nextIndex);
+            const room = roomPayload[activeIndex];
+
+            if (activeImage) {
+              activeImage.src = room.image;
+              activeImage.alt = room.title || "";
+            }
+
+            if (activeCount) activeCount.textContent = `${pad(activeIndex + 1)} / ${pad(roomPayload.length)}`;
+            if (activeTitle) activeTitle.textContent = room.title || "";
+            if (activeShort) activeShort.textContent = room.short || "";
+            if (panelTitle) panelTitle.textContent = room.title || "";
+            if (panelDescription) panelDescription.textContent = room.description || room.short || "";
+            if (roomPrice) roomPrice.textContent = room.price ? `€${room.price}` : "—";
+            if (roomGuests) roomGuests.textContent = room.guests || "—";
+            if (roomSize) roomSize.textContent = formatSize(room.size);
+            if (roomBeds) roomBeds.textContent = room.beds || "—";
+            if (roomMood) roomMood.textContent = room.mood || "—";
+            if (roomBestFor) roomBestFor.textContent = room.bestFor || "—";
+            if (roomViewSignal) roomViewSignal.textContent = room.viewSignal || "—";
+            if (roomWhyChoose) roomWhyChoose.textContent = room.whyChoose || "—";
+            if (openLink) openLink.setAttribute("href", room.href);
+
+            if (bookingLink) {
+              bookingLink.setAttribute("data-booking-context", "room");
+              bookingLink.setAttribute("data-booking-slug", room.slug || "");
+              bookingLink.setAttribute("data-booking-title", room.title || "");
+            }
+
+            thumbs.forEach((button, index) => {
+              const active = index === activeIndex;
+              button.classList.toggle("is-active", active);
+              if (active) button.setAttribute("aria-current", "true");
+              else button.removeAttribute("aria-current");
+            });
+
+            root.classList.remove("is-switching");
+            window.clearTimeout(switchTimer);
+            void root.offsetWidth;
+            root.classList.add("is-switching");
+            switchTimer = window.setTimeout(() => root.classList.remove("is-switching"), 760);
+          };
+
+          thumbs.forEach((button) => {
+            button.addEventListener("click", () => {
+              const index = Number(button.getAttribute("data-room-thumb"));
+              if (Number.isFinite(index)) render(index);
+            });
+          });
+
+          if (prevBtn) prevBtn.addEventListener("click", () => render(activeIndex - 1));
+          if (nextBtn) nextBtn.addEventListener("click", () => render(activeIndex + 1));
+
+          if (stage) {
+            stage.addEventListener("keydown", (event) => {
+              if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                event.preventDefault();
+                render(activeIndex - 1);
+              }
+
+              if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                event.preventDefault();
+                render(activeIndex + 1);
+              }
+
+              if (event.key === "Enter" && openLink instanceof HTMLAnchorElement) {
+                event.preventDefault();
+                openLink.click();
+              }
+            });
+          }
+
+          render(0);
+        })();
+      </script>
+    </>
+  ) : (
+    <section class="rooms-empty">
+      <div class="rooms-kicker">{pageTitle}</div>
+      <h1>{emptyTitle}</h1>
+      <p>{emptyText}</p>
+    </section>
+  )}
+
+  <style>
+    .rooms-hero {
+      position: relative;
+      min-height: 100svh;
+      margin-top: -5.2rem;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .rooms-hero__image {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.02);
+      transform: scale(1.015);
+    }
+
+    .rooms-hero__veil {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(5, 5, 4, 0.64), rgba(5, 5, 4, 0.14) 48%, rgba(5, 5, 4, 0.58)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.18), rgba(5, 5, 4, 0.12) 42%, rgba(5, 5, 4, 0.78));
+    }
+
+    .rooms-hero__inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      min-height: 100svh;
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1680px);
+      margin-inline: auto;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(7.8rem, 13vh, 10.5rem) 0 clamp(1.4rem, 4vh, 2.8rem);
+    }
+
+    .rooms-hero__top,
+    .rooms-hero__rail {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .rooms-hero__top span,
+    .rooms-hero__rail span,
+    .rooms-kicker {
+      font-size: 0.64rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .rooms-hero__top span {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.62rem 0.86rem;
+      border-radius: 999px;
+      backdrop-filter: blur(18px);
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .rooms-hero__content {
+      display: grid;
+      grid-template-columns: minmax(0, 0.98fr) minmax(18rem, 0.42fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: end;
+    }
+
+    .rooms-hero h1 {
+      max-width: 11ch;
+      font-size: 8.4rem;
+      line-height: 0.88;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .rooms-hero aside {
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      padding-top: 1.1rem;
+    }
+
+    .rooms-hero aside p {
+      max-width: 30rem;
+      font-size: 1rem;
+      line-height: 1.78;
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .rooms-hero__actions,
+    .rooms-direct__actions,
+    .rooms-explorer__actions {
+      margin-top: 1.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .rooms-hero__actions a,
+    .rooms-direct__actions a,
+    .rooms-explorer__actions a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.1rem;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+
+    .rooms-hero__actions a:first-child,
+    .rooms-explorer__actions a:first-child {
+      background: #fffaf2;
+      color: #15120f;
+    }
+
+    .rooms-hero__actions a:last-child {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fffaf2;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .rooms-hero__rail {
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 0.8rem;
+      color: rgba(255, 255, 255, 0.52);
+    }
+
+    .rooms-browser {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin: clamp(3.2rem, 6vw, 5.5rem) auto 0;
+      scroll-margin-top: 6.5rem;
+    }
+
+    .rooms-browser__head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(18rem, 0.38fr);
+      gap: clamp(1.4rem, 5vw, 5rem);
+      align-items: end;
+      border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+      padding-bottom: clamp(1.5rem, 3vw, 2.4rem);
+    }
+
+    .rooms-browser__head h2 {
+      margin-top: 0.75rem;
+      max-width: 13ch;
+      font-size: clamp(2.8rem, 5.6vw, 6.4rem);
+      line-height: 0.94;
+      letter-spacing: 0;
+      font-weight: 400;
+      text-wrap: balance;
+    }
+
+    .rooms-browser__head p,
+    .rooms-browser__summary p,
+    .rooms-card__body p {
+      color: rgba(21, 18, 15, 0.64);
+      line-height: 1.68;
+    }
+
+    .rooms-browser__head > div > p {
+      margin-top: 1rem;
+      max-width: 39rem;
+    }
+
+    .rooms-browser__summary {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.48);
+      padding: clamp(1rem, 2vw, 1.35rem);
+    }
+
+    .rooms-browser__summary span,
+    .rooms-card__eyebrow,
+    .rooms-card__media span,
+    .rooms-card__specs span,
+    .rooms-card__signals span {
+      display: block;
+      color: rgba(21, 18, 15, 0.48);
+      font-size: 0.62rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .rooms-browser__summary strong {
+      display: block;
+      margin-top: 0.8rem;
+      font-size: clamp(3.2rem, 6vw, 6.4rem);
+      line-height: 0.9;
+      font-weight: 400;
+    }
+
+    .rooms-browser__summary p {
+      margin-top: 1rem;
+      font-size: 0.94rem;
+    }
+
+    .rooms-browser__grid {
+      margin-top: clamp(1rem, 2.4vw, 1.8rem);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(0.8rem, 1.8vw, 1.2rem);
+    }
+
+    .rooms-card {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.45);
+      min-width: 0;
+    }
+
+    .rooms-card__media {
+      position: relative;
+      display: block;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .rooms-card__media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.04) saturate(1.03);
+      transition: transform 420ms ease;
+    }
+
+    .rooms-card:hover .rooms-card__media img {
+      transform: scale(1.035);
+    }
+
+    .rooms-card__media span {
+      position: absolute;
+      left: 0.8rem;
+      top: 0.8rem;
+      color: rgba(255, 250, 242, 0.74);
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.34);
+    }
+
+    .rooms-card__body {
+      display: grid;
+      gap: 1rem;
+      padding: clamp(1rem, 2vw, 1.35rem);
+    }
+
+    .rooms-card h3 {
+      margin-top: 0.55rem;
+      font-size: clamp(1.55rem, 2.4vw, 2.35rem);
+      line-height: 1;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .rooms-card h3 a {
+      color: #15120f;
+      text-decoration: none;
+    }
+
+    .rooms-card__body p {
+      margin-top: 0.65rem;
+      min-height: 3.3em;
+      font-size: 0.94rem;
+    }
+
+    .rooms-card__specs,
+    .rooms-card__signals {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .rooms-card__specs span,
+    .rooms-card__signals span {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 255, 255, 0.34);
+      padding: 0.55rem 0.65rem;
+      line-height: 1.28;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .rooms-card__signals span {
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .rooms-card__actions {
+      align-self: end;
+      justify-self: start;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .rooms-card__open,
+    .rooms-card__book {
+      display: inline-flex;
+      min-height: 2.45rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 0.95rem;
+      font-size: 0.84rem;
+      text-decoration: none;
+    }
+
+    .rooms-card__open {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .rooms-card__book {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      background: rgba(255, 250, 242, 0.42);
+      color: #15120f;
+    }
+
+    .rooms-field,
+    .rooms-archive,
+    .rooms-direct,
+    .rooms-empty {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-inline: auto;
+      margin-top: clamp(6rem, 11vw, 10rem);
+    }
+
+    .rooms-kicker {
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .rooms-field__intro {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 0.52fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      align-items: end;
+    }
+
+    .rooms-field__intro h2,
+    .rooms-archive__intro h2,
+    .rooms-direct h2,
+    .rooms-empty h1 {
+      margin-top: 1.1rem;
+      max-width: 11ch;
+      font-size: 6.2rem;
+      line-height: 0.88;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .rooms-field__intro p,
+    .rooms-archive__intro p,
+    .rooms-direct p,
+    .rooms-empty p {
+      max-width: 34rem;
+      font-size: 1rem;
+      line-height: 1.82;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .rooms-explorer {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.42fr);
+      gap: clamp(1.2rem, 4vw, 4rem);
+      align-items: stretch;
+    }
+
+    .rooms-explorer__visual {
+      position: relative;
+      min-height: clamp(38rem, 58vw, 56rem);
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+      outline: none;
+      box-shadow: 0 42px 130px rgba(21, 18, 15, 0.14);
+    }
+
+    .rooms-explorer__visual img {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.02);
+      transform: scale(1.015);
+    }
+
+    .rooms-field.is-switching .rooms-explorer__visual img {
+      animation: roomsImageIn 760ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .rooms-explorer__shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.2) 48%, rgba(0, 0, 0, 0.78));
+    }
+
+    .rooms-explorer__readout {
+      position: absolute;
+      left: clamp(1.2rem, 3vw, 2.4rem);
+      right: clamp(1.2rem, 3vw, 2.4rem);
+      bottom: clamp(1.2rem, 3vw, 2.4rem);
+      z-index: 2;
+      border-top: 1px solid rgba(255, 250, 242, 0.24);
+      padding-top: 1rem;
+    }
+
+    .rooms-explorer__readout span {
+      font-size: 0.64rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(255, 250, 242, 0.48);
+    }
+
+    .rooms-explorer__readout strong {
+      margin-top: 0.8rem;
+      display: block;
+      max-width: 10ch;
+      font-size: 5.8rem;
+      line-height: 0.88;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .rooms-explorer__readout p {
+      margin-top: 1rem;
+      max-width: 34rem;
+      color: rgba(255, 250, 242, 0.72);
+    }
+
+    .rooms-explorer__nav {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      z-index: 3;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .rooms-explorer__nav button {
+      display: grid;
+      height: 2.7rem;
+      width: 2.7rem;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(0, 0, 0, 0.24);
+      color: #fffaf2;
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+    }
+
+    .rooms-explorer__panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: clamp(1.4rem, 4vw, 3rem);
+      border-top: 1px solid rgba(21, 18, 15, 0.14);
+      padding-top: 1rem;
+    }
+
+    .rooms-explorer__panel h3 {
+      margin-top: 1.1rem;
+      max-width: 9ch;
+      font-size: 4.6rem;
+      line-height: 0.9;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .rooms-explorer__panel p {
+      margin-top: 1.1rem;
+      max-width: 30rem;
+      font-size: 0.96rem;
+      line-height: 1.76;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .rooms-explorer__specs {
+      margin-top: 2rem;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .rooms-explorer__specs div,
+    .rooms-explorer__beds {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.42);
+      padding: 1rem;
+    }
+
+    .rooms-explorer__specs span,
+    .rooms-explorer__beds span {
+      display: block;
+      font-size: 0.58rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .rooms-explorer__specs strong,
+    .rooms-explorer__beds strong {
+      margin-top: 0.6rem;
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 400;
+    }
+
+    .rooms-explorer__bottom {
+      align-self: end;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1.2rem;
+    }
+
+    .rooms-explorer__actions a:first-child,
+    .rooms-direct__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .rooms-explorer__actions a:last-child,
+    .rooms-direct__actions a:last-child {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .rooms-rail {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+      gap: 0.65rem;
+    }
+
+    .rooms-rail__item {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.38);
+      padding: 1rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .rooms-rail__item span,
+    .rooms-rail__item small {
+      display: block;
+      font-size: 0.58rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .rooms-rail__item strong {
+      margin-top: 0.8rem;
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .rooms-rail__item small {
+      margin-top: 0.8rem;
+      text-transform: none;
+    }
+
+    .rooms-rail__item.is-active {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .rooms-rail__item.is-active span,
+    .rooms-rail__item.is-active small {
+      color: rgba(255, 250, 242, 0.55);
+    }
+
+    .rooms-archive {
+      display: grid;
+      grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.9fr);
+      gap: clamp(2rem, 6vw, 6rem);
+      align-items: start;
+    }
+
+    .rooms-archive__list {
+      display: grid;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+    }
+
+    .rooms-archive__row {
+      display: grid;
+      grid-template-columns: 4rem minmax(0, 1fr) minmax(14rem, 0.48fr) auto;
+      gap: 1rem;
+      align-items: center;
+      border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+      padding: 1.2rem 0;
+      color: #15120f;
+      text-decoration: none;
+    }
+
+    .rooms-archive__index,
+    .rooms-archive__meta,
+    .rooms-archive__open {
+      font-size: 0.72rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.44);
+    }
+
+    .rooms-archive__row h3 {
+      font-size: 2.4rem;
+      line-height: 0.98;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .rooms-archive__row p {
+      margin-top: 0.5rem;
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .rooms-archive__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      justify-content: flex-end;
+    }
+
+    .rooms-archive__open {
+      text-align: right;
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
+    }
+
+    .rooms-direct {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.56fr);
+      gap: clamp(2rem, 6vw, 6rem);
+      align-items: end;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: clamp(2rem, 4vw, 3rem);
+      padding-bottom: clamp(5rem, 8vw, 7rem);
+    }
+
+    .rooms-empty {
+      min-height: 80svh;
+      display: grid;
+      place-content: center;
+    }
+
+    @keyframes roomsImageIn {
+      from {
+        opacity: 0.32;
+        transform: translate3d(28px, 0, 0) scale(1.04);
+        filter: blur(12px) brightness(1.06) contrast(1.04);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1.015);
+        filter: blur(0) brightness(1.08) contrast(1.05) saturate(1.02);
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .rooms-hero h1 {
+        font-size: 6.8rem;
+      }
+
+      .rooms-field__intro h2,
+      .rooms-archive__intro h2,
+      .rooms-direct h2,
+      .rooms-empty h1 {
+        font-size: 5.2rem;
+      }
+
+      .rooms-explorer__readout strong {
+        font-size: 4.8rem;
+      }
+
+      .rooms-explorer__panel h3 {
+        font-size: 3.8rem;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .rooms-hero__content,
+      .rooms-browser__head,
+      .rooms-field__intro,
+      .rooms-explorer,
+      .rooms-archive,
+      .rooms-direct {
+        grid-template-columns: 1fr;
+      }
+
+      .rooms-hero__rail {
+        display: grid;
+      }
+
+      .rooms-archive__row {
+        grid-template-columns: 3rem minmax(0, 1fr);
+      }
+
+      .rooms-archive__meta,
+      .rooms-archive__open {
+        grid-column: 2;
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .rooms-browser__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .rooms-hero__inner,
+      .rooms-browser,
+      .rooms-field,
+      .rooms-archive,
+      .rooms-direct,
+      .rooms-empty {
+        width: min(100% - 1rem, 1480px);
+      }
+
+      .rooms-hero h1,
+      .rooms-field__intro h2,
+      .rooms-archive__intro h2,
+      .rooms-direct h2,
+      .rooms-empty h1 {
+        font-size: 3.7rem;
+        line-height: 0.94;
+      }
+
+      .rooms-explorer__visual {
+        min-height: 34rem;
+      }
+
+      .rooms-explorer__readout strong,
+      .rooms-explorer__panel h3 {
+        font-size: 3rem;
+      }
+
+      .rooms-explorer__specs {
+        grid-template-columns: 1fr;
+      }
+
+      .rooms-rail {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 0.3rem;
+      }
+
+      .rooms-rail__item {
+        min-width: 15rem;
+      }
+
+      .rooms-browser__head h2 {
+        font-size: clamp(2.65rem, 12vw, 4.2rem);
+      }
+
+      .rooms-browser__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .rooms-card__media {
+        aspect-ratio: 16 / 11;
+      }
+    }
+
+    /* Stage 3A-R1 - Rooms Sales Explorer Refinement */
+
+    .rooms-hero__image {
+      object-position: center center;
+    }
+
+    .rooms-hero__veil {
+      background:
+        linear-gradient(90deg, rgba(5, 5, 4, 0.58), rgba(5, 5, 4, 0.12) 48%, rgba(5, 5, 4, 0.52)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.12), rgba(5, 5, 4, 0.1) 42%, rgba(5, 5, 4, 0.72));
+    }
+
+    .rooms-explorer__decision {
+      margin-top: 2rem;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .rooms-explorer__decision div {
+      display: grid;
+      grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+      gap: 1rem;
+      border-top: 1px solid rgba(21, 18, 15, 0.1);
+      padding-top: 0.72rem;
+    }
+
+    .rooms-explorer__decision dt {
+      font-size: 0.58rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .rooms-explorer__decision dd {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: rgba(21, 18, 15, 0.68);
+    }
+
+    .rooms-explorer__specs {
+      margin-top: 2.2rem;
+    }
+
+    .rooms-rail__item em {
+      margin-top: 0.7rem;
+      display: block;
+      font-style: normal;
+      font-size: 0.58rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.48);
+    }
+
+    .rooms-rail__item.is-active em {
+      color: rgba(255, 250, 242, 0.58);
+    }
+
+    .rooms-rail__item strong {
+      margin-top: 0.62rem;
+    }
+
+    .rooms-archive__meta span:first-child {
+      flex-basis: 100%;
+      max-width: 20rem;
+      text-align: right;
+      text-transform: none;
+      letter-spacing: 0;
+      line-height: 1.35;
+      color: rgba(21, 18, 15, 0.62);
+    }
+
+    .rooms-archive__row:hover h3,
+    .rooms-archive__row:hover .rooms-archive__open {
+      color: #000;
+    }
+
+    .rooms-direct {
+      margin-top: clamp(5rem, 9vw, 8rem);
+    }
+
+    @media (max-width: 980px) {
+      .rooms-explorer__decision div {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+      }
+
+      .rooms-archive__meta span:first-child {
+        text-align: left;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rooms-field.is-switching .rooms-explorer__visual img {
+        animation: none !important;
+      }
+    }
+
+    .rooms-field,
+    .rooms-archive {
+      display: none !important;
+    }
+
+    .rooms-hero {
+      min-height: clamp(40rem, 78svh, 58rem);
+    }
+
+    .rooms-hero__inner {
+      min-height: clamp(40rem, 78svh, 58rem);
+      padding-top: clamp(7rem, 11vh, 9rem);
+    }
+
+    .rooms-hero h1 {
+      max-width: 13ch;
+      font-size: clamp(4rem, 7.6vw, 8rem);
+    }
+
+    .rooms-direct {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-top: clamp(3.5rem, 6vw, 5.5rem);
+    }
+
+    .rooms-direct h2 {
+      max-width: 13ch;
+      font-size: clamp(2.8rem, 5.4vw, 5.8rem);
+    }
+  </style>
 </BaseLayout>

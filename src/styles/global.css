@@ -5,6 +5,171 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-white text-neutral-950 antialiased;
+    @apply text-neutral-950 antialiased;
+  }
+}
+
+/* HOTEL CORE - Global Premium Rhythm Pass */
+
+:root {
+  --hc-bg: #f4eee5;
+  --hc-bg-soft: #fbf7f0;
+  --hc-ink: #171410;
+  --hc-muted: rgba(23, 20, 16, 0.62);
+  --hc-line: rgba(23, 20, 16, 0.1);
+  --hc-ivory: #f6f1ea;
+  --hc-deep: #171410;
+  --hc-warm-shadow: rgba(64, 42, 24, 0.12);
+  --hc-panel-shadow: 0 28px 90px rgba(64, 42, 24, 0.08);
+}
+
+html {
+  background: var(--hc-bg);
+  color: var(--hc-ink);
+  max-width: 100%;
+  overflow-x: clip;
+  scroll-behavior: smooth;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  max-width: 100%;
+  overflow-x: clip;
+  isolation: isolate;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0) 36%),
+    linear-gradient(240deg, rgba(226, 197, 158, 0.2) 0%, rgba(226, 197, 158, 0) 42%),
+    linear-gradient(180deg, #fbf7f0 0%, #f4eee5 46%, #eee4d6 100%);
+  color: var(--hc-ink);
+}
+
+::selection {
+  background: rgba(23, 20, 16, 0.88);
+  color: #fffaf2;
+}
+
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.24em;
+}
+
+button,
+a {
+  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+img {
+  max-width: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(23, 20, 16, 0.72);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+.hc-atmosphere {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.hc-atmosphere::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.48) 0%, rgba(255, 255, 255, 0) 36%),
+    linear-gradient(24deg, rgba(23, 20, 16, 0.04) 0%, rgba(23, 20, 16, 0) 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(64, 42, 24, 0.05));
+}
+
+.hc-page-shell {
+  position: relative;
+  width: min(100% - 2rem, 1180px);
+  margin-inline: auto;
+  padding-block: clamp(2rem, 4vw, 3.75rem);
+  overflow-x: clip;
+}
+
+.hc-page-shell * {
+  min-width: 0;
+}
+
+.hc-page-shell :where(h1, h2, h3, p, a, span) {
+  overflow-wrap: break-word;
+}
+
+.hc-page-shell :where([class*="tracking-"]) {
+  overflow-wrap: anywhere;
+}
+
+.hc-soft-panel {
+  box-shadow: var(--hc-panel-shadow);
+}
+
+@media (max-width: 640px) {
+  .hc-page-shell {
+    width: min(100% - 1rem, 1180px);
+    padding-block: 1.5rem 2.5rem;
+  }
+
+  body {
+    background:
+      linear-gradient(130deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0) 44%),
+      linear-gradient(180deg, #fbf7f0 0%, #f4eee5 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 80ms !important;
+    animation-duration: 80ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* HOTEL CORE — Full-bleed page shell for cinematic routes */
+
+.hc-page-shell--full {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-block: 0;
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
   }
 }

@@ -1,152 +1,1402 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { LANGS, type Lang, isLang } from "../../../content/languages";
-import { getOffers, getOfferBySlug, getSettings } from "../../../cms/sheets";
+import { LANGS, type Lang, isLang, t } from "../../../content/languages";
+import { getOffers, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
-import { getHotelLabels } from "../../../vertical/content/labels";
+import {
+  HOTEL_DEMO_ASSETS,
+  OFFER_COVER_BY_SLUG,
+} from "../../../hotel/data/demoAssets";
+import CinematicInspectGallery from "../../../hotel/ui/CinematicInspectGallery.astro";
 
 export async function getStaticPaths() {
   const offers = await getOffers();
+
   return LANGS.flatMap((lang) =>
-    offers.map((o) => ({ params: { lang, slug: o.slug } }))
+    offers.map((offer) => ({
+      params: {
+        lang,
+        slug: offer.slug,
+      },
+      props: {
+        offer,
+      },
+    }))
   );
 }
-
-export const prerender = true;
 
 const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
-const L = getHotelLabels(lang);
-
-const slug = Astro.params.slug!;
-const offer = await getOfferBySlug(slug);
-if (!offer) throw new Error(`Offer not found: ${slug}`);
-
+const { offer } = Astro.props as any;
 const s = await getSettings();
 
-const title = pickLang(lang, offer, "title");
-const period = pickLang(lang, offer, "period");
-const included = splitPipe(pickLang(lang, offer, "included"));
-const terms = pickLang(lang, offer, "terms");
+const hotelName = t(
+  lang,
+  String((s as any).hotel_name_en || "Hotel Core"),
+  String((s as any).hotel_name_es || (s as any).hotel_name_en || "Hotel Core")
+);
 
-const cover = (offer.cover_image ?? "").trim();
-const gallery = splitPipe(offer.gallery_images);
+const bookingUrl = String((s as any).booking_url || "").trim();
 
-const images = [
-  ...(cover ? [cover] : []),
-  ...gallery.filter((x) => x && x !== cover),
-].filter(Boolean);
+const offerTitle = pickLang(lang, offer, "title");
+const offerPeriod = pickLang(lang, offer, "period");
+const offerIncluded = pickLang(lang, offer, "included");
+const offerTerms = pickLang(lang, offer, "terms");
 
-const isContact = String((offer as any).cta_type ?? "").toLowerCase() === "contact";
-const ctaLabel = isContact ? L.contactUs : L.bookThisOffer;
+const offerCover = OFFER_COVER_BY_SLUG[offer.slug] ?? String((offer as any).cover_image || "").trim();
 
-const ctaHref = isContact
-  ? `/${lang}/contact/`
-  : ((offer as any).cta_url && String((offer as any).cta_url).trim())
-    ? String((offer as any).cta_url).trim()
-    : s.booking_url;
+const splitList = (value: string) =>
+  String(value || "")
+    .split(/[,|\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const includedItems = Array.from(
+  new Set([...splitPipe(offerIncluded), ...splitList(offerIncluded)].filter(Boolean))
+).slice(0, 8);
+
+const termsItems = Array.from(
+  new Set([...splitPipe(offerTerms), ...splitList(offerTerms)].filter(Boolean))
+).slice(0, 8);
+
+const offerHighlights = splitPipe(pickLang(lang, offer, "highlights")).slice(0, 5);
+
+const offerGalleryBySlug: Record<string, string[]> = {
+  "stay-3-pay-2": [
+    HOTEL_DEMO_ASSETS.offerStay3Pay2,
+    HOTEL_DEMO_ASSETS.galleryCourtyardArrival,
+    HOTEL_DEMO_ASSETS.detailDeskMorning,
+    HOTEL_DEMO_ASSETS.galleryDiningEvening,
+  ],
+  "romance-weekend": [
+    HOTEL_DEMO_ASSETS.offerRomanceWeekend,
+    HOTEL_DEMO_ASSETS.galleryDiningEvening,
+    HOTEL_DEMO_ASSETS.detailLinenSleepingArea,
+    HOTEL_DEMO_ASSETS.galleryCourtyardArrival,
+  ],
+  "culture-pass": [
+    HOTEL_DEMO_ASSETS.offerCulturePass,
+    HOTEL_DEMO_ASSETS.galleryArchitectureStaircase,
+    HOTEL_DEMO_ASSETS.experienceGaudiMorning,
+    HOTEL_DEMO_ASSETS.detailDeskMorning,
+  ],
+};
+
+const galleryImages = Array.from(
+  new Set(
+    [
+      offerCover,
+      ...(offerGalleryBySlug[offer.slug] ?? []),
+    ].filter(Boolean)
+  )
+);
+
+const optionalOfferField = (key: string) =>
+  t(
+    lang,
+    String((offer as any)?.[`${key}_en`] || ""),
+    String((offer as any)?.[`${key}_es`] || "")
+  ).trim();
+
+const resolveOfferSales = () => {
+  const slug = String((offer as any)?.slug || "").toLowerCase();
+
+  const explicitMood = optionalOfferField("mood");
+  const explicitBestFor = optionalOfferField("best_for");
+  const explicitBookingLogic = optionalOfferField("booking_logic");
+  const explicitWhy = optionalOfferField("why_choose");
+
+  const profile = (() => {
+    if (slug.includes("stay") || slug.includes("pay")) {
+      return {
+        mood: t(lang, "Longer weekend rhythm", "Ritmo de fin de semana largo"),
+        bestFor: t(
+          lang,
+          "Guests who want one more quiet night in the city",
+          "Huéspedes que quieren una noche tranquila más en la ciudad"
+        ),
+        bookingLogic: t(
+          lang,
+          "Extend the stay without making the trip feel heavier.",
+          "Alargar la estancia sin que el viaje se sienta más pesado."
+        ),
+        whyChoose: t(
+          lang,
+          "Choose this offer when the best part of Barcelona is having enough time to slow down.",
+          "Elija esta oferta cuando lo mejor de Barcelona es tener tiempo suficiente para bajar el ritmo."
+        ),
+      };
+    }
+
+    if (slug.includes("romance")) {
+      return {
+        mood: t(lang, "Private evening stay", "Estancia privada de noche"),
+        bestFor: t(
+          lang,
+          "Couples, slower arrivals and quiet celebrations",
+          "Parejas, llegadas pausadas y celebraciones tranquilas"
+        ),
+        bookingLogic: t(
+          lang,
+          "A softer package around arrival, breakfast and privacy.",
+          "Un paquete más suave alrededor de llegada, desayuno y privacidad."
+        ),
+        whyChoose: t(
+          lang,
+          "Choose this offer when the room, table and timing should feel prepared before arrival.",
+          "Elija esta oferta cuando la habitación, la mesa y el ritmo deben sentirse preparados antes de llegar."
+        ),
+      };
+    }
+
+    if (slug.includes("culture")) {
+      return {
+        mood: t(lang, "Curated city days", "Días urbanos curados"),
+        bestFor: t(
+          lang,
+          "Guests who want culture without planning every step",
+          "Huéspedes que quieren cultura sin planificar cada paso"
+        ),
+        bookingLogic: t(
+          lang,
+          "Pair the room with a quieter cultural route.",
+          "Combinar la habitación con una ruta cultural más tranquila."
+        ),
+        whyChoose: t(
+          lang,
+          "Choose this offer when Barcelona should feel guided, close and less crowded.",
+          "Elija esta oferta cuando Barcelona debe sentirse guiada, cercana y menos concurrida."
+        ),
+      };
+    }
+
+    return {
+      mood: t(lang, "Direct booking value", "Valor de reserva directa"),
+      bestFor: t(
+        lang,
+        "Guests who want clarity before booking",
+        "Huéspedes que quieren claridad antes de reservar"
+      ),
+      bookingLogic: t(
+        lang,
+        "A package built around a specific reason to stay.",
+        "Un paquete construido alrededor de una razón específica para alojarse."
+      ),
+      whyChoose: t(
+        lang,
+        "Choose this offer when the hotel should shape more of the stay before you arrive.",
+        "Elija esta oferta cuando el hotel debe dar más forma a la estancia antes de su llegada."
+      ),
+    };
+  })();
+
+  return {
+    mood: explicitMood || profile.mood,
+    bestFor: explicitBestFor || profile.bestFor,
+    bookingLogic: explicitBookingLogic || profile.bookingLogic,
+    whyChoose: explicitWhy || profile.whyChoose,
+  };
+};
+
+const sales = resolveOfferSales();
+
+const pageTitle = `${hotelName} — ${offerTitle}`;
+
+const backLabel = t(lang, "Back to offers", "Volver a ofertas");
+const bookDirectLabel = t(lang, "Book direct", "Reservar directo");
+const contactHotelLabel = t(lang, "Contact hotel", "Contactar hotel");
+const openGalleryLabel = t(lang, "Inspect offer images", "Inspeccionar imágenes de oferta");
+
+const offerEyebrow = t(lang, "Offer / Package theatre", "Oferta / Teatro de paquete");
+const packageSummaryLabel = t(lang, "Package summary", "Resumen del paquete");
+const moodLabel = t(lang, "Mood", "Atmósfera");
+const bestForLabel = t(lang, "Best for", "Ideal para");
+const bookingLogicLabel = t(lang, "Booking logic", "Lógica de reserva");
+const whyChooseLabel = t(lang, "Why choose it", "Por qué elegirla");
+const includedLabel = t(lang, "Included", "Incluido");
+const termsLabel = t(lang, "Terms", "Condiciones");
+const highlightsLabel = t(lang, "Package signals", "Señales del paquete");
+const galleryLabel = t(lang, "Offer inspection", "Inspección de oferta");
+const directLabel = t(lang, "Direct package request", "Solicitud directa de paquete");
+const periodLabel = t(lang, "Period", "Periodo");
+
+const resolveOfferInspectTitle = (src: string, index: number) => {
+  if (index === 0) return offerTitle;
+
+  const value = src.toLowerCase();
+
+  if (value.includes("restaurant") || value.includes("dining")) {
+    return t(lang, "Dining setting", "Escena de mesa");
+  }
+
+  if (value.includes("courtyard") || value.includes("pool")) {
+    return t(lang, "Courtyard pause", "Pausa de patio");
+  }
+
+  if (value.includes("room") || value.includes("bed")) {
+    return t(lang, "Room pairing", "Habitación asociada");
+  }
+
+  if (value.includes("terrace") || value.includes("sunset")) {
+    return t(lang, "Stay extension", "Extensión de estancia");
+  }
+
+  if (value.includes("coffee") || value.includes("desk") || value.includes("breakfast")) {
+    return t(lang, "Included detail", "Detalle incluido");
+  }
+
+  return t(lang, "Package preview", "Vista del paquete");
+};
+
+const resolveOfferInspectSection = (src: string, index: number) => {
+  if (index === 0) return t(lang, "Offer", "Oferta");
+
+  const value = src.toLowerCase();
+
+  if (value.includes("restaurant") || value.includes("dining")) {
+    return t(lang, "Dining", "Gastronomía");
+  }
+
+  if (value.includes("courtyard") || value.includes("pool")) {
+    return t(lang, "Hotel space", "Espacio del hotel");
+  }
+
+  if (value.includes("room") || value.includes("bed")) {
+    return t(lang, "Room", "Habitación");
+  }
+
+  if (value.includes("terrace") || value.includes("sunset")) {
+    return t(lang, "Stay rhythm", "Ritmo de estancia");
+  }
+
+  return galleryLabel;
+};
+
+const resolveOfferInspectSignal = (src: string, index: number) => {
+  if (index === 0) return offerPeriod || sales.bookingLogic;
+
+  const value = src.toLowerCase();
+
+  if (value.includes("restaurant") || value.includes("dining")) {
+    return t(lang, "Table, timing and direct booking value.", "Mesa, momento y valor de reserva directa.");
+  }
+
+  if (value.includes("courtyard") || value.includes("pool")) {
+    return t(lang, "Hotel atmosphere supporting the package.", "Atmósfera del hotel que acompaña el paquete.");
+  }
+
+  if (value.includes("room") || value.includes("bed")) {
+    return t(lang, "Room context for the package rhythm.", "Contexto de habitación para el ritmo del paquete.");
+  }
+
+  if (value.includes("terrace") || value.includes("sunset")) {
+    return t(lang, "Extra time, softer arrival and slower return.", "Más tiempo, llegada suave y regreso pausado.");
+  }
+
+  return t(lang, "Package, stay rhythm and direct booking detail.", "Paquete, ritmo de estancia y detalle de reserva directa.");
+};
+
+const offerInspectItems = galleryImages.map((src, index) => ({
+  id: `${offer.slug}-${index + 1}`,
+  title: resolveOfferInspectTitle(src, index),
+  src,
+  section: resolveOfferInspectSection(src, index),
+  mood: sales.mood,
+  signal: resolveOfferInspectSignal(src, index),
+  alt: `${offerTitle} — ${index + 1}`,
+}));
+
+const offerGuideLabel = t(lang, "Package guide", "Guia del paquete");
+const offerGuideTitle = t(
+  lang,
+  "See the value, timing and details before booking.",
+  "Vea el valor, el momento y los detalles antes de reservar."
+);
+const offerGuideIntro = t(
+  lang,
+  "Compare the package reason, inclusions, conditions and atmosphere in one compact layer before opening the booking flow.",
+  "Compare la razon del paquete, inclusiones, condiciones y atmosfera en una capa compacta antes de abrir la reserva."
+);
+const usefulDetailsLabel = t(lang, "Useful details", "Detalles utiles");
+const directValueLabel = t(lang, "Direct value", "Valor directo");
+const offerPhotoLabel = t(lang, "Package photos", "Fotos del paquete");
+const galleryThumbnailsLabel = t(lang, "Choose package photo", "Elegir foto del paquete");
+const previousImageLabel = t(lang, "Previous image", "Imagen anterior");
+const nextImageLabel = t(lang, "Next image", "Siguiente imagen");
+const offerGuideSignals = (offerHighlights.length ? offerHighlights : [
+  sales.mood,
+  sales.bestFor,
+  sales.bookingLogic,
+]).slice(0, 4);
 ---
 
-<BaseLayout lang={lang} title={title}>
-  <div class="flex items-center justify-between gap-4">
-    <a class="text-sm opacity-70 hover:opacity-100 underline" href={`/${lang}/offers/`}>
-      {L.backToOffers}
-    </a>
+<BaseLayout lang={lang} title={pageTitle} fullBleed>
+  <section class="offer-detail-hero" data-dock-section>
+    <img src={offerCover} alt="" class="offer-detail-hero__image" loading="eager" decoding="async" />
+    <div class="offer-detail-hero__veil" aria-hidden="true"></div>
 
-    <a
-      class="hidden sm:inline-flex rounded-full px-4 py-2 bg-black text-white active:scale-[0.98] transition"
-      href={ctaHref}
-      target={!isContact ? "_blank" : undefined}
-      rel="noreferrer"
-    >
-      {ctaLabel}
-    </a>
-  </div>
-
-  {cover ? (
-    <section class="mt-6 overflow-hidden rounded-3xl border border-black/10">
-      <div class="aspect-[16/9] bg-black/5">
-        <img src={cover} alt="" class="h-full w-full object-cover" loading="eager" decoding="async" />
+    <div class="offer-detail-hero__inner">
+      <div class="offer-detail-hero__top">
+        <a href={`/${lang}/offers/`}>← {backLabel}</a>
+        <span>{offerEyebrow}</span>
       </div>
-    </section>
-  ) : null}
 
-  <section class="mt-8">
-    <div class="flex flex-wrap items-end justify-between gap-6">
+      <div class="offer-detail-hero__content">
+        <div>
+          <div class="offer-detail-kicker">{sales.mood}</div>
+          <h1>{offerTitle}</h1>
+          {offerPeriod ? <p>{offerPeriod}</p> : null}
+        </div>
+
+        <aside class="offer-detail-hero__panel">
+          <div class="offer-detail-kicker">{packageSummaryLabel}</div>
+
+          <h2>{sales.bookingLogic}</h2>
+          <p>{sales.whyChoose}</p>
+
+          <div class="offer-detail-hero__actions">
+            {bookingUrl ? (
+              <a href={bookingUrl} target="_blank" rel="noreferrer">
+                {bookDirectLabel}
+              </a>
+            ) : null}
+
+            <a href={`/${lang}/contact/`}>
+              {contactHotelLabel}
+            </a>
+          </div>
+        </aside>
+      </div>
+
+      <div class="offer-detail-hero__rail" aria-hidden="true">
+        <span>{sales.bestFor}</span>
+        {offerPeriod ? <span>{periodLabel}: {offerPeriod}</span> : null}
+        {includedItems[0] ? <span>{includedLabel}: {includedItems[0]}</span> : null}
+      </div>
+    </div>
+  </section>
+
+  <section class="offer-guide" id="offer-guide" data-offer-gallery data-dock-section>
+    <div class="offer-guide__copy">
       <div>
-        <h1 class="text-3xl sm:text-4xl tracking-tight">{title}</h1>
-        {period ? <p class="mt-3 text-sm sm:text-base opacity-80">{period}</p> : null}
+        <div class="offer-detail-kicker">{offerGuideLabel}</div>
+        <h2>{offerGuideTitle}</h2>
+        <p>{offerGuideIntro}</p>
       </div>
 
-      <a
-        class="sm:hidden inline-flex rounded-full px-5 py-2 bg-black text-white active:scale-[0.98] transition"
-        href={ctaHref}
-        target={!isContact ? "_blank" : undefined}
-        rel="noreferrer"
-      >
-        {ctaLabel}
-      </a>
+      <div class="offer-guide__facts" aria-label={usefulDetailsLabel}>
+        <article>
+          <span>{periodLabel}</span>
+          <strong>{offerPeriod || t(lang, "By selected dates", "Segun fechas seleccionadas")}</strong>
+        </article>
+        <article>
+          <span>{bestForLabel}</span>
+          <strong>{sales.bestFor}</strong>
+        </article>
+        <article>
+          <span>{moodLabel}</span>
+          <strong>{sales.mood}</strong>
+        </article>
+        <article>
+          <span>{directValueLabel}</span>
+          <strong>{sales.bookingLogic}</strong>
+        </article>
+      </div>
+
+      <div class="offer-guide__details">
+        <div>
+          <div class="offer-detail-kicker">{includedLabel}</div>
+          {includedItems.length ? (
+            <div class="offer-guide__chips">
+              {includedItems.slice(0, 6).map((item) => (
+                <span>{item}</span>
+              ))}
+            </div>
+          ) : (
+            <p>{t(lang, "The hotel confirms inclusions for your dates.", "El hotel confirma las inclusiones para sus fechas.")}</p>
+          )}
+        </div>
+
+        <div>
+          <div class="offer-detail-kicker">{termsLabel}</div>
+          {termsItems.length ? (
+            <div class="offer-guide__chips offer-guide__chips--quiet">
+              {termsItems.slice(0, 4).map((item) => (
+                <span>{item}</span>
+              ))}
+            </div>
+          ) : (
+            <p>{t(lang, "Terms are confirmed during direct booking.", "Las condiciones se confirman durante la reserva directa.")}</p>
+          )}
+        </div>
+      </div>
+
+      <div class="offer-guide__signals" aria-label={highlightsLabel}>
+        {offerGuideSignals.map((item, index) => (
+          <span>{String(index + 1).padStart(2, "0")} / {item}</span>
+        ))}
+      </div>
+
+      <div class="offer-guide__actions">
+        {bookingUrl ? (
+          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+        ) : null}
+        <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
+      </div>
     </div>
 
-    {included.length ? (
-      <div class="mt-8">
-        <h2 class="text-lg tracking-tight">{L.included}</h2>
-        <ul class="mt-4 space-y-2">
-          {included.map((x) => (
-            <li class="text-sm opacity-85">• {x}</li>
+    {offerInspectItems.length ? (
+      <div class="offer-guide__gallery" aria-label={openGalleryLabel}>
+        <div class="offer-detail-kicker">{offerPhotoLabel}</div>
+        <div class="offer-guide__media">
+          {offerInspectItems.map((item, index) => (
+            <figure
+              class:list={["offer-guide__slide", index === 0 && "is-active"]}
+              data-offer-slide
+              data-title={item.title}
+            >
+              <img src={item.src} alt={item.alt} loading={index === 0 ? "eager" : "lazy"} decoding="async" />
+              <figcaption>
+                <span>{String(index + 1).padStart(2, "0")} / {item.section}</span>
+                <strong>{item.title}</strong>
+                <p>{item.signal}</p>
+              </figcaption>
+            </figure>
           ))}
-        </ul>
-      </div>
-    ) : null}
+        </div>
 
-    {terms ? (
-      <div class="mt-8">
-        <h2 class="text-lg tracking-tight">{L.terms}</h2>
-        <p class="mt-3 text-sm opacity-80 whitespace-pre-line">{terms}</p>
+        <div class="offer-guide__gallery-bar">
+          <div>
+            <span data-offer-count>01 / {String(offerInspectItems.length).padStart(2, "0")}</span>
+            <strong data-offer-title>{offerInspectItems[0]?.title}</strong>
+          </div>
+
+          <div class="offer-guide__controls">
+            <button type="button" data-offer-prev aria-label={previousImageLabel}>←</button>
+            <button type="button" data-offer-next aria-label={nextImageLabel}>→</button>
+          </div>
+        </div>
+
+        <div class="offer-guide__thumbs" aria-label={galleryThumbnailsLabel}>
+          {offerInspectItems.map((item, index) => (
+            <button
+              type="button"
+              class:list={["offer-guide__thumb", index === 0 && "is-active"]}
+              data-offer-thumb
+              aria-label={`${item.title} ${String(index + 1).padStart(2, "0")}`}
+            >
+              <img src={item.src} alt="" loading="lazy" decoding="async" />
+            </button>
+          ))}
+        </div>
       </div>
     ) : null}
   </section>
 
-  {images.length > 1 ? (
-    <section class="mt-10 mb-16">
-      <div class="flex items-end justify-between">
-        <h2 class="text-lg tracking-tight">{L.gallery}</h2>
-        <div class="text-xs opacity-60">{L.tapFull}</div>
+  <section class="offer-decision" data-dock-section>
+    <div class="offer-decision__intro">
+      <div>
+        <div class="offer-detail-kicker">{t(lang, "Decision layer", "Capa de decisión")}</div>
+        <h2>
+          {t(
+            lang,
+            "Choose this package by intention, rhythm and timing.",
+            "Elija este paquete por intención, ritmo y momento."
+          )}
+        </h2>
       </div>
 
-      <div class="mt-5 grid gap-4 sm:grid-cols-2">
-        {images.map((src) => (
-          <a
-            href={src}
-            target="_blank"
-            rel="noreferrer"
-            class="block rounded-2xl overflow-hidden bg-black/5 active:scale-[0.995] transition"
-          >
-            <img src={src} alt="" class="h-full w-full object-cover" loading="lazy" decoding="async" />
-          </a>
+      <p>
+        {t(
+          lang,
+          "This offer is framed as a stay scenario: a reason to arrive, stay longer, move slower or let the hotel prepare more of the experience before you arrive.",
+          "Esta oferta se presenta como un escenario de estancia: una razón para llegar, quedarse más tiempo, moverse más despacio o dejar que el hotel prepare más de la experiencia antes de llegar."
+        )}
+      </p>
+    </div>
+
+    <div class="offer-decision__grid">
+      <article class="offer-decision__card offer-decision__card--dark">
+        <span>{moodLabel}</span>
+        <h3>{sales.mood}</h3>
+        <p>{sales.bestFor}</p>
+      </article>
+
+      <article class="offer-decision__card">
+        <span>{bookingLogicLabel}</span>
+        <h3>{t(lang, "A package with a reason.", "Un paquete con una razón.")}</h3>
+        <p>{sales.bookingLogic}</p>
+      </article>
+
+      <article class="offer-decision__card">
+        <span>{whyChooseLabel}</span>
+        <h3>{t(lang, "Direct value, not discount noise.", "Valor directo, no ruido de descuento.")}</h3>
+        <p>{sales.whyChoose}</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="offer-package-band" data-dock-section>
+    <div class="offer-package-band__block">
+      <div class="offer-detail-kicker">{includedLabel}</div>
+
+      {includedItems.length ? (
+        <div class="offer-package-band__chips">
+          {includedItems.map((item) => (
+            <span>{item}</span>
+          ))}
+        </div>
+      ) : (
+        <p>{t(lang, "Package inclusions are available on request.", "Las inclusiones del paquete están disponibles bajo petición.")}</p>
+      )}
+    </div>
+
+    <div class="offer-package-band__block">
+      <div class="offer-detail-kicker">{termsLabel}</div>
+
+      {termsItems.length ? (
+        <div class="offer-package-band__terms">
+          {termsItems.map((item, index) => (
+            <span>{String(index + 1).padStart(2, "0")} / {item}</span>
+          ))}
+        </div>
+      ) : (
+        <p>{t(lang, "Terms are confirmed during booking.", "Las condiciones se confirman durante la reserva.")}</p>
+      )}
+    </div>
+  </section>
+
+  {offerHighlights.length ? (
+    <section class="offer-signals" data-dock-section>
+      <div>
+        <div class="offer-detail-kicker">{highlightsLabel}</div>
+        <h2>
+          {t(
+            lang,
+            "What this package changes in the stay.",
+            "Lo que este paquete cambia en la estancia."
+          )}
+        </h2>
+      </div>
+
+      <div class="offer-signals__list">
+        {offerHighlights.map((item, index) => (
+          <article>
+            <small>{String(index + 1).padStart(2, "0")}</small>
+            <p>{item}</p>
+          </article>
         ))}
       </div>
     </section>
   ) : null}
 
-  <div class="fixed inset-x-0 bottom-0 z-50 sm:hidden">
-    <div class="mx-auto max-w-6xl px-4 pb-4">
-      <div class="rounded-2xl border border-black/10 bg-white/80 backdrop-blur p-3 flex items-center justify-between gap-3">
-        <div class="min-w-0">
-          <div class="text-xs opacity-60">{L.directBooking}</div>
-          <div class="text-sm truncate">{title}</div>
+  {offerInspectItems.length ? (
+    <section class="offer-inspection" data-dock-section>
+      <div class="offer-inspection__intro">
+        <div>
+          <div class="offer-detail-kicker">{galleryLabel}</div>
+          <h2>
+            {t(
+              lang,
+              "Inspect the visual rhythm of the package.",
+              "Inspeccione el ritmo visual del paquete."
+            )}
+          </h2>
         </div>
-        <a
-          class="shrink-0 rounded-full px-4 py-2 bg-black text-white active:scale-[0.98] transition"
-          href={ctaHref}
-          target={!isContact ? "_blank" : undefined}
-          rel="noreferrer"
-        >
-          {L.book}
-        </a>
+
+        <p>
+          {t(
+            lang,
+            "Open the offer images as an inspect layer instead of a standard lightbox.",
+            "Abra las imágenes de la oferta como una capa de inspección, no como un lightbox estándar."
+          )}
+        </p>
+      </div>
+
+      <CinematicInspectGallery
+        id={`offer-${offer.slug}`}
+        items={offerInspectItems}
+        ariaLabel={openGalleryLabel}
+        returnLabel={t(lang, "Return", "Volver")}
+        previousLabel={t(lang, "Previous image", "Imagen anterior")}
+        nextLabel={t(lang, "Next image", "Siguiente imagen")}
+      />
+    </section>
+  ) : null}
+
+  <section class="offer-direct" data-dock-section>
+    <div>
+      <div class="offer-detail-kicker">{directLabel}</div>
+      <h2>
+        {t(
+          lang,
+          "Ask the hotel to prepare this offer for your dates.",
+          "Pida al hotel que prepare esta oferta para sus fechas."
+        )}
+      </h2>
+    </div>
+
+    <div>
+      <p>
+        {t(
+          lang,
+          "Package value depends on timing, room choice and availability. Contact the hotel if you want the offer prepared around your exact stay rhythm.",
+          "El valor del paquete depende del momento, la habitación y la disponibilidad. Contacte con el hotel si quiere que la oferta se prepare alrededor de su ritmo exacto de estancia."
+        )}
+      </p>
+
+      <div class="offer-direct__actions">
+        {bookingUrl ? (
+          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+        ) : null}
+        <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
       </div>
     </div>
-  </div>
+  </section>
+
+  <style>
+    .offer-detail-hero {
+      position: relative;
+      min-height: 100svh;
+      margin-top: -5.2rem;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offer-detail-hero__image {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.02);
+      transform: scale(1.015);
+    }
+
+    .offer-detail-hero__veil {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 72% 20%, rgba(255, 238, 208, 0.2), transparent 34rem),
+        linear-gradient(90deg, rgba(5, 5, 4, 0.64), rgba(5, 5, 4, 0.14) 48%, rgba(5, 5, 4, 0.58)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.14), rgba(5, 5, 4, 0.1) 42%, rgba(5, 5, 4, 0.78));
+    }
+
+    .offer-detail-hero__inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      min-height: 100svh;
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1680px);
+      margin-inline: auto;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(7.8rem, 13vh, 10.5rem) 0 clamp(1.4rem, 4vh, 2.8rem);
+    }
+
+    .offer-detail-hero__top,
+    .offer-detail-hero__rail {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .offer-detail-hero__top a,
+    .offer-detail-hero__top span,
+    .offer-detail-hero__rail span,
+    .offer-detail-kicker {
+      font-size: 0.64rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    .offer-detail-hero__top a,
+    .offer-detail-hero__top span {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.62rem 0.86rem;
+      border-radius: 999px;
+      backdrop-filter: blur(18px);
+      color: rgba(255, 255, 255, 0.72);
+      text-decoration: none;
+    }
+
+    .offer-detail-hero__content {
+      display: grid;
+      grid-template-columns: minmax(0, 0.98fr) minmax(20rem, 0.42fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: end;
+    }
+
+    .offer-detail-hero h1 {
+      max-width: 10ch;
+      font-size: clamp(5rem, 10vw, 11rem);
+      line-height: 0.84;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .offer-detail-hero__content > div > p {
+      margin-top: 1.2rem;
+      max-width: 36rem;
+      font-size: 1rem;
+      line-height: 1.78;
+      color: rgba(255, 250, 242, 0.72);
+    }
+
+    .offer-detail-hero__panel {
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      padding-top: 1.1rem;
+    }
+
+    .offer-detail-hero__panel h2 {
+      margin-top: 1rem;
+      max-width: 11ch;
+      font-size: clamp(2.5rem, 4.4vw, 4.8rem);
+      line-height: 0.9;
+      letter-spacing: -0.075em;
+      font-weight: 400;
+    }
+
+    .offer-detail-hero__panel p {
+      margin-top: 1.2rem;
+      max-width: 30rem;
+      color: rgba(255, 250, 242, 0.72);
+      line-height: 1.72;
+    }
+
+    .offer-detail-hero__actions,
+    .offer-direct__actions {
+      margin-top: 1.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .offer-detail-hero__actions a,
+    .offer-direct__actions a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.1rem;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+
+    .offer-detail-hero__actions a:first-child {
+      background: #fffaf2;
+      color: #15120f;
+    }
+
+    .offer-detail-hero__actions a:last-child {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fffaf2;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .offer-detail-hero__rail {
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 0.8rem;
+      color: rgba(255, 255, 255, 0.52);
+    }
+
+    .offer-guide {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1380px);
+      margin: clamp(3.5rem, 6vw, 6rem) auto 0;
+      scroll-margin-top: 6.5rem;
+      display: grid;
+      grid-template-columns: minmax(18rem, 0.82fr) minmax(0, 1.18fr);
+      gap: clamp(1.25rem, 4vw, 4rem);
+      align-items: start;
+    }
+
+    .offer-guide__copy {
+      position: sticky;
+      top: 6.8rem;
+      display: grid;
+      gap: clamp(1.1rem, 2vw, 1.6rem);
+    }
+
+    .offer-guide h2 {
+      margin-top: 0.85rem;
+      max-width: 12ch;
+      font-size: clamp(2.7rem, 5.4vw, 6.1rem);
+      line-height: 0.92;
+      letter-spacing: 0;
+      font-weight: 400;
+      text-wrap: balance;
+    }
+
+    .offer-guide__copy > div:first-child p,
+    .offer-guide__details p {
+      margin-top: 0.95rem;
+      max-width: 34rem;
+      color: rgba(21, 18, 15, 0.64);
+      font-size: 0.98rem;
+      line-height: 1.72;
+    }
+
+    .offer-guide__facts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .offer-guide__facts article {
+      min-height: 7.2rem;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.5);
+      padding: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .offer-guide__facts span,
+    .offer-guide__slide figcaption span,
+    .offer-guide__gallery-bar span {
+      display: block;
+      color: rgba(21, 18, 15, 0.46);
+      font-size: 0.62rem;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+    }
+
+    .offer-guide__facts strong {
+      margin-top: 1rem;
+      color: rgba(21, 18, 15, 0.82);
+      font-size: clamp(1rem, 1.2vw, 1.18rem);
+      line-height: 1.28;
+      font-weight: 400;
+    }
+
+    .offer-guide__details {
+      display: grid;
+      gap: 1rem;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1rem;
+    }
+
+    .offer-guide__chips,
+    .offer-guide__signals {
+      margin-top: 0.8rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .offer-guide__chips span,
+    .offer-guide__signals span {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.56);
+      padding: 0.68rem 0.78rem;
+      color: rgba(21, 18, 15, 0.66);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .offer-guide__chips--quiet span {
+      background: rgba(21, 18, 15, 0.035);
+    }
+
+    .offer-guide__signals {
+      margin-top: 0;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1rem;
+    }
+
+    .offer-guide__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .offer-guide__actions a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.12rem;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+
+    .offer-guide__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offer-guide__actions a:last-child {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .offer-guide__gallery {
+      min-width: 0;
+    }
+
+    .offer-guide__media {
+      position: relative;
+      margin-top: 0.9rem;
+      min-height: clamp(31rem, 52vw, 46rem);
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      border: 1px solid rgba(21, 18, 15, 0.12);
+      background: #15120f;
+    }
+
+    .offer-guide__slide {
+      position: absolute;
+      inset: 0;
+      margin: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 360ms ease;
+    }
+
+    .offer-guide__slide.is-active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .offer-guide__slide::after {
+      position: absolute;
+      inset: 44% 0 0;
+      content: "";
+      background: linear-gradient(180deg, transparent, rgba(18, 14, 11, 0.46));
+      pointer-events: none;
+    }
+
+    .offer-guide__slide img,
+    .offer-guide__thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(1.06) contrast(1.03) saturate(1.03);
+    }
+
+    .offer-guide__slide figcaption {
+      position: absolute;
+      z-index: 1;
+      left: clamp(1rem, 2vw, 1.5rem);
+      right: clamp(1rem, 2vw, 1.5rem);
+      bottom: clamp(1rem, 2vw, 1.5rem);
+      color: #fffaf2;
+    }
+
+    .offer-guide__slide figcaption span {
+      color: rgba(255, 250, 242, 0.58);
+    }
+
+    .offer-guide__slide figcaption strong {
+      display: block;
+      margin-top: 0.6rem;
+      max-width: 12ch;
+      font-size: clamp(2rem, 4vw, 4.2rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .offer-guide__slide figcaption p {
+      margin-top: 0.75rem;
+      max-width: 34rem;
+      color: rgba(255, 250, 242, 0.76);
+      line-height: 1.55;
+    }
+
+    .offer-guide__gallery-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      border-top: 0;
+      background: rgba(255, 250, 242, 0.54);
+      padding: 0.85rem;
+    }
+
+    .offer-guide__gallery-bar strong {
+      display: block;
+      margin-top: 0.3rem;
+      color: rgba(21, 18, 15, 0.82);
+      font-size: 1.05rem;
+      font-weight: 400;
+    }
+
+    .offer-guide__controls {
+      display: flex;
+      gap: 0.45rem;
+      flex: 0 0 auto;
+    }
+
+    .offer-guide__controls button {
+      width: 2.5rem;
+      height: 2.5rem;
+      border: 1px solid rgba(21, 18, 15, 0.12);
+      border-radius: 999px;
+      background: #fffaf2;
+      color: #15120f;
+      cursor: pointer;
+    }
+
+    .offer-guide__thumbs {
+      margin-top: 0.75rem;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    .offer-guide__thumb {
+      aspect-ratio: 4 / 3;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.44);
+      padding: 0;
+      overflow: hidden;
+      cursor: pointer;
+      opacity: 0.72;
+    }
+
+    .offer-guide__thumb.is-active {
+      border-color: rgba(21, 18, 15, 0.72);
+      opacity: 1;
+    }
+
+    .offer-decision,
+    .offer-package-band,
+    .offer-signals,
+    .offer-inspection,
+    .offer-direct {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-inline: auto;
+      margin-top: clamp(6rem, 11vw, 10rem);
+    }
+
+    .offer-detail-kicker {
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .offer-decision__intro,
+    .offer-inspection__intro,
+    .offer-direct,
+    .offer-signals {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 0.52fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      align-items: end;
+    }
+
+    .offer-decision__intro h2,
+    .offer-inspection__intro h2,
+    .offer-direct h2,
+    .offer-signals h2 {
+      margin-top: 1.1rem;
+      max-width: 11ch;
+      font-size: clamp(3.8rem, 8vw, 8.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .offer-decision__intro p,
+    .offer-inspection__intro p,
+    .offer-direct p {
+      max-width: 34rem;
+      font-size: 1rem;
+      line-height: 1.82;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .offer-decision__grid {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(0.9rem, 2vw, 1.4rem);
+    }
+
+    .offer-decision__card {
+      min-height: clamp(24rem, 32vw, 34rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.42);
+      padding: clamp(1.2rem, 3vw, 2.2rem);
+    }
+
+    .offer-decision__card--dark {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offer-decision__card span {
+      font-size: 0.62rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .offer-decision__card--dark span {
+      color: rgba(255, 250, 242, 0.48);
+    }
+
+    .offer-decision__card h3 {
+      margin-top: 0.9rem;
+      max-width: 10ch;
+      font-size: clamp(2.3rem, 4.2vw, 4.8rem);
+      line-height: 0.9;
+      letter-spacing: -0.075em;
+      font-weight: 400;
+    }
+
+    .offer-decision__card p {
+      margin-top: 1rem;
+      max-width: 27rem;
+      color: rgba(21, 18, 15, 0.64);
+      line-height: 1.65;
+    }
+
+    .offer-decision__card--dark p {
+      color: rgba(255, 250, 242, 0.68);
+    }
+
+    .offer-package-band {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+      gap: clamp(1rem, 3vw, 3rem);
+      align-items: start;
+    }
+
+    .offer-package-band__block {
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1rem;
+    }
+
+    .offer-package-band__chips,
+    .offer-package-band__terms {
+      margin-top: 1.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+
+    .offer-package-band__chips span,
+    .offer-package-band__terms span {
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.42);
+      padding: 0.75rem 0.9rem;
+      color: rgba(21, 18, 15, 0.68);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .offer-signals {
+      align-items: start;
+    }
+
+    .offer-signals__list {
+      display: grid;
+      gap: 1rem;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1rem;
+    }
+
+    .offer-signals__list article {
+      display: grid;
+      grid-template-columns: 3rem minmax(0, 1fr);
+      gap: 1rem;
+      border-bottom: 1px solid rgba(21, 18, 15, 0.1);
+      padding-bottom: 1rem;
+    }
+
+    .offer-signals__list small {
+      font-size: 0.64rem;
+      letter-spacing: 0.26em;
+      color: rgba(21, 18, 15, 0.4);
+    }
+
+    .offer-signals__list p {
+      color: rgba(21, 18, 15, 0.68);
+      line-height: 1.55;
+    }
+
+    .offer-inspection .hc-inspect-gallery {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+    }
+
+    .offer-direct {
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: clamp(2rem, 4vw, 3rem);
+      padding-bottom: clamp(5rem, 8vw, 7rem);
+    }
+
+    .offer-direct__actions a:first-child {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .offer-direct__actions a:last-child {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    @media (max-width: 980px) {
+      .offer-detail-hero__content,
+      .offer-guide,
+      .offer-decision__intro,
+      .offer-inspection__intro,
+      .offer-direct,
+      .offer-package-band,
+      .offer-signals {
+        grid-template-columns: 1fr;
+      }
+
+      .offer-guide__copy {
+        position: static;
+      }
+
+      .offer-guide__gallery {
+        order: -1;
+      }
+
+      .offer-decision__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .offer-detail-hero__rail {
+        display: grid;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .offer-detail-hero__inner,
+      .offer-guide,
+      .offer-decision,
+      .offer-package-band,
+      .offer-signals,
+      .offer-inspection,
+      .offer-direct {
+        width: min(100% - 1rem, 1480px);
+      }
+
+      .offer-detail-hero h1,
+      .offer-decision__intro h2,
+      .offer-inspection__intro h2,
+      .offer-direct h2,
+      .offer-signals h2 {
+        font-size: clamp(3.4rem, 15vw, 5.8rem);
+        line-height: 0.9;
+      }
+
+      .offer-decision__card {
+        min-height: 21rem;
+      }
+
+      .offer-guide {
+        margin-top: 2.4rem;
+      }
+
+      .offer-guide h2 {
+        font-size: clamp(2.8rem, 13vw, 4.8rem);
+      }
+
+      .offer-guide__facts {
+        grid-template-columns: 1fr;
+      }
+
+      .offer-guide__media {
+        min-height: 27rem;
+        aspect-ratio: 4 / 5;
+      }
+
+      .offer-guide__thumbs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .offer-guide__slide figcaption strong {
+        font-size: clamp(2rem, 11vw, 3.4rem);
+      }
+    }
+
+    .offer-decision,
+    .offer-package-band,
+    .offer-signals,
+    .offer-inspection {
+      display: none !important;
+    }
+
+    .offer-direct {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1380px) !important;
+      margin-top: clamp(3.5rem, 6vw, 5.5rem) !important;
+      display: grid !important;
+      grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 0.6fr) !important;
+      gap: clamp(1.5rem, 4vw, 4rem) !important;
+      align-items: center !important;
+      padding-top: clamp(2rem, 4vw, 3rem) !important;
+      padding-bottom: clamp(4rem, 7vw, 6rem) !important;
+    }
+
+    .offer-direct h2 {
+      max-width: 13ch !important;
+      font-size: clamp(2.8rem, 5.6vw, 6.2rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: 0 !important;
+    }
+
+    @media (max-width: 980px) {
+      .offer-direct {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+
+  <script>
+    (() => {
+      document.querySelectorAll("[data-offer-gallery]").forEach((root) => {
+        const slides = Array.from(root.querySelectorAll("[data-offer-slide]"));
+        const thumbs = Array.from(root.querySelectorAll("[data-offer-thumb]"));
+        const prev = root.querySelector("[data-offer-prev]");
+        const next = root.querySelector("[data-offer-next]");
+        const count = root.querySelector("[data-offer-count]");
+        const title = root.querySelector("[data-offer-title]");
+
+        if (!slides.length) return;
+
+        let active = 0;
+        const total = String(slides.length).padStart(2, "0");
+
+        const setActive = (index) => {
+          active = (index + slides.length) % slides.length;
+
+          slides.forEach((slide, slideIndex) => {
+            slide.classList.toggle("is-active", slideIndex === active);
+          });
+
+          thumbs.forEach((thumb, thumbIndex) => {
+            thumb.classList.toggle("is-active", thumbIndex === active);
+            thumb.setAttribute("aria-current", thumbIndex === active ? "true" : "false");
+          });
+
+          if (count) count.textContent = `${String(active + 1).padStart(2, "0")} / ${total}`;
+          if (title) title.textContent = slides[active]?.getAttribute("data-title") || "";
+        };
+
+        prev?.addEventListener("click", () => setActive(active - 1));
+        next?.addEventListener("click", () => setActive(active + 1));
+        thumbs.forEach((thumb, index) => {
+          thumb.addEventListener("click", () => setActive(index));
+        });
+
+        setActive(0);
+      });
+    })();
+  </script>
 </BaseLayout>

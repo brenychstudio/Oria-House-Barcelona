@@ -1,0 +1,528 @@
+---
+import { t, type Lang } from "../../content/languages";
+import { getSettings } from "../../cms/sheets";
+
+type Props = {
+  lang: Lang;
+};
+
+const { lang } = Astro.props as Props;
+
+const s = await getSettings();
+
+const year = new Date().getFullYear();
+
+const hotelName = t(
+  lang,
+  String((s as any).hotel_name_en || "Hotel Core"),
+  String((s as any).hotel_name_es || (s as any).hotel_name_en || "Hotel Core")
+);
+
+const bookingUrl = String((s as any).booking_url || "").trim();
+
+const email = String(
+  (s as any).email || (s as any).hotel_email || "reservations@example.com"
+).trim();
+
+const phone = String(
+  (s as any).phone || (s as any).hotel_phone || (s as any).whatsapp || "+34 000 000 000"
+).trim();
+
+const phoneHref = phone.replace(/\s+/g, "");
+
+const whatsapp = String((s as any).whatsapp || "").trim();
+const whatsappDigits = whatsapp.replace(/[^\d]/g, "");
+const whatsappHref = whatsappDigits ? `https://wa.me/${whatsappDigits}` : "";
+
+const address = t(
+  lang,
+  String((s as any).address_en || "Barcelona, Spain"),
+  String((s as any).address_es || "Barcelona, España")
+);
+
+const instagramUrl = String((s as any).instagram_url || "").trim();
+const facebookUrl = String((s as any).facebook_url || "").trim();
+const tripadvisorUrl = String((s as any).tripadvisor_url || "").trim();
+
+const brandLine = t(
+  lang,
+  "A quieter Barcelona stay shaped by rooms, rituals, local rhythm and direct booking clarity.",
+  "Una estancia más tranquila en Barcelona definida por habitaciones, rituales, ritmo local y claridad de reserva directa."
+);
+
+const bookingLine = t(
+  lang,
+  "Book direct for the clearest route, or contact the hotel for room advice, arrival details and private requests.",
+  "Reserve directamente para la ruta más clara, o contacte con el hotel para asesoramiento de habitación, detalles de llegada y solicitudes privadas."
+);
+
+const navLinks = [
+  { href: `/${lang}/rooms/`, label: t(lang, "Rooms", "Habitaciones") },
+  { href: `/${lang}/offers/`, label: t(lang, "Offers", "Ofertas") },
+  { href: `/${lang}/experiences/`, label: t(lang, "Experiences", "Experiencias") },
+  { href: `/${lang}/gallery/`, label: t(lang, "Gallery", "Galería") },
+  { href: `/${lang}/location/`, label: t(lang, "Location", "Ubicación") },
+  { href: `/${lang}/contact/`, label: t(lang, "Contact", "Contacto") },
+];
+
+const guestInfo = [
+  t(lang, "Direct reservation assistance", "Asistencia de reserva directa"),
+  t(lang, "Arrival and luggage questions", "Preguntas de llegada y equipaje"),
+  t(lang, "Room advice by stay type", "Asesoramiento de habitación por tipo de estancia"),
+  t(lang, "Private requests before arrival", "Solicitudes privadas antes de la llegada"),
+];
+
+const legalItems = [
+  t(lang, "Privacy notice", "Aviso de privacidad"),
+  t(lang, "Cookie policy", "Política de cookies"),
+  t(lang, "Terms of booking", "Condiciones de reserva"),
+  t(lang, "Accessibility", "Accesibilidad"),
+];
+
+const socialLinks = [
+  instagramUrl ? { href: instagramUrl, label: "Instagram" } : null,
+  facebookUrl ? { href: facebookUrl, label: "Facebook" } : null,
+  tripadvisorUrl ? { href: tripadvisorUrl, label: "Tripadvisor" } : null,
+].filter(Boolean) as Array<{ href: string; label: string }>;
+---
+
+<footer class="hotel-footer" data-dock-section>
+  <div class="hotel-footer__ambient" aria-hidden="true"></div>
+
+  <div class="hotel-footer__inner">
+    <section class="hotel-footer__hero">
+      <div>
+        <div class="hotel-footer__kicker">
+          {t(lang, "Direct stay", "Estancia directa")}
+        </div>
+
+        <h2>{hotelName}</h2>
+      </div>
+
+      <div class="hotel-footer__statement">
+        <p>{brandLine}</p>
+
+        <div class="hotel-footer__actions">
+          {bookingUrl ? (
+            <a href={bookingUrl} target="_blank" rel="noreferrer">
+              {t(lang, "Book direct", "Reservar directo")}
+            </a>
+          ) : null}
+
+          <a href={`/${lang}/contact/`}>
+            {t(lang, "Contact hotel", "Contactar hotel")}
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="hotel-footer__grid">
+      <div class="hotel-footer__block hotel-footer__block--large">
+        <div class="hotel-footer__label">
+          {t(lang, "Reservations", "Reservas")}
+        </div>
+
+        <p>{bookingLine}</p>
+
+        <div class="hotel-footer__contact-list">
+          <a href={`mailto:${email}`}>{email}</a>
+          <a href={`tel:${phoneHref}`}>{phone}</a>
+          {whatsappHref ? (
+            <a href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp</a>
+          ) : null}
+        </div>
+      </div>
+
+      <nav class="hotel-footer__block" aria-label={t(lang, "Footer navigation", "Navegación de pie")}>
+        <div class="hotel-footer__label">
+          {t(lang, "Explore", "Explorar")}
+        </div>
+
+        <div class="hotel-footer__links">
+          {navLinks.map((link) => (
+            <a href={link.href}>{link.label}</a>
+          ))}
+        </div>
+      </nav>
+
+      <div class="hotel-footer__block">
+        <div class="hotel-footer__label">
+          {t(lang, "Arrival", "Llegada")}
+        </div>
+
+        <p>{address}</p>
+
+        <div class="hotel-footer__links">
+          <a href={`/${lang}/location/`}>
+            {t(lang, "View location", "Ver ubicación")}
+          </a>
+          <a href={`/${lang}/contact/`}>
+            {t(lang, "Ask before arrival", "Preguntar antes de llegar")}
+          </a>
+        </div>
+      </div>
+
+      <div class="hotel-footer__block">
+        <div class="hotel-footer__label">
+          {t(lang, "Guest information", "Información para huéspedes")}
+        </div>
+
+        <div class="hotel-footer__micro-list">
+          {guestInfo.map((item) => (
+            <span>{item}</span>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="hotel-footer__bottom">
+      <div>
+        <span>© {year} {hotelName}</span>
+        <span>{t(lang, "Barcelona", "Barcelona")}</span>
+      </div>
+
+      <div class="hotel-footer__legal" aria-label={t(lang, "Legal information", "Información legal")}>
+        {legalItems.map((item) => (
+          <span>{item}</span>
+        ))}
+      </div>
+
+      {socialLinks.length ? (
+        <div class="hotel-footer__social">
+          {socialLinks.map((link) => (
+            <a href={link.href} target="_blank" rel="noreferrer">{link.label}</a>
+          ))}
+        </div>
+      ) : (
+        <div class="hotel-footer__social hotel-footer__social--muted">
+          <span>Instagram</span>
+          <span>Tripadvisor</span>
+        </div>
+      )}
+    </section>
+  </div>
+</footer>
+
+<style>
+  .hotel-footer {
+    position: relative;
+    overflow: hidden;
+    background: #15120f;
+    color: #fffaf2;
+    margin-top: clamp(5rem, 9vw, 8rem);
+    padding: clamp(5rem, 8vw, 8rem) 0 max(clamp(6rem, 9vw, 8rem), calc(7rem + env(safe-area-inset-bottom)));
+    isolation: isolate;
+  }
+
+  .hotel-footer__ambient {
+    position: absolute;
+    inset: -22%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 78% 12%, rgba(226, 188, 136, 0.18), transparent 30rem),
+      radial-gradient(circle at 18% 90%, rgba(255, 250, 242, 0.08), transparent 36rem),
+      linear-gradient(180deg, #191510 0%, #0f0d0b 100%);
+  }
+
+  .hotel-footer__inner {
+    width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+    margin-inline: auto;
+  }
+
+  .hotel-footer__hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.46fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: end;
+    border-bottom: 1px solid rgba(255, 250, 242, 0.16);
+    padding-bottom: clamp(2.4rem, 5vw, 4.6rem);
+  }
+
+  .hotel-footer__kicker,
+  .hotel-footer__label {
+    font-size: 0.64rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255, 250, 242, 0.44);
+  }
+
+  .hotel-footer h2 {
+    margin-top: 1.1rem;
+    max-width: 9ch;
+    font-size: clamp(4rem, 8vw, 9rem);
+    line-height: 0.86;
+    letter-spacing: -0.085em;
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  .hotel-footer__statement p,
+  .hotel-footer__block p {
+    max-width: 34rem;
+    font-size: 1rem;
+    line-height: 1.78;
+    color: rgba(255, 250, 242, 0.66);
+  }
+
+  .hotel-footer__actions {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .hotel-footer__actions a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding-inline: 1.1rem;
+    font-size: 0.88rem;
+    text-decoration: none;
+  }
+
+  .hotel-footer__actions a:first-child {
+    background: #fffaf2;
+    color: #15120f;
+  }
+
+  .hotel-footer__actions a:last-child {
+    border: 1px solid rgba(255, 250, 242, 0.2);
+    background: rgba(255, 250, 242, 0.04);
+    color: #fffaf2;
+  }
+
+  .hotel-footer__grid {
+    display: grid;
+    grid-template-columns: minmax(18rem, 1.25fr) repeat(3, minmax(0, 0.7fr));
+    gap: clamp(1.4rem, 4vw, 4rem);
+    border-bottom: 1px solid rgba(255, 250, 242, 0.16);
+    padding-block: clamp(2.4rem, 5vw, 4.6rem);
+  }
+
+  .hotel-footer__block {
+    min-width: 0;
+  }
+
+  .hotel-footer__block p {
+    margin-top: 1rem;
+  }
+
+  .hotel-footer__contact-list,
+  .hotel-footer__links,
+  .hotel-footer__micro-list {
+    margin-top: 1.25rem;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .hotel-footer a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .hotel-footer__contact-list a,
+  .hotel-footer__links a,
+  .hotel-footer__micro-list span {
+    width: fit-content;
+    color: rgba(255, 250, 242, 0.66);
+    font-size: 0.92rem;
+    line-height: 1.35;
+  }
+
+  .hotel-footer__contact-list a:hover,
+  .hotel-footer__links a:hover {
+    color: #fffaf2;
+    transform: translateX(3px);
+  }
+
+  .hotel-footer__micro-list span {
+    width: auto;
+    border-top: 1px solid rgba(255, 250, 242, 0.1);
+    padding-top: 0.65rem;
+  }
+
+  .hotel-footer__bottom {
+    display: grid;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr) auto;
+    gap: clamp(1rem, 4vw, 4rem);
+    align-items: start;
+    padding-top: clamp(1.4rem, 3vw, 2.2rem);
+    color: rgba(255, 250, 242, 0.46);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+  }
+
+  .hotel-footer__bottom > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.1rem;
+  }
+
+  .hotel-footer__legal,
+  .hotel-footer__social {
+    justify-content: center;
+  }
+
+  .hotel-footer__social {
+    justify-content: flex-end;
+  }
+
+  .hotel-footer__social--muted span {
+    opacity: 0.62;
+  }
+
+  .hotel-footer__social a:hover {
+    color: #fffaf2;
+  }
+
+  @media (max-width: 980px) {
+    .hotel-footer__hero,
+    .hotel-footer__grid,
+    .hotel-footer__bottom {
+      grid-template-columns: 1fr;
+    }
+
+    .hotel-footer__legal,
+    .hotel-footer__social {
+      justify-content: flex-start;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hotel-footer {
+      padding-top: 4rem;
+    }
+
+    .hotel-footer__inner {
+      width: min(100% - 1rem, 1480px);
+    }
+
+    .hotel-footer h2 {
+      font-size: clamp(3.4rem, 15vw, 5.8rem);
+      line-height: 0.9;
+    }
+
+    .hotel-footer__grid {
+      gap: 2rem;
+    }
+
+    .hotel-footer__bottom {
+      font-size: 0.68rem;
+    }
+  }
+
+  /* Stage 3G-R1 - Compact Premium Footer Pass */
+
+  .hotel-footer {
+    margin-top: clamp(3.5rem, 6vw, 5.5rem);
+    padding: clamp(3.4rem, 5.8vw, 5.4rem) 0
+      max(clamp(4.8rem, 6vw, 6rem), calc(5.8rem + env(safe-area-inset-bottom)));
+  }
+
+  .hotel-footer__hero {
+    grid-template-columns: minmax(0, 0.95fr) minmax(20rem, 0.48fr);
+    padding-bottom: clamp(1.8rem, 3.5vw, 3rem);
+  }
+
+  .hotel-footer h2 {
+    max-width: 10ch;
+    font-size: clamp(3.4rem, 6.2vw, 6.8rem);
+    line-height: 0.88;
+    letter-spacing: -0.08em;
+  }
+
+  .hotel-footer__statement p,
+  .hotel-footer__block p {
+    font-size: 0.94rem;
+    line-height: 1.68;
+  }
+
+  .hotel-footer__actions {
+    margin-top: 1.15rem;
+  }
+
+  .hotel-footer__actions a {
+    min-height: 2.45rem;
+    padding-inline: 1rem;
+    font-size: 0.82rem;
+  }
+
+  .hotel-footer__grid {
+    grid-template-columns: minmax(18rem, 1.15fr) repeat(3, minmax(0, 0.68fr));
+    gap: clamp(1.2rem, 3vw, 3rem);
+    padding-block: clamp(1.8rem, 3.5vw, 3rem);
+  }
+
+  .hotel-footer__label,
+  .hotel-footer__kicker {
+    font-size: 0.58rem;
+    letter-spacing: 0.28em;
+  }
+
+  .hotel-footer__contact-list,
+  .hotel-footer__links,
+  .hotel-footer__micro-list {
+    margin-top: 1rem;
+    gap: 0.62rem;
+  }
+
+  .hotel-footer__contact-list a,
+  .hotel-footer__links a,
+  .hotel-footer__micro-list span {
+    font-size: 0.84rem;
+    line-height: 1.3;
+  }
+
+  .hotel-footer__micro-list span {
+    padding-top: 0.55rem;
+  }
+
+  .hotel-footer__bottom {
+    padding-top: clamp(1rem, 2.2vw, 1.6rem);
+    font-size: 0.66rem;
+    gap: clamp(0.8rem, 3vw, 3rem);
+  }
+
+  @media (max-width: 980px) {
+    .hotel-footer {
+      padding-top: 3.2rem;
+    }
+
+    .hotel-footer__hero {
+      gap: 1.6rem;
+    }
+
+    .hotel-footer__grid {
+      gap: 1.8rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hotel-footer {
+      margin-top: 3rem;
+      padding-top: 3rem;
+      padding-bottom: calc(5.8rem + env(safe-area-inset-bottom));
+    }
+
+    .hotel-footer h2 {
+      font-size: clamp(3rem, 13vw, 4.9rem);
+      line-height: 0.9;
+    }
+
+    .hotel-footer__statement p,
+    .hotel-footer__block p {
+      font-size: 0.9rem;
+    }
+
+    .hotel-footer__grid {
+      padding-block: 1.8rem;
+    }
+
+    .hotel-footer__bottom {
+      font-size: 0.64rem;
+    }
+  }
+</style>

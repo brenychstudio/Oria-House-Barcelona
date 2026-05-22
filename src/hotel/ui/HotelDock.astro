@@ -1,0 +1,449 @@
+---
+import type { Lang } from "../../content/languages";
+
+type Props = {
+  lang: Lang;
+};
+
+const { lang } = Astro.props as Props;
+
+const dockAriaLabel = lang === "es" ? "Navegación del sitio" : "Site navigation";
+const prevPageLabel = lang === "es" ? "Página anterior" : "Previous page";
+const nextPageLabel = lang === "es" ? "Página siguiente" : "Next page";
+const prevSectionLabel = lang === "es" ? "Sección anterior" : "Previous section";
+const nextSectionLabel = lang === "es" ? "Siguiente sección" : "Next section";
+---
+
+<nav class="hotel-global-dock" data-hotel-global-dock aria-label={dockAriaLabel}>
+  <button type="button" class="hotel-global-dock__button" data-global-dock-left aria-label={prevPageLabel}>
+    ←
+  </button>
+
+  <button type="button" class="hotel-global-dock__button" data-global-dock-up aria-label={prevSectionLabel}>
+    ↑
+  </button>
+
+  <button type="button" class="hotel-global-dock__button" data-global-dock-down aria-label={nextSectionLabel}>
+    ↓
+  </button>
+
+  <button type="button" class="hotel-global-dock__button" data-global-dock-right aria-label={nextPageLabel}>
+    →
+  </button>
+</nav>
+
+<style is:global>
+  /*
+    Stage 3D-R1 - Global Dock QA
+    Home-only dock stays hidden after migration to global dock.
+  */
+  .hotel-stay-dock {
+    display: none !important;
+  }
+
+  :root {
+    --hotel-dock-safe-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  .hc-page-shell:not(.hc-page-shell--full) {
+    padding-bottom: max(clamp(2.5rem, 4vw, 3.75rem), var(--hotel-dock-safe-bottom));
+  }
+
+  .hotel-global-dock {
+    position: fixed;
+    left: 50%;
+    bottom: calc(0.9rem + env(safe-area-inset-bottom));
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    gap: 0.24rem;
+    max-width: calc(100vw - 1rem);
+    transform: translateX(-50%);
+    border: 1px solid rgba(21, 18, 15, 0.08);
+    background: rgba(251, 247, 240, 0.42);
+    color: #15120f;
+    padding: 0.28rem;
+    border-radius: 999px;
+    box-shadow: 0 18px 60px rgba(64, 42, 24, 0.12);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    transition:
+      opacity 260ms ease,
+      transform 260ms ease,
+      background-color 260ms ease,
+      border-color 260ms ease;
+  }
+
+  .hotel-global-dock[data-idle="true"] {
+    opacity: 0.48;
+    transform: translateX(-50%) translateY(5px) scale(0.96);
+  }
+
+  .hotel-global-dock:hover,
+  .hotel-global-dock:focus-within {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  .hotel-global-dock[data-hidden="true"] {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(10px) scale(0.94);
+  }
+
+  .hotel-global-dock__button {
+    display: grid;
+    height: 2.34rem;
+    width: 2.34rem;
+    place-items: center;
+    border-radius: 999px;
+    border: 1px solid rgba(21, 18, 15, 0.08);
+    background: rgba(255, 250, 242, 0.36);
+    color: rgba(21, 18, 15, 0.82);
+    font-size: 0.86rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: none;
+    transition:
+      background-color 180ms ease,
+      color 180ms ease,
+      transform 180ms ease,
+      opacity 180ms ease;
+  }
+
+  .hotel-global-dock__button:hover {
+    background: rgba(21, 18, 15, 0.92);
+    color: #fffaf2;
+    transform: translateY(-1px);
+  }
+
+  .hotel-global-dock__button:disabled {
+    opacity: 0.26;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .hotel-global-dock__button:focus-visible {
+    outline: 2px solid rgba(21, 18, 15, 0.72);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 760px) {
+    :root {
+      --hotel-dock-safe-bottom: calc(5.8rem + env(safe-area-inset-bottom));
+    }
+
+    .hotel-global-dock {
+      bottom: calc(0.65rem + env(safe-area-inset-bottom));
+      gap: 0.18rem;
+      padding: 0.22rem;
+      background: rgba(251, 247, 240, 0.52);
+    }
+
+    .hotel-global-dock__button {
+      height: 2.2rem;
+      width: 2.2rem;
+      font-size: 0.78rem;
+    }
+  }
+
+  @media (max-width: 390px) {
+    .hotel-global-dock__button {
+      height: 2.05rem;
+      width: 2.05rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hotel-global-dock,
+    .hotel-global-dock * {
+      transition-duration: 1ms !important;
+    }
+  }
+</style>
+
+<script is:inline>
+  (() => {
+    const dock = document.querySelector("[data-hotel-global-dock]");
+    if (!dock) return;
+
+    const upBtn = dock.querySelector("[data-global-dock-up]");
+    const downBtn = dock.querySelector("[data-global-dock-down]");
+    const leftBtn = dock.querySelector("[data-global-dock-left]");
+    const rightBtn = dock.querySelector("[data-global-dock-right]");
+
+    let activeIndex = 0;
+    let ticking = false;
+    let idleTimer = 0;
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+    const normalizePath = (path) => {
+      if (!path) return "/";
+      return path.endsWith("/") ? path : `${path}/`;
+    };
+
+    const langFromPath = () => {
+      const first = window.location.pathname.split("/").filter(Boolean)[0];
+      return first === "es" ? "es" : "en";
+    };
+
+    const getPageRoutes = () => {
+      const pageLang = langFromPath();
+
+      return [
+        `/${pageLang}/`,
+        `/${pageLang}/rooms/`,
+        `/${pageLang}/offers/`,
+        `/${pageLang}/experiences/`,
+        `/${pageLang}/gallery/`,
+        `/${pageLang}/location/`,
+        `/${pageLang}/contact/`,
+      ];
+    };
+
+    const getCurrentRouteIndex = () => {
+      const routes = getPageRoutes();
+      const current = normalizePath(window.location.pathname);
+
+      const exact = routes.indexOf(current);
+      if (exact >= 0) return exact;
+
+      let bestIndex = 0;
+      let bestLength = -1;
+
+      routes.forEach((route, index) => {
+        if (route === `/${langFromPath()}/`) return;
+
+        if (current.startsWith(route) && route.length > bestLength) {
+          bestLength = route.length;
+          bestIndex = index;
+        }
+      });
+
+      return bestIndex;
+    };
+
+    const goPage = (direction) => {
+      const routes = getPageRoutes();
+      const currentIndex = getCurrentRouteIndex();
+      const nextIndex = (currentIndex + direction + routes.length) % routes.length;
+
+      window.location.href = routes[nextIndex];
+    };
+
+    const wakeDock = () => {
+      dock.setAttribute("data-idle", "false");
+
+      window.clearTimeout(idleTimer);
+
+      idleTimer = window.setTimeout(() => {
+        dock.setAttribute("data-idle", "true");
+      }, 2400);
+    };
+
+    const isElementUsableSection = (node) => {
+      if (!(node instanceof HTMLElement)) return false;
+      if (node.matches("script, style, nav, header")) return false;
+
+      const rect = node.getBoundingClientRect();
+
+      return rect.height > 140 && rect.width > 120;
+    };
+
+    const uniqueElements = (items) => {
+      const seen = new Set();
+
+      return items.filter((item) => {
+        if (!item || seen.has(item)) return false;
+        seen.add(item);
+        return true;
+      });
+    };
+
+    const getSections = () => {
+      const main = document.querySelector("main");
+      if (!main) return [];
+
+      const explicit = Array.from(
+        main.querySelectorAll("[data-home-section], [data-dock-section]")
+      ).filter(isElementUsableSection);
+
+      if (explicit.length) return uniqueElements(explicit);
+
+      const direct = Array.from(main.children).filter(isElementUsableSection);
+
+      if (direct.length > 1) return uniqueElements(direct);
+
+      const nested = Array.from(main.querySelectorAll("section"))
+        .filter(isElementUsableSection)
+        .filter((node) => {
+          const rect = node.getBoundingClientRect();
+          return rect.height > 220;
+        });
+
+      return uniqueElements(nested);
+    };
+
+    let sections = getSections();
+
+    const getActiveIndex = () => {
+      sections = getSections();
+
+      if (sections.length === 0) return 0;
+
+      const focusY = window.innerHeight * 0.48;
+
+      let bestIndex = 0;
+      let bestDistance = Infinity;
+
+      sections.forEach((section, index) => {
+        const rect = section.getBoundingClientRect();
+        const center = rect.top + rect.height / 2;
+        const distance = Math.abs(center - focusY);
+
+        const isVisible =
+          rect.bottom > window.innerHeight * 0.12 &&
+          rect.top < window.innerHeight * 0.88;
+
+        if (isVisible && distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+        }
+      });
+
+      return bestIndex;
+    };
+
+    const hasVisibleDialog = () => {
+      const candidates = Array.from(
+        document.querySelectorAll('[aria-modal="true"], [role="dialog"], .hc-lightbox, [data-hc-lb-root]')
+      );
+
+      return candidates.some((node) => {
+        if (!(node instanceof HTMLElement)) return false;
+
+        const style = window.getComputedStyle(node);
+        const rect = node.getBoundingClientRect();
+
+        return (
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          Number(style.opacity || "1") > 0.01 &&
+          rect.width > 100 &&
+          rect.height > 100
+        );
+      });
+    };
+
+    const isFooterInView = () => {
+      const footer = document.querySelector(".hotel-footer");
+      if (!(footer instanceof HTMLElement)) return false;
+
+      const rect = footer.getBoundingClientRect();
+
+      return rect.top < window.innerHeight * 0.78 && rect.bottom > window.innerHeight * 0.2;
+    };
+
+    const applyDisabledStates = () => {
+      const first = activeIndex <= 0;
+      const last = activeIndex >= sections.length - 1;
+
+      if (upBtn) upBtn.disabled = first || sections.length <= 1;
+      if (downBtn) downBtn.disabled = last || sections.length <= 1;
+
+      if (leftBtn) leftBtn.disabled = false;
+      if (rightBtn) rightBtn.disabled = false;
+    };
+
+    const updateDock = () => {
+      activeIndex = getActiveIndex();
+
+      if (hasVisibleDialog() || isFooterInView()) {
+        dock.setAttribute("data-hidden", "true");
+      } else {
+        dock.setAttribute("data-hidden", "false");
+      }
+
+      applyDisabledStates();
+    };
+
+    const requestDockUpdate = () => {
+      wakeDock();
+
+      if (ticking) return;
+
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        ticking = false;
+        updateDock();
+      });
+    };
+
+    const scrollToSection = (index) => {
+      sections = getSections();
+
+      if (!sections.length) return;
+
+      const nextIndex = clamp(index, 0, sections.length - 1);
+      const section = sections[nextIndex];
+
+      if (!section) return;
+
+      wakeDock();
+
+      section.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    };
+
+    if (upBtn) {
+      upBtn.addEventListener("click", () => {
+        updateDock();
+        scrollToSection(activeIndex - 1);
+      });
+    }
+
+    if (downBtn) {
+      downBtn.addEventListener("click", () => {
+        updateDock();
+        scrollToSection(activeIndex + 1);
+      });
+    }
+
+    if (leftBtn) {
+      leftBtn.addEventListener("click", () => {
+        wakeDock();
+        goPage(-1);
+      });
+    }
+
+    if (rightBtn) {
+      rightBtn.addEventListener("click", () => {
+        wakeDock();
+        goPage(1);
+      });
+    }
+
+    dock.addEventListener("pointerdown", wakeDock);
+    dock.addEventListener("focusin", wakeDock);
+
+    window.addEventListener("scroll", requestDockUpdate, { passive: true });
+    window.addEventListener("resize", requestDockUpdate);
+    window.addEventListener("load", requestDockUpdate);
+    document.addEventListener("keydown", requestDockUpdate);
+
+    const observer = new MutationObserver(requestDockUpdate);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style", "aria-hidden", "aria-modal", "open"],
+    });
+
+    updateDock();
+    wakeDock();
+  })();
+</script>

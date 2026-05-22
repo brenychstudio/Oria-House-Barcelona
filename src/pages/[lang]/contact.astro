@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { LANGS, type Lang, isLang, t } from "../../content/languages";
 import { getSettings } from "../../cms/sheets";
+import { HOTEL_DEMO_ASSETS } from "../../hotel/data/demoAssets";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -12,56 +13,584 @@ if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
 
 const s = await getSettings();
-const title = t(lang, "Contact", "Contacto");
 
-// Null-safe (engine demo mode)
-const whatsappRaw = String((s as any).whatsapp ?? "");
-const waDigits = whatsappRaw.replace(/[^\d]/g, "");
-const waLink = waDigits ? `https://wa.me/${waDigits}` : "";
+const hotelName = t(
+  lang,
+  String((s as any).hotel_name_en || "Hotel Core"),
+  String((s as any).hotel_name_es || (s as any).hotel_name_en || "Hotel Core")
+);
 
-const email = String((s as any).email ?? "");
-const address =
-  (lang === "es" ? (s as any).address_es : (s as any).address_en) ?? "";
+const title = t(lang, "Reservations & Contact", "Reservas y contacto");
 
-const coordsLat = String((s as any).coords_lat ?? "41.3851"); // Barcelona fallback
-const coordsLng = String((s as any).coords_lng ?? "2.1734");
+const bookingUrl = String((s as any).booking_url || "").trim();
+
+const email = String(
+  (s as any).email || (s as any).hotel_email || "reservations@example.com"
+).trim();
+
+const phone = String(
+  (s as any).phone || (s as any).hotel_phone || (s as any).whatsapp || "+34 000 000 000"
+).trim();
+
+const phoneHref = phone.replace(/\s+/g, "");
+
+const whatsapp = String((s as any).whatsapp || "").trim();
+const whatsappDigits = whatsapp.replace(/[^\d]/g, "");
+const whatsappHref = whatsappDigits ? `https://wa.me/${whatsappDigits}` : "";
+
+const address = t(
+  lang,
+  String((s as any).address_en || "Barcelona, Spain"),
+  String((s as any).address_es || "Barcelona, España")
+);
+
+const lat = Number(String((s as any).coords_lat ?? "").trim());
+const lng = Number(String((s as any).coords_lng ?? "").trim());
+const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+const mapQuery = hasCoords ? `${lat},${lng}` : address;
+
+const generatedMapEmbed = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`;
+
+const mapEmbed =
+  String(
+    (s as any).google_maps_embed_url ||
+      (s as any).maps_embed_url ||
+      (s as any).map_embed_url ||
+      ""
+  ).trim() || generatedMapEmbed;
+
+const heroImage = HOTEL_DEMO_ASSETS.contactHero;
+
+const heroEyebrow = t(lang, "Reservations / Contact", "Reservas / Contacto");
+
+const heroTitle = t(
+  lang,
+  "Let the hotel shape the stay before you arrive.",
+  "Deje que el hotel dé forma a la estancia antes de llegar."
+);
+
+const heroText = t(
+  lang,
+  "For room advice, arrival questions, direct booking requests or a more personal Barcelona stay, contact the hotel before booking.",
+  "Para asesoramiento de habitación, preguntas de llegada, solicitudes de reserva directa o una estancia más personal en Barcelona, contacte con el hotel antes de reservar."
+);
+
+const deskEyebrow = t(lang, "Reservation desk", "Mesa de reservas");
+
+const deskTitle = t(
+  lang,
+  "A direct line for room choice, arrival rhythm and private requests.",
+  "Una línea directa para elegir habitación, ritmo de llegada y solicitudes privadas."
+);
+
+const deskText = t(
+  lang,
+  "Use direct booking for the clearest route, or contact the team if you want help choosing the right room, timing an experience or preparing a quieter arrival.",
+  "Use la reserva directa para la ruta más clara, o contacte con el equipo si desea ayuda para elegir la habitación adecuada, coordinar una experiencia o preparar una llegada más tranquila."
+);
+
+const bookLabel = t(lang, "Book direct", "Reservar directo");
+const emailLabel = t(lang, "Email reservations", "Email reservas");
+const callLabel = t(lang, "Call hotel", "Llamar al hotel");
+const whatsappLabel = t(lang, "WhatsApp", "WhatsApp");
+
+const channels = [
+  {
+    index: "01",
+    label: t(lang, "Email", "Email"),
+    title: t(lang, "Reservation request", "Solicitud de reserva"),
+    text: t(
+      lang,
+      "Best for room advice, private requests, date flexibility and written confirmation.",
+      "Ideal para asesoramiento de habitación, solicitudes privadas, flexibilidad de fechas y confirmación por escrito."
+    ),
+    href: `mailto:${email}`,
+    value: email,
+  },
+  {
+    index: "02",
+    label: t(lang, "Phone", "Teléfono"),
+    title: t(lang, "Arrival or urgent questions", "Llegada o preguntas urgentes"),
+    text: t(
+      lang,
+      "Best for arrival timing, luggage questions, check-in details or fast confirmation.",
+      "Ideal para horarios de llegada, preguntas sobre equipaje, detalles de check-in o confirmación rápida."
+    ),
+    href: `tel:${phoneHref}`,
+    value: phone,
+  },
+  whatsappHref
+    ? {
+        index: "03",
+        label: "WhatsApp",
+        title: t(lang, "Quick stay coordination", "Coordinación rápida de estancia"),
+        text: t(
+          lang,
+          "Best for quick coordination before arrival and simple stay questions.",
+          "Ideal para coordinación rápida antes de la llegada y preguntas simples sobre la estancia."
+        ),
+        href: whatsappHref,
+        value: whatsapp,
+      }
+    : {
+        index: "03",
+        label: t(lang, "Address", "Dirección"),
+        title: t(lang, "Arrival reference", "Referencia de llegada"),
+        text: t(
+          lang,
+          "Use the address and map for arrival planning before check-in.",
+          "Use la dirección y el mapa para planificar la llegada antes del check-in."
+        ),
+        href: `/${lang}/location/`,
+        value: address,
+      },
+];
+
+const arrivalEyebrow = t(lang, "Arrival support", "Soporte de llegada");
+
+const arrivalTitle = t(
+  lang,
+  "Tell us what kind of stay you are planning.",
+  "Cuéntenos qué tipo de estancia está planeando."
+);
+
+const arrivalText = t(
+  lang,
+  "Quiet weekend, terrace room, culture-focused days, late arrival, private breakfast or a slower Barcelona escape — the reservation team can help shape the right route.",
+  "Fin de semana tranquilo, habitación con terraza, días culturales, llegada tardía, desayuno privado o una escapada pausada a Barcelona — el equipo de reservas puede ayudar a dar forma a la ruta adecuada."
+);
 ---
 
-<BaseLayout lang={lang} title={title}>
-  <h1 class="text-2xl tracking-tight">{title}</h1>
+<BaseLayout lang={lang} title={title} fullBleed>
+  <section class="contact-hero" data-dock-section>
+    <img src={heroImage} alt="" class="contact-hero__image" loading="eager" decoding="async" />
+    <div class="contact-hero__veil" aria-hidden="true"></div>
 
-  <div class="mt-6 grid gap-6 sm:grid-cols-2">
-    <div class="rounded-2xl border border-black/10 p-5">
-      <div class="text-sm opacity-70">{t(lang, "Address", "Dirección")}</div>
-      <div class="mt-2">{address || "—"}</div>
+    <div class="contact-hero__inner">
+      <div class="contact-hero__top">
+        <span>{heroEyebrow}</span>
+        <span>{hotelName}</span>
+      </div>
 
-      <div class="mt-5 text-sm opacity-70">WhatsApp</div>
-      {waLink ? (
-        <a class="mt-2 inline-block underline" href={waLink} target="_blank" rel="noreferrer">
-          {whatsappRaw}
-        </a>
-      ) : (
-        <div class="mt-2 opacity-60">—</div>
-      )}
+      <div class="contact-hero__content">
+        <h1>{heroTitle}</h1>
 
-      <div class="mt-5 text-sm opacity-70">{t(lang, "Email", "Email")}</div>
-      {email ? (
-        <a class="mt-2 inline-block underline" href={`mailto:${email}`}>
-          {email}
-        </a>
-      ) : (
-        <div class="mt-2 opacity-60">—</div>
-      )}
+        <aside>
+          <p>{heroText}</p>
+
+          <div class="contact-hero__actions">
+            {bookingUrl ? (
+              <a href={bookingUrl} target="_blank" rel="noreferrer">{bookLabel}</a>
+            ) : null}
+            <a href={`mailto:${email}`}>{emailLabel}</a>
+          </div>
+        </aside>
+      </div>
+
+      <div class="contact-hero__rail" aria-hidden="true">
+        <span>{t(lang, "Room advice", "Asesoramiento de habitación")}</span>
+        <span>{t(lang, "Arrival questions", "Preguntas de llegada")}</span>
+        <span>{t(lang, "Private requests", "Solicitudes privadas")}</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact-desk" data-dock-section>
+    <div class="contact-desk__intro">
+      <div>
+        <div class="contact-kicker">{deskEyebrow}</div>
+        <h2>{deskTitle}</h2>
+      </div>
+
+      <p>{deskText}</p>
     </div>
 
-    <div class="rounded-2xl border border-black/10 overflow-hidden bg-black/5 min-h-[260px]">
-      <iframe
-        title="map"
-        class="w-full h-full"
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"
-        src={`https://www.google.com/maps?q=${coordsLat},${coordsLng}&z=14&output=embed`}
-      />
+    <div class="contact-channels">
+      {channels.map((channel) => (
+        <a href={channel.href} class="contact-channel" target={channel.href.startsWith("http") ? "_blank" : undefined} rel={channel.href.startsWith("http") ? "noreferrer" : undefined}>
+          <small>{channel.index}</small>
+          <span>{channel.label}</span>
+          <h3>{channel.title}</h3>
+          <p>{channel.text}</p>
+          <strong>{channel.value}</strong>
+        </a>
+      ))}
     </div>
-  </div>
+  </section>
+
+  <section class="contact-arrival" data-dock-section>
+    <div class="contact-arrival__copy">
+      <div class="contact-kicker">{arrivalEyebrow}</div>
+      <h2>{arrivalTitle}</h2>
+      <p>{arrivalText}</p>
+
+      <div class="contact-arrival__actions">
+        {bookingUrl ? (
+          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookLabel}</a>
+        ) : null}
+        <a href={`mailto:${email}`}>{emailLabel}</a>
+        <a href={`tel:${phoneHref}`}>{callLabel}</a>
+        {whatsappHref ? (
+          <a href={whatsappHref} target="_blank" rel="noreferrer">{whatsappLabel}</a>
+        ) : null}
+      </div>
+    </div>
+
+    <div class="contact-arrival__map">
+      {mapEmbed ? (
+        <iframe
+          src={mapEmbed}
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title={`${hotelName} map`}
+        ></iframe>
+      ) : (
+        <div class="contact-arrival__fallback">
+          <span>{t(lang, "Address", "Dirección")}</span>
+          <p>{address}</p>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <style>
+    .contact-hero {
+      position: relative;
+      min-height: 100svh;
+      margin-top: -5.2rem;
+      overflow: hidden;
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .contact-hero__image {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: brightness(1.08) contrast(1.05) saturate(1.02);
+      transform: scale(1.015);
+    }
+
+    .contact-hero__veil {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 72% 20%, rgba(255, 238, 208, 0.2), transparent 34rem),
+        linear-gradient(90deg, rgba(5, 5, 4, 0.64), rgba(5, 5, 4, 0.16) 48%, rgba(5, 5, 4, 0.58)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.14), rgba(5, 5, 4, 0.1) 42%, rgba(5, 5, 4, 0.76));
+    }
+
+    .contact-hero__inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      min-height: 100svh;
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1680px);
+      margin-inline: auto;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(7.8rem, 13vh, 10.5rem) 0 clamp(1.4rem, 4vh, 2.8rem);
+    }
+
+    .contact-hero__top,
+    .contact-hero__rail {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .contact-hero__top span,
+    .contact-hero__rail span,
+    .contact-kicker {
+      font-size: 0.64rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    .contact-hero__top span {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.62rem 0.86rem;
+      border-radius: 999px;
+      backdrop-filter: blur(18px);
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .contact-hero__content {
+      display: grid;
+      grid-template-columns: minmax(0, 0.98fr) minmax(18rem, 0.42fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: end;
+    }
+
+    .contact-hero h1 {
+      max-width: 11ch;
+      font-size: clamp(4.8rem, 9vw, 10.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .contact-hero aside {
+      border-top: 1px solid rgba(255, 255, 255, 0.24);
+      padding-top: 1.1rem;
+    }
+
+    .contact-hero aside p {
+      max-width: 30rem;
+      font-size: 1rem;
+      line-height: 1.78;
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .contact-hero__actions,
+    .contact-arrival__actions {
+      margin-top: 1.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .contact-hero__actions a,
+    .contact-arrival__actions a {
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding-inline: 1.1rem;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+
+    .contact-hero__actions a:first-child,
+    .contact-arrival__actions a:first-child {
+      background: #fffaf2;
+      color: #15120f;
+    }
+
+    .contact-hero__actions a:last-child {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fffaf2;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .contact-arrival__actions a {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .contact-arrival__actions a + a {
+      border: 1px solid rgba(21, 18, 15, 0.16);
+      color: #15120f;
+      background: rgba(255, 250, 242, 0.42);
+    }
+
+    .contact-hero__rail {
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 0.8rem;
+      color: rgba(255, 255, 255, 0.52);
+    }
+
+    .contact-desk,
+    .contact-arrival {
+      width: min(100% - clamp(1.25rem, 4.6vw, 5.2rem), 1480px);
+      margin-inline: auto;
+      margin-top: clamp(6rem, 11vw, 10rem);
+    }
+
+    .contact-kicker {
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .contact-desk__intro {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 0.52fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      align-items: end;
+    }
+
+    .contact-desk__intro h2,
+    .contact-arrival__copy h2 {
+      margin-top: 1.1rem;
+      max-width: 11ch;
+      font-size: clamp(3.8rem, 8vw, 8.8rem);
+      line-height: 0.86;
+      letter-spacing: -0.085em;
+      text-wrap: balance;
+    }
+
+    .contact-desk__intro p,
+    .contact-arrival__copy p {
+      max-width: 34rem;
+      font-size: 1rem;
+      line-height: 1.82;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .contact-channels {
+      margin-top: clamp(2.4rem, 5vw, 4.8rem);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(0.9rem, 2vw, 1.4rem);
+    }
+
+    .contact-channel {
+      min-height: clamp(25rem, 34vw, 36rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(255, 250, 242, 0.42);
+      padding: clamp(1.2rem, 3vw, 2.2rem);
+      color: #15120f;
+      text-decoration: none;
+      transition:
+        background-color 260ms ease,
+        transform 260ms ease,
+        color 260ms ease;
+    }
+
+    .contact-channel:hover {
+      background: #15120f;
+      color: #fffaf2;
+      transform: translateY(-4px);
+    }
+
+    .contact-channel small,
+    .contact-channel span {
+      display: block;
+      font-size: 0.62rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .contact-channel:hover small,
+    .contact-channel:hover span {
+      color: rgba(255, 250, 242, 0.5);
+    }
+
+    .contact-channel span {
+      margin-top: 1.1rem;
+    }
+
+    .contact-channel h3 {
+      margin-top: 0.9rem;
+      max-width: 10ch;
+      font-size: clamp(2.2rem, 4vw, 4.5rem);
+      line-height: 0.9;
+      letter-spacing: -0.075em;
+      font-weight: 400;
+    }
+
+    .contact-channel p {
+      margin-top: 1rem;
+      max-width: 25rem;
+      line-height: 1.65;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    .contact-channel:hover p {
+      color: rgba(255, 250, 242, 0.7);
+    }
+
+    .contact-channel strong {
+      margin-top: 1.4rem;
+      word-break: break-word;
+      font-weight: 400;
+      color: currentColor;
+    }
+
+    .contact-arrival {
+      display: grid;
+      grid-template-columns: minmax(20rem, 0.42fr) minmax(0, 1fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: stretch;
+      padding-bottom: clamp(5rem, 8vw, 7rem);
+    }
+
+    .contact-arrival__copy {
+      align-self: end;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      padding-top: 1.2rem;
+    }
+
+    .contact-arrival__map {
+      overflow: hidden;
+      min-height: clamp(32rem, 50vw, 48rem);
+      border: 1px solid rgba(21, 18, 15, 0.1);
+      background: rgba(21, 18, 15, 0.05);
+      box-shadow: 0 42px 130px rgba(21, 18, 15, 0.1);
+    }
+
+    .contact-arrival__map iframe {
+      height: 100%;
+      min-height: clamp(32rem, 50vw, 48rem);
+      width: 100%;
+      filter: grayscale(0.2) saturate(0.86) contrast(0.98);
+    }
+
+    .contact-arrival__fallback {
+      display: grid;
+      min-height: 32rem;
+      place-items: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .contact-arrival__fallback span {
+      font-size: 0.64rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .contact-arrival__fallback p {
+      margin-top: 1rem;
+      color: rgba(21, 18, 15, 0.64);
+    }
+
+    @media (max-width: 980px) {
+      .contact-hero__content,
+      .contact-desk__intro,
+      .contact-arrival {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-hero__rail {
+        display: grid;
+      }
+
+      .contact-channels {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-channel {
+        min-height: 21rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .contact-hero__inner,
+      .contact-desk,
+      .contact-arrival {
+        width: min(100% - 1rem, 1480px);
+      }
+
+      .contact-hero h1,
+      .contact-desk__intro h2,
+      .contact-arrival__copy h2 {
+        font-size: clamp(3.4rem, 15vw, 5.8rem);
+        line-height: 0.9;
+      }
+
+      .contact-arrival__map,
+      .contact-arrival__map iframe {
+        min-height: 28rem;
+      }
+    }
+  </style>
 </BaseLayout>

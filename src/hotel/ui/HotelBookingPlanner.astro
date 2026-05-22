@@ -1,0 +1,1419 @@
+---
+import { t, type Lang } from "../../content/languages";
+import { getRooms, getOffers, getExperiences, getSettings } from "../../cms/sheets";
+import { pickLang } from "../../cms/types";
+
+type Props = {
+  lang: Lang;
+};
+
+const { lang } = Astro.props as Props;
+
+const s = await getSettings();
+const rooms = await getRooms();
+const offers = await getOffers();
+const experiences = await getExperiences();
+
+const bookingUrl = String((s as any).booking_url || "").trim();
+
+const hotelName = t(
+  lang,
+  String((s as any).hotel_name_en || "Oria House Barcelona"),
+  String((s as any).hotel_name_es || (s as any).hotel_name_en || "Oria House Barcelona")
+);
+
+const roomOptions = rooms
+  .filter((room) => String((room as any).slug || "").trim())
+  .map((room) => ({
+    slug: String((room as any).slug || ""),
+    title: pickLang(lang, room, "name"),
+    short: pickLang(lang, room, "short"),
+    price: String((room as any).price_from || "").trim(),
+  }));
+
+const offerOptions = offers
+  .filter((offer) => String((offer as any).slug || "").trim())
+  .map((offer) => ({
+    slug: String((offer as any).slug || ""),
+    title: pickLang(lang, offer, "title"),
+    short: pickLang(lang, offer, "period"),
+  }));
+
+const experienceOptions = experiences
+  .filter((experience) => String((experience as any).slug || "").trim())
+  .map((experience) => ({
+    slug: String((experience as any).slug || ""),
+    title: pickLang(lang, experience, "title"),
+    short: pickLang(lang, experience, "description"),
+  }));
+
+const stayIntentOptions = [
+  t(lang, "Quiet room", "Habitación tranquila"),
+  t(lang, "Terrace / balcony", "Terraza / balcón"),
+  t(lang, "City light", "Luz de ciudad"),
+  t(lang, "Longer stay", "Estancia más larga"),
+  t(lang, "Culture route", "Ruta cultural"),
+  t(lang, "Private arrival", "Llegada privada"),
+];
+
+const labels = {
+  aria: t(lang, "Direct stay planner", "Planificador de estancia directa"),
+  close: t(lang, "Close", "Cerrar"),
+  eyebrow: t(lang, "Direct stay planner", "Planificador directo"),
+  title: t(lang, "Plan your stay before opening the booking engine.", "Planifique su estancia antes de abrir el motor de reservas."),
+  intro: t(
+    lang,
+    "Choose dates, guests and stay preference. We will pass the context into the direct booking route where possible.",
+    "Elija fechas, huéspedes y preferencia de estancia. Pasaremos el contexto a la ruta de reserva directa cuando sea posible."
+  ),
+  dates: t(lang, "Dates", "Fechas"),
+  checkin: t(lang, "Check-in", "Llegada"),
+  checkout: t(lang, "Check-out", "Salida"),
+  guests: t(lang, "Guests", "Huéspedes"),
+  adults: t(lang, "Adults", "Adultos"),
+  children: t(lang, "Children", "Niños"),
+  stay: t(lang, "Stay preference", "Preferencia de estancia"),
+  room: t(lang, "Room preference", "Preferencia de habitación"),
+  anyRoom: t(lang, "Any suitable room", "Cualquier habitación adecuada"),
+  intent: t(lang, "Stay intent", "Intención de estancia"),
+  selectedContext: t(lang, "Selected context", "Contexto seleccionado"),
+  noContext: t(lang, "General direct booking", "Reserva directa general"),
+  roomContext: t(lang, "Selected room", "Habitación seleccionada"),
+  offerContext: t(lang, "Selected offer", "Oferta seleccionada"),
+  experienceContext: t(lang, "Selected experience", "Experiencia seleccionada"),
+  summary: t(lang, "Booking summary", "Resumen de reserva"),
+  continue: t(lang, "Continue to booking", "Continuar a reserva"),
+  askHotel: t(lang, "Ask hotel", "Preguntar al hotel"),
+  note: t(
+    lang,
+    "No payment is taken in this planning layer. Availability signals are demo-only; final rates are confirmed by the booking engine or hotel team.",
+    "No se realiza ningún pago en esta capa de planificación. Las señales de disponibilidad son solo demo; las tarifas finales se confirman en el motor de reservas o con el equipo del hotel."
+  ),
+  availability: t(lang, "Demo availability", "Disponibilidad demo"),
+  ratePreview: t(lang, "Rate preview", "Vista previa de tarifa"),
+  stayLength: t(lang, "Stay length", "Duración"),
+  available: t(lang, "Available", "Disponible"),
+  limited: t(lang, "Limited", "Limitado"),
+  requestOnly: t(lang, "Request only", "Bajo petición"),
+  bestDirectRate: t(lang, "Best direct rate", "Mejor tarifa directa"),
+  from: t(lang, "From", "Desde"),
+  night: t(lang, "night", "noche"),
+  nights: t(lang, "nights", "noches"),
+  ratesConfirmed: t(lang, "Rates confirmed by hotel", "Tarifas confirmadas por el hotel"),
+};
+---
+
+<section
+  class="hotel-booking-planner"
+  data-hotel-booking-planner
+  data-open="false"
+  aria-label={labels.aria}
+  role="dialog"
+  aria-modal="true"
+  tabindex="-1"
+>
+  <button class="hotel-booking-planner__veil" type="button" data-booking-close aria-label={labels.close}></button>
+
+  <div class="hotel-booking-planner__shell">
+    <header class="hotel-booking-planner__header">
+      <div>
+        <div class="hotel-booking-planner__kicker">{labels.eyebrow}</div>
+        <h2>{labels.title}</h2>
+      </div>
+
+      <button type="button" data-booking-close>{labels.close}</button>
+    </header>
+
+    <div class="hotel-booking-planner__body">
+      <form class="hotel-booking-planner__form" data-booking-form>
+        <section class="hotel-booking-planner__group">
+          <div class="hotel-booking-planner__label">{labels.dates}</div>
+
+          <div class="hotel-booking-planner__fields hotel-booking-planner__fields--2">
+            <label>
+              <span>{labels.checkin}</span>
+              <input type="date" name="checkin" data-booking-checkin />
+            </label>
+
+            <label>
+              <span>{labels.checkout}</span>
+              <input type="date" name="checkout" data-booking-checkout />
+            </label>
+          </div>
+        </section>
+
+        <section class="hotel-booking-planner__group">
+          <div class="hotel-booking-planner__label">{labels.guests}</div>
+
+          <div class="hotel-booking-planner__fields hotel-booking-planner__fields--2">
+            <label>
+              <span>{labels.adults}</span>
+              <select name="adults" data-booking-adults>
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </label>
+
+            <label>
+              <span>{labels.children}</span>
+              <select name="children" data-booking-children>
+                <option value="0" selected>0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="hotel-booking-planner__group">
+          <div class="hotel-booking-planner__label">{labels.stay}</div>
+
+          <label class="hotel-booking-planner__select-row">
+            <span>{labels.room}</span>
+            <select name="room" data-booking-room>
+              <option value="">{labels.anyRoom}</option>
+              {roomOptions.map((room) => (
+                <option value={room.slug}>{room.title}</option>
+              ))}
+            </select>
+          </label>
+
+          <div class="hotel-booking-planner__intent" data-booking-intents>
+            {stayIntentOptions.map((intent, index) => (
+              <button
+                type="button"
+                data-booking-intent={intent}
+                class:list={["hotel-booking-planner__intent-button", index === 0 && "is-active"]}
+              >
+                {intent}
+              </button>
+            ))}
+          </div>
+        </section>
+      </form>
+
+      <aside class="hotel-booking-planner__summary">
+        <div class="hotel-booking-planner__summary-card">
+          <div class="hotel-booking-planner__kicker">{hotelName}</div>
+
+          <div class="hotel-booking-planner__context">
+            <span>{labels.selectedContext}</span>
+            <strong data-booking-context-title>{labels.noContext}</strong>
+            <small data-booking-context-type></small>
+          </div>
+
+          <div class="hotel-booking-planner__readout">
+            <div>
+              <span>{labels.checkin}</span>
+              <strong data-booking-summary-checkin>—</strong>
+            </div>
+
+            <div>
+              <span>{labels.checkout}</span>
+              <strong data-booking-summary-checkout>—</strong>
+            </div>
+
+            <div>
+              <span>{labels.guests}</span>
+              <strong data-booking-summary-guests>2 / 0</strong>
+            </div>
+
+            <div>
+              <span>{labels.intent}</span>
+              <strong data-booking-summary-intent>{stayIntentOptions[0]}</strong>
+            </div>
+          </div>
+
+          <div class="hotel-booking-planner__availability" data-booking-availability-card>
+            <div>
+              <span>{labels.availability}</span>
+              <strong data-booking-availability-status>{labels.available}</strong>
+            </div>
+
+            <div>
+              <span>{labels.ratePreview}</span>
+              <strong data-booking-rate-preview>{labels.ratesConfirmed}</strong>
+            </div>
+
+            <div>
+              <span>{labels.stayLength}</span>
+              <strong data-booking-stay-length>—</strong>
+            </div>
+          </div>
+
+          <p>{labels.note}</p>
+
+          <div class="hotel-booking-planner__actions">
+            <button type="button" data-booking-submit>
+              {labels.continue}
+            </button>
+
+            <button type="button" data-booking-contact>
+              {labels.askHotel}
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  html[data-booking-planner="open"] {
+    overflow: hidden;
+  }
+
+  html[data-booking-planner="open"] body .hotel-global-dock {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(-50%) translateY(12px) scale(0.92) !important;
+  }
+</style>
+
+<style>
+  .hotel-booking-planner {
+    position: fixed;
+    inset: 0;
+    z-index: 180;
+    opacity: 0;
+    pointer-events: none;
+    color: #15120f;
+    transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1);
+    isolation: isolate;
+  }
+
+  .hotel-booking-planner[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .hotel-booking-planner__veil {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background:
+      radial-gradient(circle at 72% 18%, rgba(226, 188, 136, 0.14), transparent 34rem),
+      rgba(12, 10, 8, 0.62);
+  }
+
+  .hotel-booking-planner__shell {
+    position: absolute;
+    right: clamp(0.8rem, 2vw, 1.6rem);
+    top: clamp(0.8rem, 2vw, 1.6rem);
+    bottom: clamp(0.8rem, 2vw, 1.6rem);
+    width: min(58rem, calc(100vw - 1.6rem));
+    overflow: hidden;
+    border: 1px solid rgba(21, 18, 15, 0.12);
+    border-radius: 2rem;
+    background:
+      radial-gradient(circle at 88% 8%, rgba(226, 188, 136, 0.12), transparent 24rem),
+      #fbf7f0;
+    box-shadow: 0 42px 140px rgba(21, 18, 15, 0.28);
+    transform: translate3d(2rem, 0, 0) scale(0.985);
+    transition: transform 680ms cubic-bezier(0.16, 1, 0.3, 1);
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+
+  .hotel-booking-planner[data-open="true"] .hotel-booking-planner__shell {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  .hotel-booking-planner__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: start;
+    border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+    padding: clamp(1.1rem, 2.4vw, 2rem);
+  }
+
+  .hotel-booking-planner__kicker,
+  .hotel-booking-planner__label,
+  .hotel-booking-planner label span,
+  .hotel-booking-planner__context span,
+  .hotel-booking-planner__readout span {
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(21, 18, 15, 0.45);
+  }
+
+  .hotel-booking-planner h2 {
+    margin-top: 0.8rem;
+    max-width: 10.5ch;
+    font-size: clamp(2.6rem, 5vw, 5.4rem);
+    line-height: 0.88;
+    letter-spacing: -0.08em;
+    font-weight: 400;
+  }
+
+  .hotel-booking-planner__header button[data-booking-close] {
+    min-height: 2.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(21, 18, 15, 0.12);
+    background: #fffaf2;
+    padding-inline: 1rem;
+    cursor: pointer;
+  }
+
+  .hotel-booking-planner__body {
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.42fr);
+    gap: clamp(1rem, 3vw, 2rem);
+    padding: clamp(1.1rem, 2.4vw, 2rem);
+  }
+
+  .hotel-booking-planner__form {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+  }
+
+  .hotel-booking-planner__group,
+  .hotel-booking-planner__summary-card {
+    border: 1px solid rgba(21, 18, 15, 0.1);
+    background: rgba(255, 250, 242, 0.58);
+    padding: clamp(1rem, 2vw, 1.35rem);
+  }
+
+  .hotel-booking-planner__fields {
+    margin-top: 0.9rem;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .hotel-booking-planner__fields--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hotel-booking-planner label {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .hotel-booking-planner input,
+  .hotel-booking-planner select {
+    width: 100%;
+    min-height: 3rem;
+    border: 1px solid rgba(21, 18, 15, 0.13);
+    border-radius: 0;
+    background: #fffaf2;
+    color: #15120f;
+    padding-inline: 0.85rem;
+    font: inherit;
+  }
+
+  .hotel-booking-planner__select-row {
+    margin-top: 0.9rem;
+  }
+
+  .hotel-booking-planner__intent {
+    margin-top: 0.9rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .hotel-booking-planner__intent-button {
+    min-height: 2.35rem;
+    border-radius: 999px;
+    border: 1px solid rgba(21, 18, 15, 0.12);
+    background: rgba(255, 250, 242, 0.58);
+    padding-inline: 0.85rem;
+    cursor: pointer;
+    color: rgba(21, 18, 15, 0.7);
+  }
+
+  .hotel-booking-planner__intent-button.is-active {
+    background: #15120f;
+    color: #fffaf2;
+  }
+
+  .hotel-booking-planner__summary {
+    min-width: 0;
+  }
+
+  .hotel-booking-planner__summary-card {
+    position: sticky;
+    top: 0;
+    display: grid;
+    gap: 1.3rem;
+    background: #15120f;
+    color: #fffaf2;
+  }
+
+  .hotel-booking-planner__summary-card .hotel-booking-planner__kicker,
+  .hotel-booking-planner__summary-card span {
+    color: rgba(255, 250, 242, 0.46);
+  }
+
+  .hotel-booking-planner__context strong {
+    margin-top: 0.65rem;
+    display: block;
+    font-size: clamp(1.8rem, 3.4vw, 3.4rem);
+    line-height: 0.92;
+    letter-spacing: -0.065em;
+    font-weight: 400;
+  }
+
+  .hotel-booking-planner__context small {
+    margin-top: 0.55rem;
+    display: block;
+    color: rgba(255, 250, 242, 0.58);
+  }
+
+  .hotel-booking-planner__readout {
+    display: grid;
+    gap: 0.65rem;
+    border-top: 1px solid rgba(255, 250, 242, 0.14);
+    padding-top: 1rem;
+  }
+
+  .hotel-booking-planner__readout div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(255, 250, 242, 0.1);
+    padding-bottom: 0.55rem;
+  }
+
+  .hotel-booking-planner__readout strong {
+    text-align: right;
+    font-weight: 400;
+    color: rgba(255, 250, 242, 0.82);
+  }
+
+  .hotel-booking-planner__summary-card p {
+    color: rgba(255, 250, 242, 0.62);
+    line-height: 1.62;
+  }
+
+  .hotel-booking-planner__actions {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .hotel-booking-planner__actions button {
+    min-height: 2.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 250, 242, 0.18);
+    cursor: pointer;
+  }
+
+  .hotel-booking-planner__actions button:first-child {
+    background: #fffaf2;
+    color: #15120f;
+  }
+
+  .hotel-booking-planner__actions button:last-child {
+    background: rgba(255, 250, 242, 0.04);
+    color: #fffaf2;
+  }
+
+  @media (max-width: 860px) {
+    .hotel-booking-planner__shell {
+      inset: 0.5rem;
+      width: auto;
+      border-radius: 1.5rem;
+    }
+
+    .hotel-booking-planner__body {
+      grid-template-columns: 1fr;
+    }
+
+    .hotel-booking-planner__summary-card {
+      position: static;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .hotel-booking-planner__shell {
+      inset: 0;
+      border-radius: 0;
+      width: auto;
+    }
+
+    .hotel-booking-planner__header {
+      padding: 1rem;
+    }
+
+    .hotel-booking-planner h2 {
+      font-size: clamp(2.25rem, 11vw, 3.7rem);
+    }
+
+    .hotel-booking-planner__body {
+      padding: 1rem;
+    }
+
+    .hotel-booking-planner__fields--2 {
+      grid-template-columns: 1fr;
+    }
+
+    .hotel-booking-planner__group,
+    .hotel-booking-planner__summary-card {
+      padding: 0.95rem;
+    }
+  }
+
+  /*
+    Stage 5A-R1 — Booking Planner Visual + Mobile Compact QA
+    Keep existing booking logic. Polish layout only.
+  */
+
+  .hotel-booking-planner__shell {
+    width: min(54rem, calc(100vw - 1.6rem));
+    border-radius: 1.55rem;
+  }
+
+  .hotel-booking-planner__header {
+    padding: clamp(1rem, 2vw, 1.55rem);
+    align-items: start;
+  }
+
+  .hotel-booking-planner h2 {
+    max-width: 11.8ch;
+    font-size: clamp(2.7rem, 4.3vw, 4.65rem);
+    line-height: 0.9;
+    letter-spacing: -0.078em;
+  }
+
+  .hotel-booking-planner__header button[data-booking-close] {
+    min-height: 2.35rem;
+    padding-inline: 0.9rem;
+    font-size: 0.82rem;
+  }
+
+  .hotel-booking-planner__body {
+    grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.38fr);
+    gap: clamp(0.8rem, 2vw, 1.35rem);
+    padding: clamp(0.95rem, 2vw, 1.45rem);
+  }
+
+  .hotel-booking-planner__form {
+    gap: 0.75rem;
+  }
+
+  .hotel-booking-planner__group,
+  .hotel-booking-planner__summary-card {
+    padding: clamp(0.85rem, 1.6vw, 1.1rem);
+  }
+
+  .hotel-booking-planner__fields {
+    margin-top: 0.72rem;
+    gap: 0.58rem;
+  }
+
+  .hotel-booking-planner input,
+  .hotel-booking-planner select {
+    min-height: 2.72rem;
+    padding-inline: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .hotel-booking-planner__select-row {
+    margin-top: 0.72rem;
+  }
+
+  .hotel-booking-planner__intent {
+    margin-top: 0.72rem;
+    gap: 0.42rem;
+  }
+
+  .hotel-booking-planner__intent-button {
+    min-height: 2.1rem;
+    padding-inline: 0.76rem;
+    font-size: 0.82rem;
+  }
+
+  .hotel-booking-planner__summary-card {
+    gap: 1rem;
+  }
+
+  .hotel-booking-planner__context strong {
+    font-size: clamp(1.55rem, 2.85vw, 2.75rem);
+    line-height: 0.95;
+  }
+
+  .hotel-booking-planner__readout {
+    gap: 0.48rem;
+    padding-top: 0.8rem;
+  }
+
+  .hotel-booking-planner__readout div {
+    padding-bottom: 0.45rem;
+  }
+
+  .hotel-booking-planner__summary-card p {
+    font-size: 0.86rem;
+    line-height: 1.52;
+  }
+
+  .hotel-booking-planner__actions {
+    gap: 0.45rem;
+  }
+
+  .hotel-booking-planner__actions button {
+    min-height: 2.48rem;
+    font-size: 0.86rem;
+  }
+
+  @media (max-width: 860px) {
+    .hotel-booking-planner__shell {
+      inset: 0.45rem;
+      border-radius: 1.2rem;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .hotel-booking-planner__header {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(226, 188, 136, 0.1), transparent 22rem),
+        rgba(251, 247, 240, 0.94);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .hotel-booking-planner h2 {
+      max-width: 12ch;
+      font-size: clamp(2.35rem, 8.2vw, 4.2rem);
+    }
+
+    .hotel-booking-planner__body {
+      grid-template-columns: 1fr;
+      gap: 0.8rem;
+      padding: 0.85rem;
+    }
+
+    .hotel-booking-planner__summary-card {
+      position: static;
+      order: -1;
+    }
+
+    .hotel-booking-planner__context strong {
+      max-width: 12ch;
+      font-size: clamp(1.75rem, 7vw, 3rem);
+    }
+
+    .hotel-booking-planner__readout {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .hotel-booking-planner__readout div {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .hotel-booking-planner__readout strong {
+      text-align: left;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .hotel-booking-planner__shell {
+      inset: 0;
+      width: auto;
+      border-radius: 0;
+    }
+
+    .hotel-booking-planner__header {
+      padding: 0.85rem;
+    }
+
+    .hotel-booking-planner h2 {
+      max-width: 11.5ch;
+      font-size: clamp(2.05rem, 9.6vw, 3.25rem);
+      line-height: 0.94;
+      letter-spacing: -0.068em;
+    }
+
+    .hotel-booking-planner__header button[data-booking-close] {
+      min-height: 2.2rem;
+      padding-inline: 0.75rem;
+      font-size: 0.76rem;
+    }
+
+    .hotel-booking-planner__body {
+      padding: 0.75rem;
+      gap: 0.7rem;
+    }
+
+    .hotel-booking-planner__group,
+    .hotel-booking-planner__summary-card {
+      padding: 0.8rem;
+    }
+
+    .hotel-booking-planner__fields--2 {
+      grid-template-columns: 1fr;
+    }
+
+    .hotel-booking-planner__kicker,
+    .hotel-booking-planner__label,
+    .hotel-booking-planner label span,
+    .hotel-booking-planner__context span,
+    .hotel-booking-planner__readout span {
+      font-size: 0.54rem;
+      letter-spacing: 0.2em;
+    }
+
+    .hotel-booking-planner input,
+    .hotel-booking-planner select {
+      min-height: 2.65rem;
+      font-size: 0.86rem;
+    }
+
+    .hotel-booking-planner__intent {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .hotel-booking-planner__intent-button {
+      justify-content: center;
+      min-height: 2.05rem;
+      padding-inline: 0.55rem;
+      font-size: 0.74rem;
+      line-height: 1.15;
+    }
+
+    .hotel-booking-planner__readout {
+      grid-template-columns: 1fr;
+    }
+
+    .hotel-booking-planner__summary-card p {
+      font-size: 0.8rem;
+      line-height: 1.48;
+    }
+
+    .hotel-booking-planner__actions button {
+      min-height: 2.42rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  /* Stage 5C — Demo Availability Layer */
+
+  .hotel-booking-planner__availability {
+    display: grid;
+    gap: 0.6rem;
+    border-top: 1px solid rgba(255, 250, 242, 0.14);
+    border-bottom: 1px solid rgba(255, 250, 242, 0.1);
+    padding-block: 0.9rem;
+  }
+
+  .hotel-booking-planner__availability div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+  }
+
+  .hotel-booking-planner__availability span {
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255, 250, 242, 0.44);
+  }
+
+  .hotel-booking-planner__availability strong {
+    max-width: 12rem;
+    text-align: right;
+    font-weight: 400;
+    color: rgba(255, 250, 242, 0.86);
+  }
+
+  .hotel-booking-planner__availability[data-availability="available"] strong:first-of-type,
+  .hotel-booking-planner__availability[data-availability="available"] [data-booking-availability-status] {
+    color: #fffaf2;
+  }
+
+  .hotel-booking-planner__availability[data-availability="limited"] [data-booking-availability-status] {
+    color: rgba(255, 220, 160, 0.96);
+  }
+
+  .hotel-booking-planner__availability[data-availability="request"] [data-booking-availability-status] {
+    color: rgba(255, 190, 150, 0.96);
+  }
+
+  @media (max-width: 520px) {
+    .hotel-booking-planner__availability {
+      gap: 0.5rem;
+      padding-block: 0.75rem;
+    }
+
+    .hotel-booking-planner__availability div {
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .hotel-booking-planner__availability strong {
+      max-width: none;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+  }
+</style>
+
+<script is:inline define:vars={{
+  baseBookingUrl: bookingUrl,
+  contactUrl: `/${lang}/contact/`,
+  currentLang: lang,
+  roomOptions,
+  offerOptions,
+  experienceOptions,
+  labels,
+}}>
+  (() => {
+    const root = document.querySelector("[data-hotel-booking-planner]");
+    if (!root) return;
+
+    const form = root.querySelector("[data-booking-form]");
+    const checkin = root.querySelector("[data-booking-checkin]");
+    const checkout = root.querySelector("[data-booking-checkout]");
+    const adults = root.querySelector("[data-booking-adults]");
+    const children = root.querySelector("[data-booking-children]");
+    const roomSelect = root.querySelector("[data-booking-room]");
+    const intentButtons = Array.from(root.querySelectorAll("[data-booking-intent]"));
+    const closeButtons = Array.from(root.querySelectorAll("[data-booking-close]"));
+    const submitButton = root.querySelector("[data-booking-submit]");
+    const contactButton = root.querySelector("[data-booking-contact]");
+
+    const contextTitle = root.querySelector("[data-booking-context-title]");
+    const contextType = root.querySelector("[data-booking-context-type]");
+    const summaryCheckin = root.querySelector("[data-booking-summary-checkin]");
+    const summaryCheckout = root.querySelector("[data-booking-summary-checkout]");
+    const summaryGuests = root.querySelector("[data-booking-summary-guests]");
+    const summaryIntent = root.querySelector("[data-booking-summary-intent]");
+    const availabilityCard = root.querySelector("[data-booking-availability-card]");
+    const availabilityStatus = root.querySelector("[data-booking-availability-status]");
+    const ratePreview = root.querySelector("[data-booking-rate-preview]");
+    const stayLength = root.querySelector("[data-booking-stay-length]");
+
+    let isOpen = false;
+    let lastFocus = null;
+    let lockedScrollY = 0;
+    let selectedIntent = intentButtons[0]?.getAttribute("data-booking-intent") || "";
+    let currentTriggerContext = null;
+    let lastAvailability = {
+      key: "available",
+      status: labels.available,
+      nights: 0,
+      ratePreview: labels.ratesConfirmed,
+      rateValue: "",
+    };
+    let context = {
+      type: "general",
+      slug: "",
+      title: labels.noContext,
+    };
+
+    const normalize = (url) => {
+      if (!url) return "";
+
+      try {
+        return new URL(url, window.location.origin).href;
+      } catch {
+        return "";
+      }
+    };
+
+    const bookingHref = normalize(baseBookingUrl);
+
+    const formatLocalISO = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    };
+
+    const todayISO = () => {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      return formatLocalISO(date);
+    };
+
+    const addDaysISO = (iso, days) => {
+      const date = iso ? new Date(`${iso}T00:00:00`) : new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() + days);
+      return formatLocalISO(date);
+    };
+
+    const parseLocalDate = (iso) => {
+      if (!iso) return null;
+
+      const parts = iso.split("-").map(Number);
+      if (parts.length !== 3 || parts.some((part) => !Number.isFinite(part))) return null;
+
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    };
+
+    const getNights = () => {
+      const start = parseLocalDate(checkin?.value || "");
+      const end = parseLocalDate(checkout?.value || "");
+
+      if (!start || !end) return 0;
+
+      const diff = end.getTime() - start.getTime();
+      return Math.max(0, Math.round(diff / 86400000));
+    };
+
+    const isWeekendStay = () => {
+      const start = parseLocalDate(checkin?.value || "");
+      if (!start) return false;
+
+      const day = start.getDay();
+
+      return day === 5 || day === 6;
+    };
+
+    const getSelectedRoom = () => {
+      const selectedSlug =
+        roomSelect?.value ||
+        (context.type === "room" ? context.slug : "");
+
+      if (!selectedSlug) return null;
+
+      return roomOptions.find((room) => room.slug === selectedSlug) || null;
+    };
+
+    const getBaseRate = () => {
+      const selectedRoom = getSelectedRoom();
+
+      if (selectedRoom?.price) {
+        const roomRate = Number(String(selectedRoom.price).replace(/[^\d.]/g, ""));
+        if (Number.isFinite(roomRate) && roomRate > 0) return roomRate;
+      }
+
+      const roomRates = roomOptions
+        .map((room) => Number(String(room.price || "").replace(/[^\d.]/g, "")))
+        .filter((value) => Number.isFinite(value) && value > 0);
+
+      if (!roomRates.length) return 0;
+
+      return Math.min(...roomRates);
+    };
+
+    const getAvailability = () => {
+      const nights = getNights();
+      const adultCount = Number(adults?.value || "2");
+      const childCount = Number(children?.value || "0");
+      const baseRate = getBaseRate();
+      const weekend = isWeekendStay();
+      const selectedRoom = getSelectedRoom();
+      const selectedRoomSlug = selectedRoom?.slug || "";
+      const intent = String(selectedIntent || "").toLowerCase();
+
+      let key = "available";
+      let status = labels.available;
+      let rateLabel = labels.ratesConfirmed;
+      let rateValue = "";
+
+      if (nights >= 6 || adultCount + childCount >= 5) {
+        key = "request";
+        status = labels.requestOnly;
+      } else if (
+        weekend ||
+        childCount > 0 ||
+        intent.includes("terrace") ||
+        intent.includes("balc") ||
+        selectedRoomSlug.includes("terrace") ||
+        selectedRoomSlug.includes("suite")
+      ) {
+        key = "limited";
+        status = labels.limited;
+      }
+
+      if (context.type === "offer") {
+        key = key === "request" ? "request" : "available";
+        status = key === "request" ? labels.requestOnly : labels.bestDirectRate;
+      }
+
+      if (baseRate > 0 && nights > 0) {
+        const estimated = baseRate * nights;
+        rateValue = String(estimated);
+        rateLabel = `${labels.from} €${estimated} / ${nights} ${nights === 1 ? labels.night : labels.nights}`;
+      }
+
+      return {
+        key,
+        status,
+        nights,
+        ratePreview: rateLabel,
+        rateValue,
+      };
+    };
+
+    const updateAvailability = () => {
+      lastAvailability = getAvailability();
+
+      if (availabilityCard) {
+        availabilityCard.setAttribute("data-availability", lastAvailability.key);
+      }
+
+      if (availabilityStatus) availabilityStatus.textContent = lastAvailability.status;
+      if (ratePreview) ratePreview.textContent = lastAvailability.ratePreview;
+
+      if (stayLength) {
+        stayLength.textContent = lastAvailability.nights
+          ? `${lastAvailability.nights} ${lastAvailability.nights === 1 ? labels.night : labels.nights}`
+          : "—";
+      }
+    };
+
+    const lockScroll = () => {
+      lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${lockedScrollY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+
+      if (scrollbar > 0) {
+        document.body.style.paddingRight = `${scrollbar}px`;
+      }
+    };
+
+    const unlockScroll = () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      document.body.style.paddingRight = "";
+
+      window.scrollTo(0, lockedScrollY);
+    };
+
+    const getRouteContext = () => {
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      const section = parts[1] || "";
+      const slug = parts[2] || "";
+
+      if (section === "rooms" && slug) {
+        const room = roomOptions.find((item) => item.slug === slug);
+        return {
+          type: "room",
+          slug,
+          title: room?.title || slug,
+          label: labels.roomContext,
+        };
+      }
+
+      if (section === "offers" && slug) {
+        const offer = offerOptions.find((item) => item.slug === slug);
+        return {
+          type: "offer",
+          slug,
+          title: offer?.title || slug,
+          label: labels.offerContext,
+        };
+      }
+
+      if (section === "experiences" && slug) {
+        const experience = experienceOptions.find((item) => item.slug === slug);
+        return {
+          type: "experience",
+          slug,
+          title: experience?.title || slug,
+          label: labels.experienceContext,
+        };
+      }
+
+      return {
+        type: "general",
+        slug: "",
+        title: labels.noContext,
+        label: "",
+      };
+    };
+
+    const labelForContext = (type) => {
+      if (type === "room") return labels.roomContext;
+      if (type === "offer") return labels.offerContext;
+      if (type === "experience") return labels.experienceContext;
+      return "";
+    };
+
+    const findOptionForContext = (type, slug) => {
+      if (!slug) return null;
+
+      if (type === "room") {
+        return roomOptions.find((item) => item.slug === slug) || null;
+      }
+
+      if (type === "offer") {
+        return offerOptions.find((item) => item.slug === slug) || null;
+      }
+
+      if (type === "experience") {
+        return experienceOptions.find((item) => item.slug === slug) || null;
+      }
+
+      return null;
+    };
+
+    const buildContext = (type, slug, title) => {
+      const cleanType = String(type || "").trim().toLowerCase();
+      const cleanSlug = String(slug || "").trim();
+      const cleanTitle = String(title || "").trim();
+
+      if (!cleanType || cleanType === "general") {
+        return {
+          type: "general",
+          slug: "",
+          title: labels.noContext,
+          label: "",
+        };
+      }
+
+      if (!["room", "offer", "experience"].includes(cleanType)) {
+        return null;
+      }
+
+      const option = findOptionForContext(cleanType, cleanSlug);
+
+      return {
+        type: cleanType,
+        slug: cleanSlug,
+        title: cleanTitle || option?.title || cleanSlug || labels.noContext,
+        label: labelForContext(cleanType),
+      };
+    };
+
+    const getTriggerContext = (trigger) => {
+      if (!(trigger instanceof HTMLElement)) return null;
+
+      const source = trigger.closest("[data-booking-context], [data-booking-trigger]");
+      if (!(source instanceof HTMLElement)) return null;
+
+      const type =
+        source.dataset.bookingContext ||
+        source.dataset.bookingType ||
+        "";
+
+      const slug =
+        source.dataset.bookingSlug ||
+        source.dataset.roomSlug ||
+        source.dataset.offerSlug ||
+        source.dataset.experienceSlug ||
+        "";
+
+      const title =
+        source.dataset.bookingTitle ||
+        source.dataset.roomTitle ||
+        source.dataset.offerTitle ||
+        source.dataset.experienceTitle ||
+        "";
+
+      return buildContext(type, slug, title);
+    };
+
+    const updateContext = () => {
+      context = currentTriggerContext || getRouteContext();
+
+      if (contextTitle) contextTitle.textContent = context.title;
+      if (contextType) contextType.textContent = context.label || "";
+
+      if (roomSelect) {
+        roomSelect.value = context.type === "room" ? context.slug : "";
+      }
+    };
+
+    const updateSummary = () => {
+      if (summaryCheckin) summaryCheckin.textContent = checkin?.value || "—";
+      if (summaryCheckout) summaryCheckout.textContent = checkout?.value || "—";
+      if (summaryGuests) {
+        summaryGuests.textContent = `${adults?.value || "2"} / ${children?.value || "0"}`;
+      }
+      if (summaryIntent) summaryIntent.textContent = selectedIntent || "—";
+
+      updateAvailability();
+    };
+
+    const setDefaultDates = () => {
+      if (!checkin || !checkout) return;
+
+      const today = todayISO();
+      const tomorrow = addDaysISO(today, 1);
+      const after = addDaysISO(today, 3);
+
+      checkin.min = today;
+      checkout.min = tomorrow;
+
+      if (!checkin.value) checkin.value = tomorrow;
+      if (!checkout.value) checkout.value = after;
+    };
+
+    const syncCheckoutMin = () => {
+      if (!checkin || !checkout) return;
+
+      const minCheckout = addDaysISO(checkin.value || todayISO(), 1);
+      checkout.min = minCheckout;
+
+      if (!checkout.value || checkout.value <= checkin.value) {
+        checkout.value = minCheckout;
+      }
+    };
+
+    const open = (trigger, explicitContext = null) => {
+      if (isOpen) return;
+
+      lastFocus = trigger instanceof HTMLElement ? trigger : document.activeElement;
+      currentTriggerContext =
+        (explicitContext
+          ? buildContext(explicitContext.type, explicitContext.slug, explicitContext.title)
+          : null) ||
+        getTriggerContext(trigger);
+
+      isOpen = true;
+
+      setDefaultDates();
+      syncCheckoutMin();
+      updateContext();
+      updateSummary();
+
+      root.dataset.open = "true";
+      document.documentElement.setAttribute("data-booking-planner", "open");
+      lockScroll();
+
+      window.setTimeout(() => root.focus(), 30);
+    };
+
+    const close = () => {
+      if (!isOpen) return;
+
+      isOpen = false;
+      currentTriggerContext = null;
+      root.dataset.open = "false";
+      document.documentElement.removeAttribute("data-booking-planner");
+      unlockScroll();
+
+      if (lastFocus instanceof HTMLElement) {
+        window.setTimeout(() => lastFocus.focus({ preventScroll: true }), 80);
+      }
+    };
+
+    const appendParams = (target) => {
+      const fallback = new URL(contactUrl, window.location.origin);
+
+      let url;
+      try {
+        url = target ? new URL(target, window.location.origin) : fallback;
+      } catch {
+        url = fallback;
+      }
+
+      const params = {
+        checkin: checkin?.value || "",
+        checkout: checkout?.value || "",
+        adults: adults?.value || "",
+        children: children?.value || "",
+        room: roomSelect?.value || "",
+        intent: selectedIntent || "",
+        nights: lastAvailability.nights ? String(lastAvailability.nights) : "",
+        availability: lastAvailability.key || "",
+        rate_preview: lastAvailability.rateValue || "",
+      };
+
+      if (context.type === "offer") params.offer = context.slug;
+      if (context.type === "experience") params.experience = context.slug;
+      if (context.type === "room" && !params.room) params.room = context.slug;
+
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) url.searchParams.set(key, value);
+      });
+
+      return url.toString();
+    };
+
+    const interceptBookingLinks = () => {
+      const links = Array.from(document.querySelectorAll("a"));
+
+      links.forEach((link) => {
+        if (!(link instanceof HTMLAnchorElement)) return;
+        if (link.dataset.bookingPlannerBound === "true") return;
+
+        const href = normalize(link.getAttribute("href") || "");
+        const matchesBooking = Boolean(bookingHref && href === bookingHref);
+        const hasExplicitTrigger =
+          link.matches("[data-booking-trigger], [data-booking-context]") ||
+          Boolean(link.closest("[data-booking-trigger], [data-booking-context]"));
+
+        if (!matchesBooking && !hasExplicitTrigger) return;
+
+        link.dataset.bookingPlannerBound = "true";
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          open(link);
+        });
+      });
+    };
+
+    if (checkin) {
+      checkin.addEventListener("change", () => {
+        syncCheckoutMin();
+        updateSummary();
+      });
+    }
+
+    [checkout, adults, children, roomSelect].forEach((node) => {
+      if (!node) return;
+      node.addEventListener("change", updateSummary);
+    });
+
+    intentButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        selectedIntent = button.getAttribute("data-booking-intent") || "";
+
+        intentButtons.forEach((item) => item.classList.remove("is-active"));
+        button.classList.add("is-active");
+
+        updateSummary();
+      });
+    });
+
+    closeButtons.forEach((button) => button.addEventListener("click", close));
+
+    if (submitButton) {
+      submitButton.addEventListener("click", () => {
+        window.location.href = appendParams(baseBookingUrl || contactUrl);
+      });
+    }
+
+    if (contactButton) {
+      contactButton.addEventListener("click", () => {
+        window.location.href = appendParams(contactUrl);
+      });
+    }
+
+    root.addEventListener("keydown", (event) => {
+      if (!isOpen) return;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close();
+      }
+    });
+
+    window.addEventListener("hotel:booking-planner:open", (event) => {
+      const detail = event.detail || {};
+      open(detail.trigger || null, detail.context || null);
+    });
+
+    interceptBookingLinks();
+
+    const observer = new MutationObserver(interceptBookingLinks);
+    observer.observe(document.body, { childList: true, subtree: true });
+  })();
+</script>
