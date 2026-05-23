@@ -1,8 +1,19 @@
 // src/core/cms/env.ts
+const viteEnv: Record<string, unknown> = {
+  ENGINE_MODE: import.meta.env.ENGINE_MODE,
+  ENGINE_STRICT_ENV: import.meta.env.ENGINE_STRICT_ENV,
+  SHEETS_SETTINGS_CSV: import.meta.env.SHEETS_SETTINGS_CSV,
+  SHEETS_ROOMS_CSV: import.meta.env.SHEETS_ROOMS_CSV,
+  SHEETS_OFFERS_CSV: import.meta.env.SHEETS_OFFERS_CSV,
+  SHEETS_EXPERIENCES_CSV: import.meta.env.SHEETS_EXPERIENCES_CSV,
+  SHEETS_REVIEWS_CSV: import.meta.env.SHEETS_REVIEWS_CSV,
+  SHEETS_PAGES_CSV: import.meta.env.SHEETS_PAGES_CSV,
+};
+
 function readEnv(key: string): string | undefined {
   const v =
-    // Astro/Vite server-side
-    (import.meta as any)?.env?.[key] ??
+    // Astro/Vite server-side. Keep keys explicit; Vite module runner rejects import.meta.env[key].
+    viteEnv[key] ??
     // Node runtime
     (process as any)?.env?.[key];
 
