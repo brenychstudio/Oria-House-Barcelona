@@ -1404,7 +1404,7 @@ const experienceGuideSignals = (experienceHighlights.length ? experienceHighligh
         let active = 0;
         const total = String(slides.length).padStart(2, "0");
 
-        const setActive = (index) => {
+        const setActive = (index: number) => {
           active = (index + slides.length) % slides.length;
 
           slides.forEach((slide, slideIndex) => {
