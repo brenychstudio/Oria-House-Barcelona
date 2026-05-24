@@ -4,6 +4,7 @@ import { LANGS, type Lang, isLang, t } from "../../../content/languages";
 import { getSettings } from "../../../cms/sheets";
 import { getHotelLabels } from "../../../hotel/content/labels";
 import { GALLERY_ARCHIVE_IMAGES } from "../../../hotel/data/demoAssets";
+import { getSeoCopy } from "../../../hotel/seo/siteSeo";
 import CinematicGalleryArchive from "../../../hotel/ui/CinematicGalleryArchive.astro";
 
 export function getStaticPaths() {
@@ -13,6 +14,7 @@ export function getStaticPaths() {
 const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
+const seo = getSeoCopy("gallery", lang);
 
 const L = getHotelLabels(lang);
 const s = await getSettings();
@@ -74,18 +76,61 @@ const archiveLabels = [
   {
     id: "room-calm",
     title: t(lang, "Room calm", "Calma de habitación"),
-    section: t(lang, "Room", "Habitación"),
+    section: t(lang, "Rooms", "Habitaciones"),
     mood: t(lang, "Morning room", "Habitación de mañana"),
     signal: t(lang, "linen / wood / soft light", "lino / madera / luz suave"),
     src: GALLERY_ARCHIVE_IMAGES[7],
     alt: t(lang, "Quiet room with bed, wood and soft morning light.", "Habitación tranquila con cama, madera y luz suave de mañana."),
+  },
+  {
+    id: "bathroom-detail",
+    title: t(lang, "Bathroom detail", "Detalle de bano"),
+    section: t(lang, "Rooms", "Habitaciones"),
+    mood: t(lang, "Clean ritual", "Ritual limpio"),
+    signal: t(lang, "stone / brass / water", "piedra / laton / agua"),
+    src: GALLERY_ARCHIVE_IMAGES[4],
+    alt: t(lang, "Bathroom detail with warm stone and fixtures.", "Detalle de bano con piedra calida y griferia."),
+  },
+  {
+    id: "desk-morning",
+    title: t(lang, "Desk morning", "Escritorio de manana"),
+    section: t(lang, "Rooms", "Habitaciones"),
+    mood: t(lang, "Quiet work light", "Luz tranquila de trabajo"),
+    signal: t(lang, "paper / coffee / window", "papel / cafe / ventana"),
+    src: GALLERY_ARCHIVE_IMAGES[5],
+    alt: t(lang, "Room desk with soft morning light.", "Escritorio de habitacion con luz suave de manana."),
+  },
+  {
+    id: "window-light",
+    title: t(lang, "Window light", "Luz de ventana"),
+    section: t(lang, "Rooms", "Habitaciones"),
+    mood: t(lang, "Slow morning", "Manana lenta"),
+    signal: t(lang, "curtain / sun / quiet", "cortina / sol / calma"),
+    src: GALLERY_ARCHIVE_IMAGES[6],
+    alt: t(lang, "Window light falling across a quiet room.", "Luz de ventana sobre una habitacion tranquila."),
+  },
+  {
+    id: "arrival-corridor",
+    title: t(lang, "Arrival corridor", "Pasillo de llegada"),
+    section: t(lang, "Architecture", "Arquitectura"),
+    mood: t(lang, "Soft threshold", "Umbral suave"),
+    signal: t(lang, "door / plaster / pause", "puerta / estuco / pausa"),
+    src: GALLERY_ARCHIVE_IMAGES[8],
+    alt: t(lang, "Quiet hotel corridor with warm arrival light.", "Pasillo tranquilo del hotel con luz calida de llegada."),
   },
 ];
 
 const archiveItems = archiveLabels.filter((item) => Boolean(item.src));
 ---
 
-<BaseLayout lang={lang} title={title} fullBleed>
+<BaseLayout
+  lang={lang}
+  title={seo.title}
+  description={seo.description}
+  ogImage={archiveItems[0]?.src}
+  canonicalPath={`/${lang}/gallery/`}
+  fullBleed
+>
   <CinematicGalleryArchive
     id={`hotel-gallery-${lang}`}
     eyebrow={t(lang, "Cinematic gallery", "Galería cinematográfica")}
@@ -100,5 +145,25 @@ const archiveItems = archiveLabels.filter((item) => Boolean(item.src));
     previousLabel={t(lang, "Previous frame", "Frame anterior")}
     nextLabel={t(lang, "Next frame", "Siguiente frame")}
     returnLabel={t(lang, "Return", "Volver")}
+    archiveEyebrow={t(lang, "Archive view", "Vista de archivo")}
+    archiveTitle={t(lang, "Scan the hotel by atmosphere.", "Explore el hotel por atmosfera.")}
+    archiveIntro={t(
+      lang,
+      "Browse rooms, water, dining and architecture as a quick visual index, then open any frame for a slower inspection.",
+      "Explore habitaciones, agua, gastronomia y arquitectura como un indice visual rapido, y abra cualquier frame para una inspeccion mas pausada."
+    )}
+    roomsHref={`/${lang}/rooms/`}
+    roomsLabel={t(lang, "Explore rooms", "Explorar habitaciones")}
+    ctaEyebrow={t(lang, "Choose by light", "Elegir por luz")}
+    ctaTitle={t(
+      lang,
+      "Find the room that matches this atmosphere.",
+      "Encuentre la habitacion que coincide con esta atmosfera."
+    )}
+    ctaIntro={t(
+      lang,
+      "Use the archive as a visual route into the rooms, then book direct when the light feels right.",
+      "Use el archivo como una ruta visual hacia las habitaciones y reserve directo cuando la luz encaje."
+    )}
   />
 </BaseLayout>

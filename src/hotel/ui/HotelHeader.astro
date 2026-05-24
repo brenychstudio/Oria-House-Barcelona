@@ -82,13 +82,13 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
       aria-label={homeLabel}
       data-header-part="brand"
     >
-      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#171410] text-[11px] uppercase text-white shadow-[0_10px_26px_rgba(23,20,16,0.18)]">
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#171410] text-[11px] uppercase text-white shadow-[0_10px_26px_rgba(23,20,16,0.18)]" data-header-logo>
         HC
       </span>
 
       <span class="hidden min-w-0 sm:block">
         <span class="block truncate text-sm">{siteName}</span>
-        <span class="mt-0.5 block text-[10px] uppercase opacity-45">
+        <span class="mt-1.5 block text-[10px] uppercase opacity-45">
           {brandSubline}
         </span>
       </span>
@@ -123,7 +123,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
       class="hotel-header__actions hidden items-center gap-2 rounded-full border border-black/10 bg-[#fbf7f0]/76 p-1.5 shadow-[0_18px_60px_rgba(64,42,24,0.10)] backdrop-blur-2xl lg:flex supports-[backdrop-filter]:bg-[#fbf7f0]/62"
       data-header-part="actions"
     >
-      <div class="flex rounded-full border border-black/10 bg-white/44 p-1">
+      <div class="flex rounded-full border border-black/10 bg-white/44 p-1" data-header-lang-list>
         {LANGS.map((l) => {
           const active = l === lang;
 
@@ -148,6 +148,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
           target="_blank"
           rel="noreferrer"
           class="inline-flex min-h-10 items-center justify-center rounded-full bg-[#171410] px-5 text-sm text-white shadow-[0_14px_34px_rgba(23,20,16,0.20)] hover:-translate-y-0.5"
+          data-header-cta
         >
           {bookLabel}
         </a>
@@ -155,6 +156,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
         <a
           href={`/${lang}/contact/`}
           class="inline-flex min-h-10 items-center justify-center rounded-full bg-[#171410] px-5 text-sm text-white shadow-[0_14px_34px_rgba(23,20,16,0.20)] hover:-translate-y-0.5"
+          data-header-cta
         >
           {bookLabel}
         </a>
@@ -163,7 +165,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
 
     <details class="hotel-header__mobile group relative lg:hidden">
       <summary class="list-none">
-        <span class="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-black/10 bg-[#fbf7f0]/78 px-4 text-sm shadow-[0_18px_60px_rgba(64,42,24,0.10)] backdrop-blur-2xl">
+        <span class="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-black/10 bg-[#fbf7f0]/78 px-4 text-sm shadow-[0_18px_60px_rgba(64,42,24,0.10)] backdrop-blur-2xl" data-header-mobile-summary>
           <span class="group-open:hidden">{menuLabel}</span>
           <span class="hidden group-open:inline">{closeLabel}</span>
         </span>
@@ -197,7 +199,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
         </nav>
 
         <div class="mt-3 flex items-center justify-between gap-3 border-t border-black/10 pt-3">
-          <div class="flex rounded-full border border-black/10 bg-white/50 p-1">
+          <div class="flex rounded-full border border-black/10 bg-white/50 p-1" data-header-lang-list>
             {LANGS.map((l) => {
               const active = l === lang;
 
@@ -221,6 +223,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
               target="_blank"
               rel="noreferrer"
               class="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#171410] px-4 text-sm text-white"
+              data-header-cta
             >
               {bookLabel}
             </a>
@@ -228,6 +231,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
             <a
               href={`/${lang}/contact/`}
               class="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#171410] px-4 text-sm text-white"
+              data-header-cta
             >
               {bookLabel}
             </a>
@@ -241,6 +245,18 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
 <style>
   .hotel-header {
     --header-split: 0;
+    --header-bg: rgba(251, 247, 240, 0.72);
+    --header-text: #171410;
+    --header-muted: rgba(23, 20, 16, 0.62);
+    --header-border: rgba(23, 20, 16, 0.1);
+    --header-chip: rgba(255, 255, 255, 0.46);
+    --header-chip-active-bg: #171410;
+    --header-chip-active-text: #fffaf2;
+    --header-cta-bg: #171410;
+    --header-cta-text: #fffaf2;
+    --header-cta-border: rgba(23, 20, 16, 0.92);
+    --header-shadow: rgba(64, 42, 24, 0.1);
+    --header-blur: 24px;
   }
 
   .hotel-header__inner {
@@ -259,13 +275,64 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
     transition:
       box-shadow 260ms ease,
       border-color 260ms ease,
-      background-color 260ms ease;
+      background-color 620ms cubic-bezier(0.19, 1, 0.22, 1),
+      color 520ms cubic-bezier(0.19, 1, 0.22, 1),
+      backdrop-filter 620ms cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .hotel-header__brand,
+  .hotel-header__actions,
+  .hotel-header__nav,
+  .hotel-header__mobile summary > span {
+    border-color: var(--header-border) !important;
+    background-color: var(--header-bg) !important;
+    color: var(--header-text) !important;
+    box-shadow: 0 18px 60px var(--header-shadow);
+    backdrop-filter: blur(var(--header-blur));
+    -webkit-backdrop-filter: blur(var(--header-blur));
+  }
+
+  .hotel-header [data-header-logo],
+  .hotel-header__nav a[aria-current="page"],
+  .hotel-header [data-header-lang-list] a[aria-current="page"],
+  .hotel-header [data-header-cta] {
+    border-color: var(--header-cta-border) !important;
+    background: var(--header-cta-bg) !important;
+    color: var(--header-cta-text) !important;
+  }
+
+  .hotel-header__nav a:not([aria-current="page"]),
+  .hotel-header [data-header-lang-list] a:not([aria-current="page"]) {
+    color: var(--header-muted) !important;
+    opacity: 1 !important;
+  }
+
+  .hotel-header [data-header-lang-list] {
+    border-color: var(--header-border) !important;
+    background-color: var(--header-chip) !important;
+    transition:
+      background-color 620ms cubic-bezier(0.19, 1, 0.22, 1),
+      border-color 620ms cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .hotel-header__mobile > div {
+    border-color: var(--header-border) !important;
+    background-color: color-mix(in srgb, var(--header-bg), #fffaf2 18%) !important;
+    color: var(--header-text) !important;
+    transition:
+      background-color 620ms cubic-bezier(0.19, 1, 0.22, 1),
+      border-color 620ms cubic-bezier(0.19, 1, 0.22, 1),
+      color 520ms cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .hotel-header__mobile nav a:not([aria-current="page"]) {
+    color: var(--header-text);
   }
 
   .hotel-header__brand {
     justify-self: start;
     transform:
-      translate3d(calc(var(--header-split) * -7.8rem), calc(var(--header-split) * -0.18rem), 0)
+      translate3d(0, calc(var(--header-split) * -0.18rem), 0)
       scale(calc(1 - (var(--header-split) * 0.018)));
   }
 
@@ -279,7 +346,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
   .hotel-header__actions {
     justify-self: end;
     transform:
-      translate3d(calc(var(--header-split) * 7.8rem), calc(var(--header-split) * -0.18rem), 0)
+      translate3d(0, calc(var(--header-split) * -0.18rem), 0)
       scale(calc(1 - (var(--header-split) * 0.018)));
   }
 
@@ -292,13 +359,13 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
   @media (min-width: 1500px) {
     .hotel-header__brand {
       transform:
-        translate3d(calc(var(--header-split) * -11rem), calc(var(--header-split) * -0.18rem), 0)
+        translate3d(0, calc(var(--header-split) * -0.18rem), 0)
         scale(calc(1 - (var(--header-split) * 0.018)));
     }
 
     .hotel-header__actions {
       transform:
-        translate3d(calc(var(--header-split) * 11rem), calc(var(--header-split) * -0.18rem), 0)
+        translate3d(0, calc(var(--header-split) * -0.18rem), 0)
         scale(calc(1 - (var(--header-split) * 0.018)));
     }
   }
@@ -333,21 +400,205 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
     if (!header) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduced.matches) return;
 
     let ticking = false;
+    let activeScene = "";
 
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const ease = (value) => value * value * (3 - 2 * value);
+
+    const themes = {
+      default: {
+        bg: "rgba(251, 247, 240, 0.72)",
+        text: "#171410",
+        muted: "rgba(23, 20, 16, 0.62)",
+        border: "rgba(23, 20, 16, 0.1)",
+        chip: "rgba(255, 255, 255, 0.46)",
+        ctaBg: "#171410",
+        ctaText: "#fffaf2",
+        ctaBorder: "rgba(23, 20, 16, 0.92)",
+        shadow: "rgba(64, 42, 24, 0.1)",
+        blur: "24px",
+        washA: "rgba(255, 255, 255, 0.48)",
+        washB: "rgba(226, 197, 158, 0.12)",
+        washC: "rgba(64, 42, 24, 0.05)",
+        washOpacity: "1",
+      },
+      "site-light": {
+        bg: "rgba(251, 247, 240, 0.72)",
+        text: "#171410",
+        muted: "rgba(23, 20, 16, 0.62)",
+        border: "rgba(23, 20, 16, 0.1)",
+        chip: "rgba(255, 255, 255, 0.46)",
+        ctaBg: "#171410",
+        ctaText: "#fffaf2",
+        ctaBorder: "rgba(23, 20, 16, 0.92)",
+        shadow: "rgba(64, 42, 24, 0.1)",
+        blur: "24px",
+        washA: "rgba(255, 255, 255, 0.48)",
+        washB: "rgba(226, 197, 158, 0.12)",
+        washC: "rgba(64, 42, 24, 0.05)",
+        washOpacity: "1",
+      },
+      "site-dark": {
+        bg: "rgba(13, 11, 9, 0.58)",
+        text: "#fffaf2",
+        muted: "rgba(255, 250, 242, 0.66)",
+        border: "rgba(255, 250, 242, 0.16)",
+        chip: "rgba(255, 250, 242, 0.08)",
+        ctaBg: "#fffaf2",
+        ctaText: "#15120f",
+        ctaBorder: "rgba(255, 250, 242, 0.84)",
+        shadow: "rgba(0, 0, 0, 0.2)",
+        blur: "30px",
+        washA: "rgba(255, 250, 242, 0.06)",
+        washB: "rgba(226, 188, 136, 0.14)",
+        washC: "rgba(5, 5, 4, 0.2)",
+        washOpacity: "0.8",
+      },
+      "home-hero": {
+        bg: "rgba(251, 247, 240, 0.68)",
+        text: "#171410",
+        muted: "rgba(23, 20, 16, 0.6)",
+        border: "rgba(23, 20, 16, 0.1)",
+        chip: "rgba(255, 255, 255, 0.44)",
+        ctaBg: "#171410",
+        ctaText: "#fffaf2",
+        ctaBorder: "rgba(23, 20, 16, 0.92)",
+        shadow: "rgba(64, 42, 24, 0.11)",
+        blur: "24px",
+        washA: "rgba(255, 255, 255, 0.46)",
+        washB: "rgba(226, 197, 158, 0.16)",
+        washC: "rgba(64, 42, 24, 0.06)",
+        washOpacity: "1",
+      },
+      "home-stay": {
+        bg: "rgba(251, 247, 240, 0.78)",
+        text: "#171410",
+        muted: "rgba(23, 20, 16, 0.62)",
+        border: "rgba(23, 20, 16, 0.1)",
+        chip: "rgba(255, 255, 255, 0.5)",
+        ctaBg: "#171410",
+        ctaText: "#fffaf2",
+        ctaBorder: "rgba(23, 20, 16, 0.92)",
+        shadow: "rgba(64, 42, 24, 0.1)",
+        blur: "24px",
+        washA: "rgba(255, 255, 255, 0.52)",
+        washB: "rgba(226, 197, 158, 0.14)",
+        washC: "rgba(64, 42, 24, 0.05)",
+        washOpacity: "1",
+      },
+      "home-gallery": {
+        bg: "rgba(13, 11, 9, 0.58)",
+        text: "#fffaf2",
+        muted: "rgba(255, 250, 242, 0.66)",
+        border: "rgba(255, 250, 242, 0.16)",
+        chip: "rgba(255, 250, 242, 0.08)",
+        ctaBg: "#fffaf2",
+        ctaText: "#15120f",
+        ctaBorder: "rgba(255, 250, 242, 0.84)",
+        shadow: "rgba(0, 0, 0, 0.2)",
+        blur: "30px",
+        washA: "rgba(255, 250, 242, 0.06)",
+        washB: "rgba(226, 188, 136, 0.14)",
+        washC: "rgba(5, 5, 4, 0.2)",
+        washOpacity: "0.8",
+      },
+      "home-closing": {
+        bg: "rgba(246, 239, 228, 0.82)",
+        text: "#171410",
+        muted: "rgba(23, 20, 16, 0.62)",
+        border: "rgba(23, 20, 16, 0.1)",
+        chip: "rgba(255, 255, 255, 0.42)",
+        ctaBg: "#171410",
+        ctaText: "#fffaf2",
+        ctaBorder: "rgba(23, 20, 16, 0.92)",
+        shadow: "rgba(64, 42, 24, 0.12)",
+        blur: "24px",
+        washA: "rgba(255, 255, 255, 0.5)",
+        washB: "rgba(226, 197, 158, 0.12)",
+        washC: "rgba(64, 42, 24, 0.04)",
+        washOpacity: "1",
+      },
+    };
+
+    const applyTheme = (sceneId) => {
+      const theme = themes[sceneId] || themes.default;
+
+      header.style.setProperty("--header-bg", theme.bg);
+      header.style.setProperty("--header-text", theme.text);
+      header.style.setProperty("--header-muted", theme.muted);
+      header.style.setProperty("--header-border", theme.border);
+      header.style.setProperty("--header-chip", theme.chip);
+      header.style.setProperty("--header-cta-bg", theme.ctaBg);
+      header.style.setProperty("--header-cta-text", theme.ctaText);
+      header.style.setProperty("--header-cta-border", theme.ctaBorder);
+      header.style.setProperty("--header-shadow", theme.shadow);
+      header.style.setProperty("--header-blur", theme.blur);
+      header.setAttribute("data-header-theme", sceneId || "default");
+
+      const root = document.documentElement;
+      root.style.setProperty("--hc-atmosphere-a", theme.washA || themes.default.washA || "rgba(255, 255, 255, 0.48)");
+      root.style.setProperty("--hc-atmosphere-b", theme.washB || themes.default.washB || "rgba(226, 197, 158, 0.12)");
+      root.style.setProperty("--hc-atmosphere-c", theme.washC || themes.default.washC || "rgba(64, 42, 24, 0.05)");
+      root.style.setProperty("--hc-atmosphere-opacity", theme.washOpacity || "1");
+      root.setAttribute("data-page-scene", sceneId || "default");
+    };
+
+    const getActiveScene = () => {
+      const scenes = Array.from(document.querySelectorAll("[data-header-scene]"));
+      if (!scenes.length) return "";
+
+      const headerRect = header.getBoundingClientRect();
+      const target = Math.min(
+        window.innerHeight - 1,
+        Math.max(24, headerRect.bottom + 10)
+      );
+      const sampleX = Math.max(1, Math.min(window.innerWidth - 1, window.innerWidth / 2));
+      const stack = document.elementsFromPoint(sampleX, target);
+      const direct = stack
+        .map((node) => node instanceof Element ? node.closest("[data-header-scene]") : null)
+        .find(Boolean);
+
+      if (direct) return direct.getAttribute("data-header-scene") || "";
+
+      let best = null;
+      let bestScore = -Infinity;
+
+      scenes.forEach((scene) => {
+        const rect = scene.getBoundingClientRect();
+        const visible = rect.bottom > target && rect.top < target;
+        if (!visible) return;
+
+        const distance = Math.abs(rect.top - target);
+        const score = 1000 - distance;
+
+        if (score > bestScore) {
+          bestScore = score;
+          best = scene;
+        }
+      });
+
+      return best?.getAttribute("data-header-scene") || "";
+    };
 
     const render = () => {
       ticking = false;
 
       const raw = clamp(window.scrollY / 520, 0, 1);
       const split = ease(raw);
+      const nextScene = getActiveScene();
 
-      header.style.setProperty("--header-split", split.toFixed(4));
+      if (!reduced.matches) {
+        header.style.setProperty("--header-split", split.toFixed(4));
+      }
+
       header.setAttribute("data-scrolled", split > 0.04 ? "true" : "false");
+
+      if (nextScene !== activeScene) {
+        activeScene = nextScene;
+        applyTheme(activeScene);
+      }
     };
 
     const requestRender = () => {
@@ -358,7 +609,12 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
 
     window.addEventListener("scroll", requestRender, { passive: true });
     window.addEventListener("resize", requestRender);
+    window.addEventListener("load", requestRender, { once: true });
 
-    render();
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", requestRender, { once: true });
+    } else {
+      requestRender();
+    }
   })();
 </script>

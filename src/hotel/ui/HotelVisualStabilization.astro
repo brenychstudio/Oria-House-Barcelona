@@ -64,6 +64,75 @@
       linear-gradient(180deg, rgba(5, 5, 4, 0.08), rgba(5, 5, 4, 0.055) 42%, rgba(5, 5, 4, 0.52)) !important;
   }
 
+  /*
+    Detail hero readability veil.
+    Keeps the photography lifted, but gives the decision panel its own local contrast
+    when it sits over windows, sky, curtains or bright bedding.
+  */
+
+  body .room-detail-hero__panel,
+  body .offer-detail-hero__panel,
+  body .experience-detail-hero__panel {
+    position: relative !important;
+    isolation: isolate !important;
+    border-top-color: rgba(255, 250, 242, 0.34) !important;
+    padding: clamp(0.45rem, 1vw, 0.7rem) clamp(0.35rem, 0.8vw, 0.55rem) !important;
+    text-shadow: 0 1px 14px rgba(5, 5, 4, 0.36) !important;
+  }
+
+  body .room-detail-hero__panel::before,
+  body .offer-detail-hero__panel::before,
+  body .experience-detail-hero__panel::before {
+    content: "";
+    position: absolute;
+    inset: -0.35rem -0.45rem -0.45rem;
+    z-index: -1;
+    border: 1px solid rgba(255, 250, 242, 0.09);
+    background:
+      linear-gradient(135deg, rgba(12, 10, 8, 0.34), rgba(12, 10, 8, 0.16) 58%, rgba(12, 10, 8, 0.22)),
+      radial-gradient(circle at 22% 0%, rgba(255, 250, 242, 0.08), transparent 15rem);
+    box-shadow:
+      0 16px 54px rgba(5, 5, 4, 0.1),
+      inset 0 1px 0 rgba(255, 250, 242, 0.05);
+    backdrop-filter: blur(4px) saturate(0.96);
+    -webkit-backdrop-filter: blur(4px) saturate(0.96);
+    pointer-events: none;
+  }
+
+  body .room-detail-hero__panel p,
+  body .offer-detail-hero__panel p,
+  body .experience-detail-hero__panel p {
+    color: rgba(255, 250, 242, 0.9) !important;
+  }
+
+  body .room-detail-hero__panel .room-detail-kicker,
+  body .offer-detail-hero__panel h2,
+  body .experience-detail-hero__panel h2 {
+    color: rgba(255, 250, 242, 0.74) !important;
+  }
+
+  body .room-detail-hero__specs div {
+    border-color: rgba(255, 250, 242, 0.18) !important;
+    background: rgba(10, 8, 6, 0.12) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 250, 242, 0.05) !important;
+  }
+
+  body .room-detail-hero__specs span {
+    color: rgba(255, 250, 242, 0.68) !important;
+  }
+
+  body .room-detail-hero__specs strong {
+    color: #fffaf2 !important;
+  }
+
+  body .room-detail-hero__actions a:last-child,
+  body .offer-detail-hero__actions a:last-child,
+  body .experience-detail-hero__actions a:last-child {
+    border-color: rgba(255, 250, 242, 0.3) !important;
+    background: rgba(10, 8, 6, 0.1) !important;
+    color: #fffaf2 !important;
+  }
+
   body .rooms-explorer__shade,
   body .offers-theatre__shade,
   body .experiences-theatre__shade,
@@ -1274,4 +1343,1853 @@
       min-height: 92svh !important;
     }
   }
+
+  /*
+    Stage 6A - Home Mobile App Mode Pass
+    Goal:
+    - phone is not a downscaled desktop;
+    - hide desktop/mobile floating docks on phone;
+    - compact Home sections;
+    - reduce hero density;
+    - make footer app-like;
+    - keep desktop/tablet untouched.
+  */
+
+  @media (max-width: 760px) {
+    html,
+    body {
+      overflow-x: clip !important;
+    }
+
+    /*
+      Phone navigation decision:
+      Header menu is the navigation.
+      Floating arrow docks are desktop/tablet only.
+    */
+    body .hotel-global-dock,
+    body .hotel-stay-dock,
+    body [data-home-stay-dock] {
+      display: none !important;
+    }
+
+    /*
+      App-like mobile header behavior.
+      Header remains visible at page start and hides on scroll down.
+    */
+    html[data-mobile-header-hidden="true"] body header,
+    html[data-mobile-header-hidden="true"] body [data-hotel-header],
+    html[data-mobile-header-hidden="true"] body .hotel-header,
+    html[data-mobile-header-hidden="true"] body .hc-header {
+      transform: translateY(-115%) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    body header,
+    body [data-hotel-header],
+    body .hotel-header,
+    body .hc-header {
+      transition:
+        transform 280ms ease,
+        opacity 280ms ease !important;
+      will-change: transform, opacity;
+    }
+
+    /*
+      HOME HERO - compact app entrance.
+    */
+    body .hotel-home-stage {
+      min-height: 88svh !important;
+      max-height: none !important;
+      overflow: hidden !important;
+    }
+
+    body .hotel-home-stage__inner {
+      width: min(100% - 1rem, 1680px) !important;
+      min-height: 88svh !important;
+      padding-top: 5.9rem !important;
+      padding-bottom: 1rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      gap: 1rem !important;
+    }
+
+    body .hotel-home-stage__top {
+      display: flex !important;
+      align-items: flex-start !important;
+      justify-content: space-between !important;
+      gap: 0.75rem !important;
+      min-width: 0 !important;
+    }
+
+    body .hotel-home-stage__top > :not(:first-child),
+    body .hotel-home-presence,
+    body .hotel-home-meta,
+    body .hotel-home-scroll-cue,
+    body .hotel-home-stage__bottom,
+    body .hotel-home-route,
+    body .hotel-home-stage [class*="brand"],
+    body .hotel-home-stage [class*="source"],
+    body .hotel-home-stage [class*="credit"],
+    body .hotel-home-stage [class*="nameplate"],
+    body .hotel-home-stage [class*="microbrand"] {
+      display: none !important;
+    }
+
+    body .hotel-home-kicker {
+      width: fit-content !important;
+      max-width: calc(100vw - 2rem) !important;
+      min-width: 0 !important;
+      white-space: nowrap !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      writing-mode: horizontal-tb !important;
+      text-orientation: mixed !important;
+      letter-spacing: 0.14em !important;
+      font-size: 0.52rem !important;
+      padding: 0.55rem 0.68rem !important;
+    }
+
+    body .hotel-home-stage__content {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      justify-content: flex-end !important;
+      gap: 0.85rem !important;
+      min-width: 0 !important;
+    }
+
+    body .hotel-home-stage__copy {
+      width: 100% !important;
+      max-width: 21rem !important;
+      min-width: 0 !important;
+      align-self: flex-start !important;
+      justify-self: start !important;
+      margin: 0 !important;
+      transform: none !important;
+    }
+
+    body .hotel-home-display {
+      width: 100% !important;
+      max-width: 10.8ch !important;
+      font-size: clamp(2.24rem, 8.9vw, 3.15rem) !important;
+      line-height: 0.96 !important;
+      letter-spacing: 0 !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+      transform: none !important;
+      text-wrap: balance !important;
+    }
+
+    body .hotel-home-display span,
+    body .hotel-home-display span + span {
+      display: block !important;
+      text-indent: 0 !important;
+    }
+
+    body .hotel-home-stage__panel {
+      position: relative !important;
+      z-index: 3 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      justify-self: stretch !important;
+      margin: 0 !important;
+      padding: 0.9rem !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      background:
+        linear-gradient(180deg, rgba(70, 60, 48, 0.64), rgba(25, 20, 15, 0.42)) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+    }
+
+    body .hotel-home-stage__panel-label {
+      margin-bottom: 0.48rem !important;
+      font-size: 0.5rem !important;
+      letter-spacing: 0.16em !important;
+    }
+
+    body .hotel-home-stage__panel p {
+      max-width: 100% !important;
+      font-size: 0.84rem !important;
+      line-height: 1.5 !important;
+    }
+
+    body .hotel-home-stage__panel a,
+    body .hotel-home-button {
+      min-height: 2.32rem !important;
+      padding-inline: 0.82rem !important;
+      font-size: 0.75rem !important;
+    }
+
+    /*
+      HOME CONTENT - mobile app rhythm.
+      These are intentionally broad home-only pattern selectors.
+    */
+    body [class*="home"][class*="field"],
+    body [class*="home"][class*="path"],
+    body [class*="home"][class*="gallery"],
+    body [class*="home"][class*="closing"],
+    body [class*="home"][class*="notes"],
+    body [class*="home"][class*="proof"],
+    body [class*="home"][class*="direct"] {
+      min-height: auto !important;
+      margin-top: 0 !important;
+      padding-top: clamp(2.4rem, 9vw, 3.6rem) !important;
+      padding-bottom: clamp(2.4rem, 9vw, 3.6rem) !important;
+    }
+
+    body [class*="home"] h2,
+    body [class*="home"] [class*="title"] {
+      max-width: 10.5ch !important;
+      font-size: clamp(2.35rem, 10.4vw, 4rem) !important;
+      line-height: 0.95 !important;
+      letter-spacing: 0 !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+    }
+
+    body [class*="home"] p {
+      max-width: 28rem !important;
+      font-size: 0.9rem !important;
+      line-height: 1.6 !important;
+    }
+
+    body [class*="home"][class*="card"],
+    body [class*="home"] article,
+    body [class*="home"] [class*="item"],
+    body [class*="home"] [class*="panel"] {
+      min-height: auto !important;
+    }
+
+    body [class*="home"] img {
+      max-width: 100% !important;
+    }
+
+    body [class*="home"][class*="gallery"] {
+      overflow: hidden !important;
+    }
+
+    body [class*="home"][class*="gallery"] [class*="visual"],
+    body [class*="home"][class*="gallery"] [class*="stage"],
+    body [class*="home"][class*="archive"] [class*="visual"],
+    body [class*="home"][class*="archive"] [class*="stage"] {
+      min-height: 24rem !important;
+      max-height: 34rem !important;
+    }
+
+    body [class*="home"][class*="gallery"] [class*="filmstrip"],
+    body [class*="home"][class*="archive"] [class*="filmstrip"] {
+      overflow-x: auto !important;
+      scrollbar-width: none !important;
+    }
+
+    body [class*="home"][class*="gallery"] [class*="filmstrip"]::-webkit-scrollbar,
+    body [class*="home"][class*="archive"] [class*="filmstrip"]::-webkit-scrollbar {
+      display: none !important;
+    }
+
+    /*
+      Closing / notes section: make it readable, not monumental.
+    */
+    body [class*="home"][class*="closing"] h2,
+    body [class*="home"][class*="direct"] h2,
+    body [class*="home"][class*="notes"] h2,
+    body [class*="home"][class*="proof"] h2 {
+      max-width: 11ch !important;
+      font-size: clamp(2.15rem, 9.5vw, 3.6rem) !important;
+      line-height: 0.98 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body [class*="home"][class*="closing"] blockquote,
+    body [class*="home"][class*="notes"] blockquote,
+    body [class*="home"][class*="proof"] blockquote {
+      font-size: 0.94rem !important;
+      line-height: 1.45 !important;
+    }
+
+    /*
+      Mobile footer - compact app footer.
+    */
+    body .hotel-footer {
+      margin-top: 0 !important;
+      padding-top: 2.75rem !important;
+      padding-bottom: calc(3.2rem + env(safe-area-inset-bottom)) !important;
+      overflow: hidden !important;
+    }
+
+    body .hotel-footer__inner {
+      width: min(100% - 1rem, 1480px) !important;
+      max-width: none !important;
+    }
+
+    body .hotel-footer__hero {
+      display: block !important;
+      grid-template-columns: none !important;
+      padding-bottom: 1.25rem !important;
+    }
+
+    body .hotel-footer h2 {
+      max-width: 8.5ch !important;
+      font-size: clamp(2.05rem, 9.8vw, 3.25rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .hotel-footer__statement {
+      margin-top: 1rem !important;
+      max-width: 100% !important;
+    }
+
+    body .hotel-footer__statement p,
+    body .hotel-footer__block p {
+      font-size: 0.82rem !important;
+      line-height: 1.5 !important;
+    }
+
+    body .hotel-footer__actions {
+      margin-top: 0.8rem !important;
+      gap: 0.42rem !important;
+    }
+
+    body .hotel-footer__actions a {
+      min-height: 2.18rem !important;
+      padding-inline: 0.75rem !important;
+      font-size: 0.7rem !important;
+    }
+
+    body .hotel-footer__grid {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 1.1rem !important;
+      padding-block: 1.25rem !important;
+    }
+
+    body .hotel-footer__label,
+    body .hotel-footer__kicker {
+      font-size: 0.48rem !important;
+      letter-spacing: 0.2em !important;
+    }
+
+    body .hotel-footer__contact-list,
+    body .hotel-footer__links,
+    body .hotel-footer__micro-list {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.38rem !important;
+      margin-top: 0.62rem !important;
+    }
+
+    body .hotel-footer__contact-list a,
+    body .hotel-footer__links a,
+    body .hotel-footer__micro-list span {
+      width: auto !important;
+      max-width: 100% !important;
+      font-size: 0.72rem !important;
+      line-height: 1.25 !important;
+      overflow-wrap: anywhere !important;
+    }
+
+    body .hotel-footer__micro-list span {
+      padding-top: 0.38rem !important;
+    }
+
+    body .hotel-footer__bottom {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.55rem !important;
+      padding-top: 0.85rem !important;
+      font-size: 0.56rem !important;
+      line-height: 1.3 !important;
+    }
+
+    body .hotel-footer__bottom > div,
+    body .hotel-footer__legal,
+    body .hotel-footer__social {
+      justify-content: flex-start !important;
+      gap: 0.38rem 0.7rem !important;
+    }
+  }
+
+  @media (max-width: 430px) {
+    body .hotel-home-stage {
+      min-height: 84svh !important;
+    }
+
+    body .hotel-home-stage__inner {
+      min-height: 84svh !important;
+      padding-top: 5.5rem !important;
+    }
+
+    body .hotel-home-display {
+      max-width: 10.4ch !important;
+      font-size: clamp(2.08rem, 8.6vw, 2.92rem) !important;
+    }
+
+    body .hotel-home-stage__panel {
+      padding: 0.82rem !important;
+    }
+
+    body .hotel-home-stage__panel p {
+      font-size: 0.8rem !important;
+    }
+
+    body [class*="home"] h2,
+    body [class*="home"] [class*="title"] {
+      font-size: clamp(2.15rem, 9.8vw, 3.55rem) !important;
+    }
+  }
+
+  /*
+    Stage 6A-R1 - Home Mobile Final Composition Pass
+    Scope: Home mobile only + mobile footer compaction.
+    Goal: make phone feel like a designed mobile app, not a reduced desktop page.
+  */
+
+  @media (max-width: 760px) {
+    /*
+      HOME HERO: full premium entrance.
+      No visible cream cut in the first viewport.
+    */
+    body .hotel-home-stage {
+      min-height: 100svh !important;
+      height: 100svh !important;
+      overflow: hidden !important;
+      background: #15120f !important;
+    }
+
+    body .hotel-home-stage__inner {
+      min-height: 100svh !important;
+      height: 100svh !important;
+      width: min(100% - 1rem, 1680px) !important;
+      padding-top: 5.7rem !important;
+      padding-bottom: 1rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+    }
+
+    body .hotel-home-stage img,
+    body .hotel-home-stage picture,
+    body .hotel-home-stage video {
+      object-position: center center !important;
+    }
+
+    body .hotel-home-stage::after {
+      content: "" !important;
+      position: absolute !important;
+      inset: auto 0 0 0 !important;
+      height: 42% !important;
+      pointer-events: none !important;
+      background: linear-gradient(
+        180deg,
+        rgba(12, 10, 8, 0) 0%,
+        rgba(12, 10, 8, 0.24) 34%,
+        rgba(12, 10, 8, 0.72) 100%
+      ) !important;
+      z-index: 1 !important;
+    }
+
+    body .hotel-home-stage__top,
+    body .hotel-home-stage__content {
+      position: relative !important;
+      z-index: 3 !important;
+    }
+
+    body .hotel-home-stage__content {
+      box-sizing: border-box !important;
+      width: 100% !important;
+      padding-inline: 0.5rem !important;
+    }
+
+    body .hotel-home-display {
+      max-width: 8.7ch !important;
+      font-size: clamp(2.3rem, 10.2vw, 3.7rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: 0 !important;
+      margin-top: auto !important;
+      text-shadow: 0 18px 70px rgba(0, 0, 0, 0.36) !important;
+    }
+
+    body .hotel-home-stage__panel {
+      margin-top: 0.75rem !important;
+      padding: 0.82rem !important;
+      background:
+        linear-gradient(180deg, rgba(42, 35, 27, 0.7), rgba(22, 18, 13, 0.52)) !important;
+      border: 1px solid rgba(255, 250, 242, 0.14) !important;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18) !important;
+    }
+
+    body .hotel-home-stage__panel p {
+      font-size: 0.8rem !important;
+      line-height: 1.48 !important;
+    }
+
+    body .hotel-home-stage__panel a,
+    body .hotel-home-button {
+      min-height: 2.22rem !important;
+      padding-inline: 0.78rem !important;
+      font-size: 0.72rem !important;
+    }
+
+    /*
+      HOME FIRST CONTENT: less monumental, more mobile editorial.
+    */
+    body [class*="home"][class*="field"],
+    body [class*="home"][class*="path"],
+    body [class*="home"][class*="gallery"],
+    body [class*="home"][class*="closing"],
+    body [class*="home"][class*="notes"],
+    body [class*="home"][class*="proof"],
+    body [class*="home"][class*="direct"] {
+      padding-top: clamp(2rem, 7vw, 2.8rem) !important;
+      padding-bottom: clamp(2rem, 7vw, 2.8rem) !important;
+      margin-top: 0 !important;
+    }
+
+    body [class*="home"] h2,
+    body [class*="home"] [class*="title"] {
+      max-width: 9.7ch !important;
+      font-size: clamp(2.05rem, 9.4vw, 3.35rem) !important;
+      line-height: 0.96 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body [class*="home"] p {
+      font-size: 0.86rem !important;
+      line-height: 1.55 !important;
+    }
+
+    /*
+      Stay cards / object field: reduce desktop-card feeling.
+    */
+    body [class*="home"] article,
+    body [class*="home"] [class*="card"],
+    body [class*="home"] [class*="item"] {
+      min-height: auto !important;
+    }
+
+    body [class*="home"][class*="path"] {
+      min-height: auto !important;
+    }
+
+    body [class*="home"][class*="path"] [class*="card"],
+    body [class*="home"][class*="field"] [class*="card"],
+    body [class*="home"][class*="field"] article {
+      min-height: 12rem !important;
+    }
+
+    /*
+      Mobile gallery block: make it feel like a compact app module.
+    */
+    body [class*="home"][class*="gallery"],
+    body [class*="home"][class*="archive"] {
+      padding-top: 2.6rem !important;
+      padding-bottom: 2.6rem !important;
+    }
+
+    body [class*="home"][class*="gallery"] [class*="visual"],
+    body [class*="home"][class*="gallery"] [class*="stage"],
+    body [class*="home"][class*="archive"] [class*="visual"],
+    body [class*="home"][class*="archive"] [class*="stage"] {
+      min-height: 21rem !important;
+      max-height: 29rem !important;
+    }
+
+    body [class*="home"][class*="gallery"] h2,
+    body [class*="home"][class*="archive"] h2 {
+      max-width: 9.2ch !important;
+      font-size: clamp(2.05rem, 9vw, 3.25rem) !important;
+    }
+
+    /*
+      Closing / proof: stop overlong app scroll.
+    */
+    body [class*="home"][class*="closing"] h2,
+    body [class*="home"][class*="direct"] h2,
+    body [class*="home"][class*="notes"] h2,
+    body [class*="home"][class*="proof"] h2 {
+      max-width: 9.5ch !important;
+      font-size: clamp(2rem, 8.8vw, 3.15rem) !important;
+      line-height: 0.98 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body [class*="home"][class*="closing"] blockquote,
+    body [class*="home"][class*="notes"] blockquote,
+    body [class*="home"][class*="proof"] blockquote {
+      font-size: 0.88rem !important;
+      line-height: 1.42 !important;
+    }
+
+    /*
+      Footer: compact app footer, not a long desktop sitemap.
+    */
+    body .hotel-footer {
+      margin-top: 0 !important;
+      padding-top: 2.35rem !important;
+      padding-bottom: calc(2.7rem + env(safe-area-inset-bottom)) !important;
+    }
+
+    body .hotel-footer__hero {
+      padding-bottom: 1.1rem !important;
+      border-bottom: 1px solid rgba(255, 250, 242, 0.12) !important;
+    }
+
+    body .hotel-footer h2 {
+      max-width: 8.2ch !important;
+      font-size: clamp(1.95rem, 9.2vw, 3rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .hotel-footer__statement {
+      margin-top: 0.85rem !important;
+    }
+
+    body .hotel-footer__statement p,
+    body .hotel-footer__block p {
+      font-size: 0.78rem !important;
+      line-height: 1.45 !important;
+    }
+
+    body .hotel-footer__actions a {
+      min-height: 2.05rem !important;
+      padding-inline: 0.72rem !important;
+      font-size: 0.68rem !important;
+    }
+
+    body .hotel-footer__grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 1.05rem 1rem !important;
+      padding-block: 1.15rem !important;
+    }
+
+    body .hotel-footer__grid > :first-child,
+    body .hotel-footer__grid > :last-child {
+      grid-column: 1 / -1 !important;
+    }
+
+    body .hotel-footer__label,
+    body .hotel-footer__kicker {
+      font-size: 0.46rem !important;
+      letter-spacing: 0.18em !important;
+    }
+
+    body .hotel-footer__contact-list,
+    body .hotel-footer__links,
+    body .hotel-footer__micro-list {
+      gap: 0.33rem !important;
+      margin-top: 0.55rem !important;
+    }
+
+    body .hotel-footer__contact-list a,
+    body .hotel-footer__links a,
+    body .hotel-footer__micro-list span {
+      font-size: 0.68rem !important;
+      line-height: 1.22 !important;
+    }
+
+    body .hotel-footer__bottom {
+      padding-top: 0.8rem !important;
+      font-size: 0.54rem !important;
+      gap: 0.46rem !important;
+    }
+  }
+
+  @media (max-width: 430px) {
+    body .hotel-home-stage {
+      min-height: 100svh !important;
+      height: 100svh !important;
+    }
+
+    body .hotel-home-stage__inner {
+      min-height: 100svh !important;
+      height: 100svh !important;
+      padding-top: 5.35rem !important;
+    }
+
+    body .hotel-home-display {
+      max-width: 8.1ch !important;
+      font-size: clamp(2.16rem, 9.7vw, 3.35rem) !important;
+    }
+
+    body .hotel-home-stage__panel {
+      padding: 0.78rem !important;
+    }
+
+    body .hotel-footer__grid {
+      grid-template-columns: 1fr 1fr !important;
+    }
+  }
+
+  /*
+    Stage 6A-R2 - Mobile Header Top-only / Auto-hide Fix
+    Header is available at the entrance and during upward intent, then gets out
+    of the way for the app-like mobile reading flow.
+  */
+
+  @media (max-width: 760px) {
+    body .hotel-header,
+    body [data-hotel-header] {
+      transition:
+        transform 240ms ease,
+        opacity 240ms ease,
+        visibility 240ms ease !important;
+      will-change: transform, opacity;
+    }
+
+    html[data-mobile-header-hidden="true"] body .hotel-header,
+    html[data-mobile-header-hidden="true"] body [data-hotel-header] {
+      transform: translate3d(0, -125%, 0) !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    html[data-mobile-header-hidden="false"] body .hotel-header,
+    html[data-mobile-header-hidden="false"] body [data-hotel-header] {
+      transform: translate3d(0, 0, 0) !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+
+    body .hotel-header:has(.hotel-header__mobile[open]),
+    body [data-hotel-header]:has(.hotel-header__mobile[open]) {
+      transform: translate3d(0, 0, 0) !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+  }
+
+  /*
+    Stage 6B - Rooms / Offers / Experiences Mobile App Mode
+    Scope:
+    - commercial index pages;
+    - commercial detail pages;
+    - phone only.
+    Home mobile is frozen after Stage 6A-R2, so avoid home-specific selectors here.
+  */
+
+  @media (max-width: 760px) {
+    /*
+      Commercial section heroes:
+      shorter than desktop, still cinematic, not full-scroll monsters.
+    */
+
+    body .rooms-hero,
+    body .offers-hero,
+    body .experiences-hero,
+    body .room-detail-hero,
+    body .offer-detail-hero,
+    body .experience-detail-hero {
+      min-height: 88svh !important;
+      height: auto !important;
+      overflow: hidden !important;
+    }
+
+    body .rooms-hero__inner,
+    body .offers-hero__inner,
+    body .experiences-hero__inner,
+    body .room-detail-hero__inner,
+    body .offer-detail-hero__inner,
+    body .experience-detail-hero__inner {
+      min-height: 88svh !important;
+      height: auto !important;
+      width: min(100% - 1rem, 1680px) !important;
+      padding-top: 5.6rem !important;
+      padding-bottom: 1rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      gap: 1rem !important;
+    }
+
+    body .rooms-hero__content,
+    body .offers-hero__content,
+    body .experiences-hero__content,
+    body .room-detail-hero__content,
+    body .offer-detail-hero__content,
+    body .experience-detail-hero__content {
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: flex-end !important;
+      gap: 0.85rem !important;
+      min-width: 0 !important;
+    }
+
+    body .rooms-hero h1,
+    body .offers-hero h1,
+    body .experiences-hero h1,
+    body .room-detail-hero h1,
+    body .offer-detail-hero h1,
+    body .experience-detail-hero h1 {
+      max-width: 8.8ch !important;
+      font-size: clamp(2.25rem, 10.2vw, 3.7rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: 0 !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+      text-wrap: balance !important;
+      text-shadow: 0 18px 70px rgba(0, 0, 0, 0.34) !important;
+    }
+
+    body .rooms-hero aside,
+    body .offers-hero aside,
+    body .experiences-hero aside,
+    body .room-detail-hero__panel,
+    body .offer-detail-hero__panel,
+    body .experience-detail-hero__panel {
+      width: 100% !important;
+      max-width: 100% !important;
+      padding: 0.82rem !important;
+      border: 1px solid rgba(255, 250, 242, 0.14) !important;
+      background:
+        linear-gradient(180deg, rgba(42, 35, 27, 0.68), rgba(22, 18, 13, 0.48)) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.16) !important;
+    }
+
+    body .rooms-hero aside p,
+    body .offers-hero aside p,
+    body .experiences-hero aside p,
+    body .room-detail-hero__panel p,
+    body .offer-detail-hero__panel p,
+    body .experience-detail-hero__panel p {
+      max-width: 100% !important;
+      font-size: 0.8rem !important;
+      line-height: 1.48 !important;
+    }
+
+    body .room-detail-hero__panel h2,
+    body .offer-detail-hero__panel h2,
+    body .experience-detail-hero__panel h2 {
+      max-width: 11ch !important;
+      font-size: clamp(1.55rem, 7vw, 2.45rem) !important;
+      line-height: 0.95 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .rooms-hero__top span:last-child,
+    body .offers-hero__top span:last-child,
+    body .experiences-hero__top span:last-child,
+    body .room-detail-hero__top span,
+    body .offer-detail-hero__top span,
+    body .experience-detail-hero__top span,
+    body .rooms-hero__rail,
+    body .offers-hero__rail,
+    body .experiences-hero__rail,
+    body .room-detail-hero__rail,
+    body .offer-detail-hero__rail,
+    body .experience-detail-hero__rail {
+      display: none !important;
+    }
+
+    body .rooms-hero__actions,
+    body .offers-hero__actions,
+    body .experiences-hero__actions,
+    body .room-detail-hero__actions,
+    body .offer-detail-hero__actions,
+    body .experience-detail-hero__actions {
+      margin-top: 0.8rem !important;
+      gap: 0.42rem !important;
+    }
+
+    body .rooms-hero__actions a,
+    body .offers-hero__actions a,
+    body .experiences-hero__actions a,
+    body .room-detail-hero__actions a,
+    body .offer-detail-hero__actions a,
+    body .experience-detail-hero__actions a {
+      min-height: 2.22rem !important;
+      padding-inline: 0.78rem !important;
+      font-size: 0.72rem !important;
+    }
+
+    /*
+      Index page explorer/theatre modules.
+      Convert from desktop split theatre to compact app cards.
+    */
+
+    body .rooms-field,
+    body .offers-field,
+    body .experiences-field,
+    body .rooms-archive,
+    body .offers-archive,
+    body .experiences-archive,
+    body .rooms-direct,
+    body .offers-direct,
+    body .experiences-direct {
+      width: min(100% - 1rem, 1480px) !important;
+      margin-top: 0 !important;
+      padding-top: clamp(2.2rem, 7vw, 3rem) !important;
+      padding-bottom: clamp(2.2rem, 7vw, 3rem) !important;
+    }
+
+    body .rooms-field__intro,
+    body .offers-field__intro,
+    body .experiences-field__intro,
+    body .rooms-direct,
+    body .offers-direct,
+    body .experiences-direct {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 1rem !important;
+      align-items: start !important;
+    }
+
+    body .rooms-field__intro h2,
+    body .offers-field__intro h2,
+    body .experiences-field__intro h2,
+    body .rooms-archive__intro h2,
+    body .offers-archive__intro h2,
+    body .experiences-archive__intro h2,
+    body .rooms-direct h2,
+    body .offers-direct h2,
+    body .experiences-direct h2 {
+      max-width: 9.6ch !important;
+      font-size: clamp(2rem, 9vw, 3.25rem) !important;
+      line-height: 0.96 !important;
+      letter-spacing: 0 !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+    }
+
+    body .rooms-field__intro p,
+    body .offers-field__intro p,
+    body .experiences-field__intro p,
+    body .rooms-archive__intro p,
+    body .offers-archive__intro p,
+    body .experiences-archive__intro p,
+    body .rooms-direct p,
+    body .offers-direct p,
+    body .experiences-direct p {
+      max-width: 28rem !important;
+      font-size: 0.86rem !important;
+      line-height: 1.55 !important;
+    }
+
+    body .rooms-theatre,
+    body .offers-theatre,
+    body .experiences-theatre {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 1rem !important;
+      margin-top: 1.4rem !important;
+    }
+
+    body .rooms-theatre__visual,
+    body .offers-theatre__visual,
+    body .experiences-theatre__visual {
+      min-height: 24rem !important;
+      max-height: 31rem !important;
+      aspect-ratio: 4 / 5 !important;
+      box-shadow: 0 24px 80px rgba(64, 42, 24, 0.12) !important;
+    }
+
+    body .rooms-theatre__readout,
+    body .offers-theatre__readout,
+    body .experiences-theatre__readout {
+      left: 1rem !important;
+      right: 1rem !important;
+      bottom: 1rem !important;
+      padding-top: 0.75rem !important;
+    }
+
+    body .rooms-theatre__readout strong,
+    body .offers-theatre__readout strong,
+    body .experiences-theatre__readout strong {
+      max-width: 8.8ch !important;
+      font-size: clamp(2rem, 9vw, 3.4rem) !important;
+      line-height: 0.94 !important;
+    }
+
+    body .rooms-theatre__panel,
+    body .offers-theatre__panel,
+    body .experiences-theatre__panel {
+      display: block !important;
+      border-top: 1px solid rgba(21, 18, 15, 0.12) !important;
+      padding-top: 1rem !important;
+      min-height: auto !important;
+    }
+
+    body .rooms-theatre__panel h3,
+    body .offers-theatre__panel h3,
+    body .experiences-theatre__panel h3 {
+      max-width: 10ch !important;
+      font-size: clamp(2rem, 9vw, 3.25rem) !important;
+      line-height: 0.94 !important;
+    }
+
+    body .rooms-theatre__panel p,
+    body .offers-theatre__panel p,
+    body .experiences-theatre__panel p,
+    body .rooms-theatre__decision dd,
+    body .offers-theatre__decision dd,
+    body .experiences-theatre__decision dd {
+      font-size: 0.8rem !important;
+      line-height: 1.45 !important;
+    }
+
+    body .rooms-theatre__decision,
+    body .offers-theatre__decision,
+    body .experiences-theatre__decision {
+      margin-top: 1rem !important;
+      gap: 0.45rem !important;
+    }
+
+    body .rooms-theatre__decision div,
+    body .offers-theatre__decision div,
+    body .experiences-theatre__decision div {
+      grid-template-columns: 1fr !important;
+      gap: 0.3rem !important;
+      padding-top: 0.55rem !important;
+    }
+
+    body .rooms-rail,
+    body .offers-rail,
+    body .experiences-rail {
+      display: flex !important;
+      overflow-x: auto !important;
+      gap: 0.55rem !important;
+      margin-top: 0.8rem !important;
+      padding-bottom: 0.2rem !important;
+      scrollbar-width: none !important;
+    }
+
+    body .rooms-rail::-webkit-scrollbar,
+    body .offers-rail::-webkit-scrollbar,
+    body .experiences-rail::-webkit-scrollbar {
+      display: none !important;
+    }
+
+    body .rooms-rail__item,
+    body .offers-rail__item,
+    body .experiences-rail__item {
+      min-width: 12.5rem !important;
+      padding: 0.82rem !important;
+    }
+
+    body .rooms-rail__item strong,
+    body .offers-rail__item strong,
+    body .experiences-rail__item strong {
+      font-size: 1.15rem !important;
+      line-height: 1.02 !important;
+    }
+
+    /*
+      Archives: app list, not desktop comparison table.
+    */
+
+    body .rooms-archive,
+    body .offers-archive,
+    body .experiences-archive {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 1.2rem !important;
+    }
+
+    body .rooms-archive__list,
+    body .offers-archive__list,
+    body .experiences-archive__list {
+      border-top: 1px solid rgba(21, 18, 15, 0.12) !important;
+    }
+
+    body .rooms-archive__row,
+    body .offers-archive__row,
+    body .experiences-archive__row {
+      display: grid !important;
+      grid-template-columns: 2.2rem minmax(0, 1fr) !important;
+      gap: 0.75rem !important;
+      padding: 0.95rem 0 !important;
+      align-items: start !important;
+    }
+
+    body .rooms-archive__row h3,
+    body .offers-archive__row h3,
+    body .experiences-archive__row h3 {
+      font-size: clamp(1.25rem, 6vw, 2rem) !important;
+      line-height: 1 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .rooms-archive__row p,
+    body .offers-archive__row p,
+    body .experiences-archive__row p,
+    body .rooms-archive__meta span,
+    body .offers-archive__meta span,
+    body .experiences-archive__meta span {
+      font-size: 0.75rem !important;
+      line-height: 1.38 !important;
+    }
+
+    body .rooms-archive__meta,
+    body .rooms-archive__open,
+    body .offers-archive__meta,
+    body .offers-archive__open,
+    body .experiences-archive__meta,
+    body .experiences-archive__open {
+      grid-column: 2 !important;
+      text-align: left !important;
+      justify-content: flex-start !important;
+    }
+
+    /*
+      Detail pages: shorter decision/inspection rhythm.
+    */
+
+    body .room-decision,
+    body .room-details-band,
+    body .room-inspection,
+    body .room-direct,
+    body .offer-decision,
+    body .offer-package-band,
+    body .offer-signals,
+    body .offer-inspection,
+    body .offer-direct,
+    body .experience-sequence,
+    body .experience-planning,
+    body .experience-inspection,
+    body .experience-direct {
+      width: min(100% - 1rem, 1480px) !important;
+      margin-top: 0 !important;
+      padding-top: clamp(2.2rem, 7vw, 3rem) !important;
+      padding-bottom: clamp(2.2rem, 7vw, 3rem) !important;
+    }
+
+    body .room-decision__intro,
+    body .room-inspection__intro,
+    body .room-direct,
+    body .offer-decision__intro,
+    body .offer-inspection__intro,
+    body .offer-direct,
+    body .offer-signals,
+    body .experience-sequence__intro,
+    body .experience-inspection__intro,
+    body .experience-direct,
+    body .room-details-band,
+    body .offer-package-band,
+    body .experience-planning {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 1rem !important;
+      align-items: start !important;
+    }
+
+    body .room-decision__intro h2,
+    body .room-inspection__intro h2,
+    body .room-direct h2,
+    body .offer-decision__intro h2,
+    body .offer-inspection__intro h2,
+    body .offer-direct h2,
+    body .offer-signals h2,
+    body .experience-sequence__intro h2,
+    body .experience-inspection__intro h2,
+    body .experience-direct h2 {
+      max-width: 9.8ch !important;
+      font-size: clamp(2rem, 8.8vw, 3.25rem) !important;
+      line-height: 0.96 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .room-decision__grid,
+    body .offer-decision__grid,
+    body .experience-sequence__grid {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.75rem !important;
+      margin-top: 1.2rem !important;
+    }
+
+    body .room-decision__card,
+    body .offer-decision__card,
+    body .experience-sequence__card {
+      min-height: 12rem !important;
+      padding: 1rem !important;
+    }
+
+    body .room-decision__card h3,
+    body .offer-decision__card h3,
+    body .experience-sequence__card h3 {
+      max-width: 11ch !important;
+      font-size: clamp(1.55rem, 7vw, 2.6rem) !important;
+      line-height: 0.96 !important;
+    }
+
+    body .room-decision__card p,
+    body .offer-decision__card p,
+    body .experience-sequence__card p {
+      font-size: 0.8rem !important;
+      line-height: 1.45 !important;
+    }
+
+    body .room-details-band__chips span,
+    body .room-details-band__signals span,
+    body .offer-package-band__chips span,
+    body .offer-package-band__terms span,
+    body .experience-planning__signals span {
+      padding: 0.58rem 0.7rem !important;
+      font-size: 0.72rem !important;
+      line-height: 1.3 !important;
+    }
+
+    body .room-inspection .hc-inspect-gallery,
+    body .offer-inspection .hc-inspect-gallery,
+    body .experience-inspection .hc-inspect-gallery {
+      margin-top: 1.2rem !important;
+    }
+
+    body .room-inspection .hc-inspect-gallery__grid,
+    body .offer-inspection .hc-inspect-gallery__grid,
+    body .experience-inspection .hc-inspect-gallery__grid {
+      grid-template-columns: 1fr !important;
+      gap: 0.65rem !important;
+    }
+
+    body .room-inspection .hc-inspect-gallery__item,
+    body .room-inspection .hc-inspect-gallery__item:first-child,
+    body .offer-inspection .hc-inspect-gallery__item,
+    body .offer-inspection .hc-inspect-gallery__item:first-child,
+    body .experience-inspection .hc-inspect-gallery__item,
+    body .experience-inspection .hc-inspect-gallery__item:first-child {
+      grid-column: auto !important;
+      min-height: 17rem !important;
+      aspect-ratio: 4 / 5 !important;
+    }
+
+    body .room-inspection .hc-inspect-gallery__readout strong,
+    body .offer-inspection .hc-inspect-gallery__readout strong,
+    body .experience-inspection .hc-inspect-gallery__readout strong {
+      max-width: 10ch !important;
+      font-size: clamp(1.65rem, 7.5vw, 3rem) !important;
+      line-height: 0.96 !important;
+    }
+  }
+
+  @media (max-width: 430px) {
+    body .rooms-hero,
+    body .offers-hero,
+    body .experiences-hero,
+    body .room-detail-hero,
+    body .offer-detail-hero,
+    body .experience-detail-hero {
+      min-height: 84svh !important;
+    }
+
+    body .rooms-hero__inner,
+    body .offers-hero__inner,
+    body .experiences-hero__inner,
+    body .room-detail-hero__inner,
+    body .offer-detail-hero__inner,
+    body .experience-detail-hero__inner {
+      min-height: 84svh !important;
+      padding-top: 5.35rem !important;
+    }
+
+    body .rooms-hero h1,
+    body .offers-hero h1,
+    body .experiences-hero h1,
+    body .room-detail-hero h1,
+    body .offer-detail-hero h1,
+    body .experience-detail-hero h1 {
+      font-size: clamp(2.12rem, 9.6vw, 3.4rem) !important;
+      max-width: 8.4ch !important;
+    }
+
+    body .rooms-theatre__visual,
+    body .offers-theatre__visual,
+    body .experiences-theatre__visual {
+      min-height: 22rem !important;
+    }
+  }
+
+  /*
+    Stage 6C - Gallery / Location / Contact Mobile App Mode
+    Scope:
+    - gallery mobile;
+    - location mobile;
+    - contact mobile;
+    - phone only.
+    Home and commercial pages are already handled by Stage 6A/6B.
+  */
+
+  @media (max-width: 760px) {
+    /*
+      GALLERY PAGE
+      Convert cinematic archive into compact mobile viewer.
+    */
+
+    body .hc-gallery-archive {
+      width: 100% !important;
+      min-height: auto !important;
+      padding-top: 5.8rem !important;
+      padding-bottom: 2.8rem !important;
+      overflow: hidden !important;
+    }
+
+    body .hc-gallery-archive > * {
+      max-width: 100% !important;
+    }
+
+    body .hc-gallery-archive__console,
+    body .hc-gallery-archive__grid-section,
+    body .hc-gallery-archive__closing {
+      width: min(100% - 1rem, 1480px) !important;
+      margin-inline: auto !important;
+    }
+
+    body .hc-gallery-archive h1,
+    body .hc-gallery-archive__grid-copy h2,
+    body .hc-gallery-archive__closing h2,
+    body .hc-gallery-archive__chapter-copy h3 {
+      max-width: 9.6ch !important;
+      font-size: clamp(2.35rem, 10vw, 3.7rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: 0 !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      hyphens: none !important;
+    }
+
+    body .hc-gallery-archive__intro p,
+    body .hc-gallery-archive__grid-copy p,
+    body .hc-gallery-archive__closing p,
+    body .hc-gallery-archive__chapter-copy p {
+      max-width: 28rem !important;
+      font-size: 0.86rem !important;
+      line-height: 1.55 !important;
+    }
+
+    body .hc-gallery-archive__actions {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 0.5rem !important;
+      margin-top: 1rem !important;
+    }
+
+    body .hc-gallery-archive__action,
+    body .hc-gallery-archive__full {
+      min-height: 2.28rem !important;
+      padding-inline: 0.82rem !important;
+      font-size: 0.74rem !important;
+      white-space: nowrap !important;
+    }
+
+    body .hc-gallery-archive__stage,
+    body .hc-gallery-archive__image-shell {
+      min-height: 24rem !important;
+      max-height: 34rem !important;
+      aspect-ratio: 4 / 5 !important;
+    }
+
+    body .hc-gallery-archive__readout {
+      left: 1rem !important;
+      right: 1rem !important;
+      bottom: 1rem !important;
+      padding-top: 0.75rem !important;
+    }
+
+    body .hc-gallery-archive__readout strong {
+      max-width: 8.8ch !important;
+      font-size: clamp(1.9rem, 8.8vw, 3.25rem) !important;
+      line-height: 0.95 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .hc-gallery-archive__filmstrip {
+      display: flex !important;
+      overflow-x: auto !important;
+      gap: 0.5rem !important;
+      padding-bottom: 0.2rem !important;
+      scrollbar-width: none !important;
+    }
+
+    body .hc-gallery-archive__filmstrip::-webkit-scrollbar {
+      display: none !important;
+    }
+
+    body .hc-gallery-archive__thumb {
+      min-width: 5.8rem !important;
+      max-width: 8rem !important;
+      min-height: 4.6rem !important;
+      padding: 0.35rem !important;
+    }
+
+    body .hc-gallery-archive__nav button,
+    body .hc-gallery-archive__arrow {
+      height: 2.35rem !important;
+      width: 2.35rem !important;
+      font-size: 0.76rem !important;
+    }
+
+    /*
+      LOCATION PAGE
+      Mobile should feel like a compact arrival guide.
+    */
+
+    body .location-hero {
+      min-height: 84svh !important;
+      overflow: hidden !important;
+    }
+
+    body .location-hero__inner {
+      min-height: 84svh !important;
+      width: min(100% - 1rem, 1680px) !important;
+      padding-top: 5.6rem !important;
+      padding-bottom: 1rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+    }
+
+    body .location-hero h1 {
+      max-width: 9.2ch !important;
+      font-size: clamp(2.25rem, 10vw, 3.55rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .location-hero__content {
+      box-sizing: border-box !important;
+      width: 100% !important;
+      padding-inline: 0.5rem !important;
+    }
+
+    body .location-hero aside {
+      width: 100% !important;
+      padding: 0.82rem !important;
+      border: 1px solid rgba(255, 250, 242, 0.14) !important;
+      background:
+        linear-gradient(180deg, rgba(42, 35, 27, 0.66), rgba(22, 18, 13, 0.48)) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+    }
+
+    body .location-hero aside p {
+      max-width: 100% !important;
+      font-size: 0.8rem !important;
+      line-height: 1.48 !important;
+    }
+
+    body .location-hero__actions {
+      margin-top: 0.8rem !important;
+      gap: 0.42rem !important;
+    }
+
+    body .location-hero__actions a {
+      min-height: 2.22rem !important;
+      padding-inline: 0.78rem !important;
+      font-size: 0.72rem !important;
+    }
+
+    body .location-route,
+    body .location-map {
+      width: min(100% - 1rem, 1480px) !important;
+      margin-top: 0 !important;
+      padding-top: clamp(2.2rem, 7vw, 3rem) !important;
+      padding-bottom: clamp(2.2rem, 7vw, 3rem) !important;
+    }
+
+    body .location-route__intro,
+    body .location-map {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 1rem !important;
+      align-items: start !important;
+    }
+
+    body .location-route__intro h2,
+    body .location-map__copy h2 {
+      max-width: 9.6ch !important;
+      font-size: clamp(2rem, 9vw, 3.25rem) !important;
+      line-height: 0.96 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .location-route__intro p,
+    body .location-map__copy p {
+      max-width: 28rem !important;
+      font-size: 0.86rem !important;
+      line-height: 1.55 !important;
+    }
+
+    body .location-route__field {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.85rem !important;
+      margin-top: 1.2rem !important;
+    }
+
+    body .location-route__item,
+    body .location-route__item:nth-child(1),
+    body .location-route__item:nth-child(2),
+    body .location-route__item:nth-child(3) {
+      grid-column: auto !important;
+      margin-top: 0 !important;
+      min-height: 18rem !important;
+      aspect-ratio: 4 / 5 !important;
+    }
+
+    body .location-route__copy {
+      left: 1rem !important;
+      right: 1rem !important;
+      bottom: 1rem !important;
+      padding-top: 0.75rem !important;
+    }
+
+    body .location-route__copy h3 {
+      max-width: 9.2ch !important;
+      font-size: clamp(1.65rem, 7.8vw, 2.9rem) !important;
+      line-height: 0.96 !important;
+    }
+
+    body .location-route__copy p {
+      max-width: 100% !important;
+      font-size: 0.78rem !important;
+      line-height: 1.42 !important;
+    }
+
+    body .location-map__address {
+      margin-top: 1rem !important;
+      padding: 0.82rem !important;
+    }
+
+    body .location-map__actions {
+      margin-top: 0.85rem !important;
+      gap: 0.42rem !important;
+    }
+
+    body .location-map__actions a {
+      min-height: 2.22rem !important;
+      padding-inline: 0.78rem !important;
+      font-size: 0.72rem !important;
+    }
+
+    body .location-map__frame,
+    body .location-map__frame iframe,
+    body .location-map__fallback {
+      min-height: 18rem !important;
+      max-height: 22rem !important;
+    }
+
+    /*
+      CONTACT PAGE
+      Mobile should feel like a reservation assistant flow.
+    */
+
+    body .contact-hero {
+      min-height: 84svh !important;
+      overflow: hidden !important;
+    }
+
+    body .contact-hero__inner {
+      min-height: 84svh !important;
+      width: min(100% - 1rem, 1680px) !important;
+      padding-top: 5.6rem !important;
+      padding-bottom: 1rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+    }
+
+    body .contact-hero h1 {
+      max-width: 9ch !important;
+      font-size: clamp(2.2rem, 9.8vw, 3.5rem) !important;
+      line-height: 0.94 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .contact-hero__content {
+      box-sizing: border-box !important;
+      width: 100% !important;
+      padding-inline: 0.5rem !important;
+    }
+
+    body .contact-hero aside {
+      width: 100% !important;
+      padding: 0.82rem !important;
+      border: 1px solid rgba(255, 250, 242, 0.14) !important;
+      background:
+        linear-gradient(180deg, rgba(42, 35, 27, 0.66), rgba(22, 18, 13, 0.48)) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+    }
+
+    body .contact-hero aside p {
+      max-width: 100% !important;
+      font-size: 0.8rem !important;
+      line-height: 1.48 !important;
+    }
+
+    body .contact-hero__actions {
+      margin-top: 0.8rem !important;
+      gap: 0.42rem !important;
+    }
+
+    body .contact-hero__actions a {
+      min-height: 2.22rem !important;
+      padding-inline: 0.78rem !important;
+      font-size: 0.72rem !important;
+    }
+
+    body .contact-desk,
+    body .contact-arrival {
+      width: min(100% - 1rem, 1480px) !important;
+      margin-top: 0 !important;
+      padding-top: clamp(2.2rem, 7vw, 3rem) !important;
+      padding-bottom: clamp(2.2rem, 7vw, 3rem) !important;
+    }
+
+    body .contact-desk__intro,
+    body .contact-arrival {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 1rem !important;
+      align-items: start !important;
+    }
+
+    body .contact-desk__intro h2,
+    body .contact-arrival__copy h2 {
+      max-width: 9.6ch !important;
+      font-size: clamp(2rem, 9vw, 3.25rem) !important;
+      line-height: 0.96 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .contact-desk__intro p,
+    body .contact-arrival__copy p {
+      max-width: 28rem !important;
+      font-size: 0.86rem !important;
+      line-height: 1.55 !important;
+    }
+
+    body .contact-channels {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.75rem !important;
+      margin-top: 1.2rem !important;
+    }
+
+    body .contact-channel {
+      min-height: auto !important;
+      padding: 1rem !important;
+    }
+
+    body .contact-channel h3 {
+      max-width: 10ch !important;
+      font-size: clamp(1.45rem, 7vw, 2.4rem) !important;
+      line-height: 0.98 !important;
+    }
+
+    body .contact-channel p {
+      font-size: 0.78rem !important;
+      line-height: 1.45 !important;
+    }
+
+    body .contact-channel strong {
+      margin-top: 0.85rem !important;
+      font-size: 0.82rem !important;
+    }
+
+    body .contact-arrival__actions {
+      margin-top: 0.85rem !important;
+      gap: 0.42rem !important;
+    }
+
+    body .contact-arrival__actions a {
+      min-height: 2.22rem !important;
+      padding-inline: 0.78rem !important;
+      font-size: 0.72rem !important;
+    }
+
+    body .contact-arrival__map,
+    body .contact-arrival__map iframe,
+    body .contact-arrival__fallback {
+      min-height: 18rem !important;
+      max-height: 22rem !important;
+    }
+  }
+
+  @media (max-width: 430px) {
+    body .hc-gallery-archive h1,
+    body .hc-gallery-archive__grid-copy h2,
+    body .hc-gallery-archive__closing h2,
+    body .location-hero h1,
+    body .contact-hero h1 {
+      font-size: clamp(2.05rem, 9.4vw, 3.25rem) !important;
+      max-width: 8.8ch !important;
+    }
+
+    body .location-hero,
+    body .contact-hero {
+      min-height: 82svh !important;
+    }
+
+    body .location-hero__inner,
+    body .contact-hero__inner {
+      min-height: 82svh !important;
+      padding-top: 5.35rem !important;
+    }
+
+    body .hc-gallery-archive__stage,
+    body .hc-gallery-archive__image-shell {
+      min-height: 22rem !important;
+    }
+  }
+
+  /*
+    Room detail premium glass pass.
+    Keeps the mobile hero decision block readable without the heavy muddy panel.
+  */
+  body .room-detail-hero__panel {
+    border: 1px solid rgba(255, 250, 242, 0.3) !important;
+    background:
+      linear-gradient(135deg, rgba(255, 250, 242, 0.16), rgba(255, 250, 242, 0.035)),
+      rgba(255, 250, 242, 0.035) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 24px 78px rgba(0, 0, 0, 0.16) !important;
+    backdrop-filter: blur(30px) saturate(1.2) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(1.2) !important;
+    text-shadow: 0 1px 18px rgba(5, 5, 4, 0.2) !important;
+  }
+
+  body .room-detail-hero__panel::before {
+    display: none !important;
+  }
+
+  body .room-detail-hero__veil {
+    background:
+      radial-gradient(circle at 72% 18%, rgba(255, 238, 208, 0.16), transparent 34rem),
+      linear-gradient(90deg, rgba(5, 5, 4, 0.3), rgba(5, 5, 4, 0.045) 48%, rgba(5, 5, 4, 0.26)),
+      linear-gradient(180deg, rgba(5, 5, 4, 0.055), rgba(5, 5, 4, 0.035) 42%, rgba(5, 5, 4, 0.34)) !important;
+  }
+
+  body .room-detail-hero__specs div {
+    border-color: rgba(255, 250, 242, 0.28) !important;
+    background: rgba(255, 250, 242, 0.1) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.11),
+      0 10px 34px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  @media (max-width: 640px) {
+    body .room-detail-hero__panel {
+      background:
+        linear-gradient(135deg, rgba(255, 250, 242, 0.17), rgba(255, 250, 242, 0.045)),
+        rgba(255, 250, 242, 0.04) !important;
+    }
+  }
+
+  @media (max-width: 760px) {
+    body .hotel-home-stage__top,
+    body .rooms-hero__top,
+    body .offers-hero__top,
+    body .experiences-hero__top,
+    body .location-hero__top,
+    body .contact-hero__top,
+    body .room-detail-hero__top,
+    body .offer-detail-hero__top,
+    body .experience-detail-hero__top {
+      margin-top: clamp(0.8rem, 3vw, 1.05rem) !important;
+    }
+  }
 </style>
+
+<script is:inline>
+  (() => {
+    const media = window.matchMedia("(max-width: 760px)");
+
+    let lastY = window.scrollY || 0;
+    let ticking = false;
+    let revealTimer = 0;
+
+    const root = document.documentElement;
+
+    const hasOpenMobileMenu = () => {
+      return Boolean(
+        document.querySelector(
+          '.hotel-header__mobile[open], .hotel-header details[open], [data-hotel-header] details[open], .hotel-header [aria-expanded="true"], [data-hotel-header] [aria-expanded="true"], [data-mobile-menu][data-open="true"], [data-hotel-mobile-menu][data-open="true"], .is-menu-open'
+        )
+      );
+    };
+
+    const setHidden = (hidden) => {
+      root.setAttribute("data-mobile-header-hidden", hidden ? "true" : "false");
+    };
+
+    const scheduleAutoHide = () => {
+      window.clearTimeout(revealTimer);
+
+      revealTimer = window.setTimeout(() => {
+        if (!media.matches || hasOpenMobileMenu()) return;
+        if ((window.scrollY || 0) > 180) setHidden(true);
+      }, 1100);
+    };
+
+    const update = () => {
+      ticking = false;
+
+      if (!media.matches) {
+        window.clearTimeout(revealTimer);
+        root.removeAttribute("data-mobile-header-hidden");
+        return;
+      }
+
+      const currentY = window.scrollY || 0;
+      const delta = currentY - lastY;
+      const atTop = currentY < 80;
+      const pastIntro = currentY > Math.min(window.innerHeight * 0.42, 360);
+
+      if (hasOpenMobileMenu()) {
+        window.clearTimeout(revealTimer);
+        setHidden(false);
+        lastY = currentY;
+        return;
+      }
+
+      if (atTop) {
+        window.clearTimeout(revealTimer);
+        setHidden(false);
+        lastY = currentY;
+        return;
+      }
+
+      if (delta > 3 && pastIntro) {
+        window.clearTimeout(revealTimer);
+        setHidden(true);
+      } else if (delta < -8) {
+        setHidden(false);
+        scheduleAutoHide();
+      } else if (pastIntro && !root.hasAttribute("data-mobile-header-hidden")) {
+        setHidden(true);
+      }
+
+      lastY = currentY;
+    };
+
+    const request = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    };
+
+    window.addEventListener("scroll", request, { passive: true });
+    window.addEventListener("resize", request);
+    window.addEventListener("load", request);
+    window.addEventListener("pageshow", request);
+
+    document.addEventListener("toggle", request, true);
+
+    request();
+  })();
+</script>

@@ -10,6 +10,7 @@ import {
   OFFER_COVER_BY_SLUG,
   ROOM_COVER_BY_SLUG,
 } from "../../hotel/data/demoAssets";
+import { getSeoCopy } from "../../hotel/seo/siteSeo";
 import CinematicGalleryPreview from "../../hotel/ui/CinematicGalleryPreview.astro";
 
 export function getStaticPaths() {
@@ -19,6 +20,7 @@ export function getStaticPaths() {
 const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
+const seo = getSeoCopy("home", lang);
 
 const s = await getSettings();
 
@@ -309,12 +311,20 @@ const guestSignalText = t(
 );
 ---
 
-<BaseLayout lang={lang} title={title} fullBleed>
+<BaseLayout
+  lang={lang}
+  title={seo.title}
+  description={seo.description}
+  ogImage={heroFrame}
+  canonicalPath={`/${lang}/`}
+  fullBleed
+>
   <section
     id="home-hero"
     class="hotel-home-stage"
     aria-label={heroTitle}
     data-home-section
+    data-header-scene="home-hero"
     data-dock-title={dockHeroTitle}
     data-dock-mode={dockSectionMode}
   >
@@ -407,6 +417,7 @@ const guestSignalText = t(
     class="hotel-living-section"
     data-living-stay-field
     data-home-section
+    data-header-scene="home-stay"
     data-dock-title={dockStayTitle}
     data-dock-mode={dockStayMode}
   >
@@ -509,6 +520,7 @@ const guestSignalText = t(
   <div
     id="home-gallery"
     data-home-section
+    data-header-scene="home-gallery"
     data-dock-title={dockGalleryTitle}
     data-dock-mode={dockGalleryMode}
   >
@@ -529,6 +541,7 @@ const guestSignalText = t(
     id="home-closing"
     class="hotel-closing-section"
     data-home-section
+    data-header-scene="home-closing"
     data-dock-title={dockClosingTitle}
     data-dock-mode={dockSectionMode}
   >
@@ -1124,6 +1137,14 @@ const guestSignalText = t(
     /* Stage 2G - Home Closing / Notes / CTA Editorial Reframe */
 
     .hotel-closing-section {
+      --closing-content-opacity: 0.86;
+      --closing-content-y: 4vh;
+      --closing-image-scale: 1.045;
+      --closing-image-y: -2.5vh;
+      --closing-shade-opacity: 0.18;
+      --closing-shade-y: 0vh;
+      --closing-visual-opacity: 0.94;
+      --closing-visual-y: 4.5vh;
       position: relative;
       display: grid;
       grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
@@ -1131,13 +1152,39 @@ const guestSignalText = t(
       overflow: hidden;
       background: #f6efe4;
       color: #15120f;
+      isolation: isolate;
+    }
+
+    #home-gallery {
+      position: relative;
+      isolation: isolate;
+    }
+
+    .hotel-closing-section::before {
+      content: "";
+      position: absolute;
+      inset: -8% 0 auto;
+      z-index: 4;
+      height: 24%;
+      opacity: var(--closing-shade-opacity);
+      transform: translate3d(0, var(--closing-shade-y), 0);
+      background:
+        radial-gradient(circle at 72% 12%, rgba(226, 188, 136, 0.18), transparent 34%),
+        linear-gradient(180deg, #15120f 0%, rgba(21, 18, 15, 0.94) 42%, rgba(21, 18, 15, 0) 100%);
+      clip-path: polygon(0 0, 100% 0, 100% 72%, 0 100%);
+      pointer-events: none;
+      will-change: opacity, transform;
     }
 
     .hotel-closing__visual {
       position: relative;
+      z-index: 1;
       min-height: 100svh;
       overflow: hidden;
       background: #15120f;
+      opacity: var(--closing-visual-opacity);
+      transform: translate3d(0, var(--closing-visual-y), 0);
+      will-change: transform, opacity;
     }
 
     .hotel-closing__visual img {
@@ -1147,7 +1194,8 @@ const guestSignalText = t(
       width: 100%;
       object-fit: cover;
       filter: brightness(1.04) contrast(1.04) saturate(1.02);
-      transform: scale(1.015);
+      transform: translate3d(0, var(--closing-image-y), 0) scale(var(--closing-image-scale));
+      will-change: transform;
     }
 
     .hotel-closing__visual::after {
@@ -1190,10 +1238,15 @@ const guestSignalText = t(
     }
 
     .hotel-closing__content {
+      position: relative;
+      z-index: 2;
       display: grid;
       grid-template-rows: minmax(0, 1fr) auto;
       min-height: 100svh;
       padding: clamp(5rem, 8vw, 8rem) max(1.25rem, calc((100vw - 1480px) / 2)) clamp(3rem, 6vw, 5rem) clamp(1.25rem, 5vw, 5rem);
+      opacity: var(--closing-content-opacity, 1);
+      transform: translate3d(0, var(--closing-content-y, 0vh), 0);
+      will-change: transform, opacity;
     }
 
     .hotel-closing__main {
@@ -2740,6 +2793,81 @@ const guestSignalText = t(
       }
     }
   </style>
+
+  <script is:inline>
+    (() => {
+      const closing = document.querySelector(".hotel-closing-section");
+      if (!closing) return;
+
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const smoothstep = (value) => value * value * (3 - 2 * value);
+      const lerp = (current, target, amount) => current + (target - current) * amount;
+
+      const state = {
+        current: 0,
+        target: 0,
+      };
+
+      let running = false;
+
+      const apply = () => {
+        const closingProgress = state.current;
+        const closingInverse = 1 - closingProgress;
+
+        closing.style.setProperty("--closing-shade-opacity", (closingInverse * 0.18).toFixed(4));
+        closing.style.setProperty("--closing-shade-y", `${(-closingProgress * 18).toFixed(2)}vh`);
+        closing.style.setProperty("--closing-visual-y", `${(closingInverse * 4.5).toFixed(2)}vh`);
+        closing.style.setProperty("--closing-visual-opacity", (0.94 + closingProgress * 0.06).toFixed(4));
+        closing.style.setProperty("--closing-image-y", `${(-closingInverse * 2.5).toFixed(2)}vh`);
+        closing.style.setProperty("--closing-content-y", `${(closingInverse * 4).toFixed(2)}vh`);
+        closing.style.setProperty("--closing-content-opacity", (0.86 + closingProgress * 0.14).toFixed(4));
+        closing.style.setProperty("--closing-image-scale", (1.045 - closingProgress * 0.03).toFixed(4));
+      };
+
+      const readTargets = () => {
+        if (reducedMotion.matches) {
+          state.target = 1;
+          return;
+        }
+
+        const viewport = window.innerHeight || 1;
+        const closingRect = closing.getBoundingClientRect();
+        const closingRaw = clamp((viewport * 0.86 - closingRect.top) / (viewport * 0.94), 0, 1);
+
+        state.target = smoothstep(closingRaw);
+      };
+
+      const step = () => {
+        running = false;
+
+        const amount = window.innerWidth < 760 ? 0.26 : 0.18;
+        state.current = lerp(state.current, state.target, amount);
+
+        apply();
+
+        const closingDelta = Math.abs(state.current - state.target);
+
+        if (closingDelta > 0.004) {
+          running = true;
+          requestAnimationFrame(step);
+        }
+      };
+
+      const requestUpdate = () => {
+        readTargets();
+
+        if (running) return;
+        running = true;
+        requestAnimationFrame(step);
+      };
+
+      window.addEventListener("scroll", requestUpdate, { passive: true });
+      window.addEventListener("resize", requestUpdate);
+
+      requestUpdate();
+    })();
+  </script>
 
   <script is:inline>
     (() => {

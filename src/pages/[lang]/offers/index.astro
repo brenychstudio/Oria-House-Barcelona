@@ -4,6 +4,7 @@ import { LANGS, type Lang, isLang, t } from "../../../content/languages";
 import { getOffers, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
 import { OFFER_COVER_BY_SLUG } from "../../../hotel/data/demoAssets";
+import { getSeoCopy } from "../../../hotel/seo/siteSeo";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -12,6 +13,7 @@ export function getStaticPaths() {
 const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
+const seo = getSeoCopy("offers", lang);
 
 const s = await getSettings();
 
@@ -208,7 +210,14 @@ const offersAvailableLabel = t(lang, "Offers available", "Ofertas disponibles");
 const offerReasonLabel = t(lang, "Reason to book", "Razon para reservar");
 ---
 
-<BaseLayout lang={lang} title={pageTitle} fullBleed>
+<BaseLayout
+  lang={lang}
+  title={seo.title}
+  description={seo.description}
+  ogImage={heroOffer?.image ?? firstOffer?.image}
+  canonicalPath={`/${lang}/offers/`}
+  fullBleed
+>
   {firstOffer ? (
     <>
       <section class="offers-hero" data-dock-section>

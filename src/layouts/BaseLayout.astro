@@ -1,8 +1,15 @@
 ---
 import "../styles/global.css";
 
-import { LANGS, t, type Lang } from "../content/languages";
+import { t, type Lang } from "../content/languages";
 import { getSettings } from "../cms/sheets";
+import {
+  DEFAULT_OG_IMAGE,
+  SITE_NAME,
+  absoluteAssetUrl,
+  absoluteUrl,
+  getAlternatePath,
+} from "../hotel/seo/siteSeo";
 import HotelHeader from "../hotel/ui/HotelHeader.astro";
 import HotelFooter from "../hotel/ui/HotelFooter.astro";
 import HotelDock from "../hotel/ui/HotelDock.astro";
@@ -35,17 +42,12 @@ const mainClass = fullBleed
 
 const s = await getSettings();
 
-const site = Astro.site ?? new URL("http://localhost:4321");
-const path = canonicalPath ?? Astro.url.pathname;
+const currentPath = canonicalPath || Astro.url.pathname;
+const canonicalUrl = absoluteUrl(currentPath);
+const alternateEn = absoluteUrl(getAlternatePath(currentPath, "en"));
+const alternateEs = absoluteUrl(getAlternatePath(currentPath, "es"));
 
-function withLangPath(pathname: string, targetLang: string) {
-  const parts = pathname.split("/").filter(Boolean);
-  if (parts.length === 0) return `/${targetLang}/`;
-  parts[0] = targetLang;
-  return `/${parts.join("/")}/`;
-}
-
-const canonicalUrl = new URL(path, site).toString();
+const metaTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
 
 const fallbackDesc = t(
   lang,
@@ -53,25 +55,19 @@ const fallbackDesc = t(
   String((s as any).meta_description_es || "")
 ).trim();
 
-const desc = String(description || fallbackDesc || "").trim();
+const metaDescription = String(
+  description ||
+    fallbackDesc ||
+    "A quiet boutique hotel demo in Barcelona shaped by cinematic rooms, curated experiences, direct booking clarity and premium hospitality design."
+).trim();
 
 const fallbackOg = String((s as any).og_image || (s as any).hero_image || "").trim();
-const og = String(ogImage || fallbackOg || "").trim();
-const ogAbs = og
-  ? og.startsWith("http://") || og.startsWith("https://")
-    ? og
-    : new URL(og, site).toString()
-  : "";
+const metaOgImage = absoluteAssetUrl(String(ogImage || fallbackOg || DEFAULT_OG_IMAGE).trim());
 
 const isNoindex =
   Boolean(noindex) || String((s as any).noindex || "").toUpperCase() === "TRUE";
 
-const alternates = LANGS.map((l) => ({
-  lang: l,
-  href: new URL(withLangPath(path, l), site).toString(),
-}));
-
-const siteName = t(lang, s.hotel_name_en, s.hotel_name_es);
+const robotsContent = isNoindex ? "noindex,nofollow" : "index,follow";
 ---
 
 <!doctype html>
@@ -79,41 +75,38 @@ const siteName = t(lang, s.hotel_name_en, s.hotel_name_es);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <title>{metaTitle}</title>
 
-    {desc ? <meta name="description" content={desc} /> : null}
+    <meta name="description" content={metaDescription} />
+    <meta name="robots" content={robotsContent} />
 
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="en" href={alternateEn} />
+    <link rel="alternate" hreflang="es" href={alternateEs} />
+    <link rel="alternate" hreflang="x-default" href={alternateEn} />
 
-    {alternates.map((a) => (
-      <link rel="alternate" hreflang={a.lang} href={a.href} />
-    ))}
-    <link rel="alternate" hreflang="x-default" href={alternates[0]?.href ?? canonicalUrl} />
-
-    {isNoindex ? (
-      <meta name="robots" content="noindex,nofollow" />
-    ) : (
-      <meta name="robots" content="index,follow" />
-    )}
-
-    <meta property="og:site_name" content={siteName} />
-    <meta property="og:title" content={title} />
-    {desc ? <meta property="og:description" content={desc} /> : null}
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={metaTitle} />
+    <meta property="og:description" content={metaDescription} />
     <meta property="og:url" content={canonicalUrl} />
-    {ogAbs ? <meta property="og:image" content={ogAbs} /> : null}
+    <meta property="og:image" content={metaOgImage} />
 
-    <meta name="twitter:card" content={ogAbs ? "summary_large_image" : "summary"} />
-    <meta name="twitter:title" content={title} />
-    {desc ? <meta name="twitter:description" content={desc} /> : null}
-    {ogAbs ? <meta name="twitter:image" content={ogAbs} /> : null}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={metaTitle} />
+    <meta name="twitter:description" content={metaDescription} />
+    <meta name="twitter:image" content={metaOgImage} />
+
+    <meta name="theme-color" content="#15120f" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/site.webmanifest" />
   </head>
 
   <body>
     <div class="hc-atmosphere" aria-hidden="true"></div>
 
     <HotelHeader lang={lang} pathname={Astro.url.pathname} />
-    <main class={mainClass}>
+    <main class={mainClass} data-header-scene="site-light">
       <slot />
     </main>
 

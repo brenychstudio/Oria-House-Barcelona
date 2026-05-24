@@ -1,10 +1,11 @@
 // src/pages/sitemap.xml.ts
 import { LANGS } from "../content/languages";
 import { buildSitemapXml } from "../core/seo/sitemap";
+import { SITE_URL } from "../hotel/seo/siteSeo";
 import { getSitemapEntries } from "../seo/sitemap";
 
-export async function GET({ site }: { site?: URL }) {
-  const origin = site?.origin ?? "http://localhost:4321";
+export async function GET() {
+  const origin = SITE_URL;
   const today = new Date().toISOString().slice(0, 10);
 
   const entries = await getSitemapEntries({ origin, today, langs: LANGS });

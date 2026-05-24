@@ -4,6 +4,7 @@ import { LANGS, type Lang, isLang, t } from "../../../content/languages";
 import { getRooms, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
 import { ROOM_COVER_BY_SLUG } from "../../../hotel/data/demoAssets";
+import { getSeoCopy } from "../../../hotel/seo/siteSeo";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -12,6 +13,7 @@ export function getStaticPaths() {
 const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
+const seo = getSeoCopy("rooms", lang);
 
 const s = await getSettings();
 
@@ -21,6 +23,11 @@ const visibleRooms = rooms.filter((room) =>
 );
 
 const bookingUrl = String((s as any).booking_url || "").trim();
+
+const extractNumber = (value: unknown) => {
+  const match = String(value ?? "").match(/\d+(?:[.,]\d+)?/);
+  return match ? Number(match[0].replace(",", ".")) : null;
+};
 
 const optionalRoomField = (room: any, key: string) =>
   t(
@@ -160,6 +167,9 @@ const roomItems = visibleRooms.map((room, index) => {
   const size = String((room as any).size_m2 || (room as any).size_sqm || (room as any).size || "").trim();
   const beds = pickLang(lang, room, "beds");
   const sales = resolveRoomSales(room, index);
+  const priceValue = extractNumber(price);
+  const guestsValue = extractNumber(guests);
+  const sizeValue = extractNumber(size);
 
   return {
     id: room.id || room.slug || `room-${index + 1}`,
@@ -172,6 +182,9 @@ const roomItems = visibleRooms.map((room, index) => {
     price,
     guests,
     size,
+    priceValue,
+    guestsValue,
+    sizeValue,
     beds,
     highlights,
     index,
@@ -264,9 +277,44 @@ const browseText = t(
 );
 const roomsAvailableLabel = t(lang, "Rooms available", "Habitaciones disponibles");
 const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
+const filterRoomsLabel = t(lang, "Filter rooms", "Filtrar habitaciones");
+const guestsFilterLabel = t(lang, "People", "Personas");
+const priceFilterLabel = t(lang, "Price", "Precio");
+const sizeFilterLabel = t(lang, "Size", "Tamano");
+const sortLabel = t(lang, "Sort", "Ordenar");
+const anyLabel = t(lang, "Any", "Cualquiera");
+const resetFiltersLabel = t(lang, "Reset", "Reiniciar");
+const viewModeLabel = t(lang, "View mode", "Modo de vista");
+const gridViewLabel = t(lang, "Grid", "Grid");
+const listViewLabel = t(lang, "List", "Lista");
+const tileScanLabel = t(lang, "Tile scan", "Vista visual");
+const lineScanLabel = t(lang, "Line scan", "Vista lista");
+const recommendedLabel = t(lang, "Recommended", "Recomendado");
+const priceLowLabel = t(lang, "Price low to high", "Precio menor a mayor");
+const priceHighLabel = t(lang, "Price high to low", "Precio mayor a menor");
+const sizeLargeLabel = t(lang, "Largest first", "Mas grandes primero");
+const guestsHighLabel = t(lang, "Most people first", "Mas personas primero");
+const noRoomsMatchTitle = t(lang, "No rooms match these filters.", "Ninguna habitacion coincide.");
+const noRoomsMatchText = t(
+  lang,
+  "Reset the filters or widen one parameter to see more stays.",
+  "Reinicie los filtros o amplie un parametro para ver mas estancias."
+);
+const resultsCopy = t(lang, "matching stays", "estancias coinciden");
+const allResultsCopy = t(lang, "all stays shown", "todas visibles");
+const priceUpToLabel = t(lang, "Up to", "Hasta");
+const priceAboveLabel = t(lang, "Above", "Mas de");
+const sizeAtLeastLabel = t(lang, "At least", "Minimo");
 ---
 
-<BaseLayout lang={lang} title={pageTitle} fullBleed>
+<BaseLayout
+  lang={lang}
+  title={seo.title}
+  description={seo.description}
+  ogImage={heroRoom?.image ?? firstRoom?.image}
+  canonicalPath={`/${lang}/rooms/`}
+  fullBleed
+>
   {firstRoom ? (
     <>
       <section class="rooms-hero" data-dock-section>
@@ -310,7 +358,7 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
         </div>
       </section>
 
-      <section id="rooms-browser" class="rooms-browser" data-dock-section>
+      <section id="rooms-browser" class="rooms-browser" data-room-browser data-dock-section>
         <div class="rooms-browser__head">
           <div>
             <div class="rooms-kicker">{browseLabel}</div>
@@ -320,21 +368,120 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
 
           <aside class="rooms-browser__summary" aria-label={quickSignalsLabel}>
             <span>{roomsAvailableLabel}</span>
-            <strong>{roomItems.length}</strong>
-            <p>{fieldText}</p>
+            <strong data-room-result-count>{roomItems.length}</strong>
+            <p>
+              <span data-room-result-copy>{fieldText}</span>
+            </p>
           </aside>
         </div>
 
-        <div class="rooms-browser__grid">
+        <div class="rooms-browser__controls" aria-label={filterRoomsLabel}>
+          <div class="rooms-filter-rail">
+            <fieldset class="rooms-filter-group">
+              <legend>{guestsFilterLabel}</legend>
+              <label>
+                <input type="radio" name="rooms-guests" value="all" data-room-filter="guests" checked />
+                <span>{anyLabel}</span>
+              </label>
+              <label>
+                <input type="radio" name="rooms-guests" value="2" data-room-filter="guests" />
+                <span>2+</span>
+              </label>
+              <label>
+                <input type="radio" name="rooms-guests" value="3" data-room-filter="guests" />
+                <span>3+</span>
+              </label>
+              <label>
+                <input type="radio" name="rooms-guests" value="4" data-room-filter="guests" />
+                <span>4+</span>
+              </label>
+            </fieldset>
+
+            <fieldset class="rooms-filter-group">
+              <legend>{priceFilterLabel}</legend>
+              <label>
+                <input type="radio" name="rooms-price" value="all" data-room-filter="price" checked />
+                <span>{anyLabel}</span>
+              </label>
+              <label>
+                <input type="radio" name="rooms-price" value="200" data-room-filter="price" />
+                <span>{priceUpToLabel} €200</span>
+              </label>
+              <label>
+                <input type="radio" name="rooms-price" value="300" data-room-filter="price" />
+                <span>{priceUpToLabel} €300</span>
+              </label>
+              <label>
+                <input type="radio" name="rooms-price" value="401+" data-room-filter="price" />
+                <span>€400+</span>
+              </label>
+            </fieldset>
+
+            <fieldset class="rooms-filter-group">
+              <legend>{sizeFilterLabel}</legend>
+              <label>
+                <input type="radio" name="rooms-size" value="all" data-room-filter="size" checked />
+                <span>{anyLabel}</span>
+              </label>
+              <label>
+                <input type="radio" name="rooms-size" value="24" data-room-filter="size" />
+                <span>24 m²+</span>
+              </label>
+              <label>
+                <input type="radio" name="rooms-size" value="32" data-room-filter="size" />
+                <span>32 m²+</span>
+              </label>
+              <label>
+                <input type="radio" name="rooms-size" value="40" data-room-filter="size" />
+                <span>40 m²+</span>
+              </label>
+            </fieldset>
+
+            <label class="rooms-filter-group rooms-browser__sort">
+              <span>{sortLabel}</span>
+              <select data-room-sort aria-label={sortLabel}>
+                <option value="recommended">{recommendedLabel}</option>
+                <option value="price-asc">{priceLowLabel}</option>
+                <option value="price-desc">{priceHighLabel}</option>
+                <option value="size-desc">{sizeLargeLabel}</option>
+                <option value="guests-desc">{guestsHighLabel}</option>
+              </select>
+            </label>
+
+            <div class="rooms-view-toggle" role="group" aria-label={viewModeLabel}>
+              <button type="button" class="is-active" data-room-view="grid" aria-pressed="true">
+                <span>{gridViewLabel}</span>
+                <small>{tileScanLabel}</small>
+              </button>
+              <button type="button" data-room-view="list" aria-pressed="false">
+                <span>{listViewLabel}</span>
+                <small>{lineScanLabel}</small>
+              </button>
+            </div>
+
+            <button type="button" class="rooms-browser__reset" data-room-reset>
+              {resetFiltersLabel}
+            </button>
+          </div>
+        </div>
+
+        <div class="rooms-browser__grid" data-room-results>
           {roomItems.map((room, index) => (
-            <article class="rooms-card">
+            <article
+              class="rooms-card"
+              data-room-card
+              data-room-index={index}
+              data-room-price={room.priceValue ?? ""}
+              data-room-guests={room.guestsValue ?? ""}
+              data-room-size={room.sizeValue ?? ""}
+            >
               <a href={room.href} class="rooms-card__media" aria-label={`${openRoomLabel}: ${room.title}`}>
                 <img src={room.image} alt="" loading={index < 3 ? "eager" : "lazy"} decoding="async" />
                 <span>{String(index + 1).padStart(2, "0")}</span>
               </a>
 
               <div class="rooms-card__body">
-                <div>
+                <div class="rooms-card__intro">
                   <div class="rooms-card__eyebrow">{room.mood}</div>
                   <h3>
                     <a href={room.href}>{room.title}</a>
@@ -343,14 +490,39 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
                 </div>
 
                 <div class="rooms-card__specs">
-                  <span>{room.price ? `${fromLabel} €${room.price}` : room.viewSignal}</span>
-                  {room.guests ? <span>{guestsLabel}: {room.guests}</span> : null}
-                  {room.size ? <span>{sizeLabel}: {room.size}{room.size.match(/[a-zA-Z]/) ? "" : " m²"}</span> : null}
+                  <span>
+                    <small>{fromLabel}</small>
+                    <strong>{room.price ? `€${room.price}` : "—"}</strong>
+                  </span>
+                  {room.guests ? (
+                    <span>
+                      <small>{guestsLabel}</small>
+                      <strong>{room.guests}</strong>
+                    </span>
+                  ) : null}
+                  {room.size ? (
+                    <span>
+                      <small>{sizeLabel}</small>
+                      <strong>{room.size}{room.size.match(/[a-zA-Z]/) ? "" : " m²"}</strong>
+                    </span>
+                  ) : null}
+                  {room.beds ? (
+                    <span>
+                      <small>{bedsLabel}</small>
+                      <strong>{room.beds}</strong>
+                    </span>
+                  ) : null}
                 </div>
 
                 <div class="rooms-card__signals">
-                  <span>{room.viewSignal}</span>
-                  <span>{room.bestFor}</span>
+                  <span>
+                    <small>{viewSignalLabel}</small>
+                    <strong>{room.viewSignal}</strong>
+                  </span>
+                  <span>
+                    <small>{bestForLabel}</small>
+                    <strong>{room.bestFor}</strong>
+                  </span>
                 </div>
 
                 <div class="rooms-card__actions">
@@ -373,6 +545,11 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
               </div>
             </article>
           ))}
+        </div>
+
+        <div class="rooms-browser__empty" data-room-empty hidden>
+          <strong>{noRoomsMatchTitle}</strong>
+          <p>{noRoomsMatchText}</p>
         </div>
       </section>
 
@@ -669,6 +846,137 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
           render(0);
         })();
       </script>
+
+      <script is:inline define:vars={{ roomBrowserLabels: { resultsCopy, allResultsCopy } }}>
+        (() => {
+          const root = document.querySelector("[data-room-browser]");
+          if (!root) return;
+
+          const results = root.querySelector("[data-room-results]");
+          const cards = Array.from(root.querySelectorAll("[data-room-card]"));
+          const filters = Array.from(root.querySelectorAll("[data-room-filter]"));
+          const sortSelect = root.querySelector("[data-room-sort]");
+          const resetButton = root.querySelector("[data-room-reset]");
+          const viewButtons = Array.from(root.querySelectorAll("[data-room-view]"));
+          const countNode = root.querySelector("[data-room-result-count]");
+          const copyNode = root.querySelector("[data-room-result-copy]");
+          const emptyNode = root.querySelector("[data-room-empty]");
+
+          if (!results || cards.length === 0) return;
+
+          const getNumber = (card, key) => {
+            const raw = String(card.dataset[key] || "").trim();
+            if (!raw) return null;
+            const value = Number(raw);
+            return Number.isFinite(value) ? value : null;
+          };
+
+          const activeFilters = () =>
+            filters.reduce((state, input) => {
+              if (input.checked) state[input.getAttribute("data-room-filter")] = input.value;
+              return state;
+            }, {});
+
+          const matchesFilter = (card, state) => {
+            const guests = getNumber(card, "roomGuests");
+            const price = getNumber(card, "roomPrice");
+            const size = getNumber(card, "roomSize");
+
+            if (state.guests && state.guests !== "all") {
+              const minGuests = Number(state.guests);
+              if (guests === null || guests < minGuests) return false;
+            }
+
+            if (state.price && state.price !== "all") {
+              if (price === null) return false;
+              if (state.price.endsWith("+")) {
+                if (price <= Number(state.price.replace("+", ""))) return false;
+              } else if (price > Number(state.price)) {
+                return false;
+              }
+            }
+
+            if (state.size && state.size !== "all") {
+              const minSize = Number(state.size);
+              if (size === null || size < minSize) return false;
+            }
+
+            return true;
+          };
+
+          const byNumber = (key, direction) => (a, b) => {
+            const av = getNumber(a, key);
+            const bv = getNumber(b, key);
+            const empty = direction === "asc" ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+            return ((av ?? empty) - (bv ?? empty)) * (direction === "asc" ? 1 : -1);
+          };
+
+          const byRecommended = (a, b) =>
+            Number(a.dataset.roomIndex || 0) - Number(b.dataset.roomIndex || 0);
+
+          const sortCards = (items) => {
+            const mode = sortSelect?.value || "recommended";
+            const sorted = [...items];
+
+            if (mode === "price-asc") sorted.sort(byNumber("roomPrice", "asc"));
+            else if (mode === "price-desc") sorted.sort(byNumber("roomPrice", "desc"));
+            else if (mode === "size-desc") sorted.sort(byNumber("roomSize", "desc"));
+            else if (mode === "guests-desc") sorted.sort(byNumber("roomGuests", "desc"));
+            else sorted.sort(byRecommended);
+
+            return sorted;
+          };
+
+          const updateResults = () => {
+            const state = activeFilters();
+            const visible = cards.filter((card) => matchesFilter(card, state));
+            const ordered = sortCards(cards);
+
+            ordered.forEach((card) => {
+              card.hidden = !visible.includes(card);
+              results.appendChild(card);
+            });
+
+            if (countNode) countNode.textContent = String(visible.length);
+            if (copyNode) {
+              copyNode.textContent =
+                visible.length === cards.length
+                  ? roomBrowserLabels.allResultsCopy
+                  : `${visible.length} / ${cards.length} ${roomBrowserLabels.resultsCopy}`;
+            }
+
+            if (emptyNode) emptyNode.hidden = visible.length > 0;
+          };
+
+          const setView = (mode) => {
+            root.classList.toggle("is-list-view", mode === "list");
+            viewButtons.forEach((button) => {
+              const active = button.getAttribute("data-room-view") === mode;
+              button.setAttribute("aria-pressed", active ? "true" : "false");
+              button.classList.toggle("is-active", active);
+            });
+          };
+
+          filters.forEach((input) => input.addEventListener("change", updateResults));
+          sortSelect?.addEventListener("change", updateResults);
+          resetButton?.addEventListener("click", () => {
+            filters.forEach((input) => {
+              input.checked = input.value === "all";
+            });
+            if (sortSelect) sortSelect.value = "recommended";
+            updateResults();
+          });
+
+          viewButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+              setView(button.getAttribute("data-room-view") || "grid");
+            });
+          });
+
+          updateResults();
+          setView("grid");
+        })();
+      </script>
     </>
   ) : (
     <section class="rooms-empty">
@@ -854,9 +1162,7 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
 
     .rooms-browser__summary span,
     .rooms-card__eyebrow,
-    .rooms-card__media span,
-    .rooms-card__specs span,
-    .rooms-card__signals span {
+    .rooms-card__media span {
       display: block;
       color: rgba(21, 18, 15, 0.48);
       font-size: 0.62rem;
@@ -877,11 +1183,163 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
       font-size: 0.94rem;
     }
 
+    .rooms-browser__controls {
+      position: sticky;
+      top: 5.2rem;
+      z-index: 8;
+      border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+      padding: clamp(0.8rem, 1.6vw, 1rem) 0;
+      background: rgba(247, 242, 234, 0.86);
+      backdrop-filter: blur(18px);
+    }
+
+    .rooms-filter-rail {
+      display: flex;
+      align-items: stretch;
+      gap: 0.55rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      white-space: nowrap;
+    }
+
+    .rooms-filter-rail::-webkit-scrollbar {
+      display: none;
+    }
+
+    .rooms-filter-group,
+    .rooms-view-toggle,
+    .rooms-browser__reset {
+      flex: 0 0 auto;
+      border: 1px solid rgba(21, 18, 15, 0.12);
+      background: rgba(255, 250, 242, 0.62);
+      box-shadow: 0 18px 50px rgba(21, 18, 15, 0.045);
+    }
+
+    .rooms-filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      min-height: 3.25rem;
+      margin: 0;
+      padding: 0.35rem;
+    }
+
+    .rooms-filter-group legend,
+    .rooms-browser__sort > span {
+      padding: 0 0.55rem;
+      font-size: 0.58rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .rooms-filter-group label {
+      position: relative;
+      display: block;
+      cursor: pointer;
+    }
+
+    .rooms-filter-group input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .rooms-filter-group label span,
+    .rooms-browser__reset,
+    .rooms-view-toggle button {
+      display: inline-flex;
+      min-height: 2.36rem;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      padding: 0 0.78rem;
+      color: rgba(21, 18, 15, 0.68);
+      font: inherit;
+      font-size: 0.82rem;
+    }
+
+    .rooms-filter-group input:checked + span {
+      border-color: rgba(21, 18, 15, 0.86);
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .rooms-browser__sort {
+      display: grid;
+      grid-template-columns: auto minmax(10.5rem, 1fr);
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.35rem;
+    }
+
+    .rooms-browser__sort select {
+      min-height: 2.36rem;
+      border: 0;
+      border-radius: 0;
+      background: rgba(255, 255, 255, 0.34);
+      color: #15120f;
+      padding: 0 2rem 0 0.72rem;
+      font: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+
+    .rooms-browser__reset {
+      min-height: 3.25rem;
+      border-radius: 0;
+      padding-inline: 0.95rem;
+      cursor: pointer;
+    }
+
+    .rooms-view-toggle {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(4.8rem, 1fr));
+      padding: 0.35rem;
+    }
+
+    .rooms-view-toggle button {
+      display: grid;
+      gap: 0.12rem;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      padding: 0.42rem 0.72rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .rooms-view-toggle button.is-active {
+      background: #15120f;
+      color: #fffaf2;
+    }
+
+    .rooms-view-toggle span {
+      font-size: 0.82rem;
+      line-height: 1.05;
+    }
+
+    .rooms-view-toggle small {
+      font-size: 0.58rem;
+      line-height: 1.2;
+      color: rgba(21, 18, 15, 0.48);
+    }
+
+    .rooms-view-toggle button.is-active small {
+      color: rgba(255, 250, 242, 0.62);
+    }
+
     .rooms-browser__grid {
       margin-top: clamp(1rem, 2.4vw, 1.8rem);
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: clamp(0.8rem, 1.8vw, 1.2rem);
+    }
+
+    .rooms-browser.is-list-view .rooms-browser__grid {
+      grid-template-columns: 1fr;
     }
 
     .rooms-card {
@@ -890,6 +1348,15 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
       border: 1px solid rgba(21, 18, 15, 0.1);
       background: rgba(255, 250, 242, 0.45);
       min-width: 0;
+    }
+
+    .rooms-browser.is-list-view .rooms-card {
+      grid-template-columns: minmax(15rem, 0.24fr) minmax(0, 1fr);
+      grid-template-rows: 1fr;
+    }
+
+    .rooms-card[hidden] {
+      display: none !important;
     }
 
     .rooms-card__media {
@@ -927,6 +1394,38 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
       padding: clamp(1rem, 2vw, 1.35rem);
     }
 
+    .rooms-browser.is-list-view .rooms-card__media {
+      height: 100%;
+      min-height: 14rem;
+      aspect-ratio: auto;
+    }
+
+    .rooms-browser.is-list-view .rooms-card__body {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "intro actions"
+        "specs actions"
+        "signals actions";
+      align-content: center;
+      align-items: end;
+      gap: 0.9rem clamp(1.4rem, 3vw, 3rem);
+    }
+
+    .rooms-card__intro,
+    .rooms-browser.is-list-view .rooms-card__intro {
+      grid-area: intro;
+    }
+
+    .rooms-browser.is-list-view .rooms-card__specs {
+      grid-area: specs;
+      justify-content: flex-start;
+    }
+
+    .rooms-browser.is-list-view .rooms-card__signals {
+      grid-area: signals;
+      justify-content: flex-start;
+    }
+
     .rooms-card h3 {
       margin-top: 0.55rem;
       font-size: clamp(1.55rem, 2.4vw, 2.35rem);
@@ -942,7 +1441,6 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
 
     .rooms-card__body p {
       margin-top: 0.65rem;
-      min-height: 3.3em;
       font-size: 0.94rem;
     }
 
@@ -950,21 +1448,52 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
     .rooms-card__signals {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.45rem;
+      gap: 0.5rem;
     }
 
     .rooms-card__specs span,
     .rooms-card__signals span {
       border: 1px solid rgba(21, 18, 15, 0.1);
-      background: rgba(255, 255, 255, 0.34);
-      padding: 0.55rem 0.65rem;
-      line-height: 1.28;
+      background: rgba(255, 255, 255, 0.42);
+      padding: 0.62rem 0.72rem;
       text-transform: none;
       letter-spacing: 0;
     }
 
+    .rooms-card__specs span {
+      min-width: 5.2rem;
+    }
+
+    .rooms-card__specs small,
+    .rooms-card__signals small {
+      display: block;
+      font-size: 0.54rem;
+      line-height: 1;
+      text-transform: uppercase;
+      color: rgba(21, 18, 15, 0.42);
+    }
+
+    .rooms-card__specs strong,
+    .rooms-card__signals strong {
+      display: block;
+      margin-top: 0.42rem;
+      color: #15120f;
+      font-size: 0.94rem;
+      line-height: 1.18;
+      font-weight: 400;
+    }
+
+    .rooms-card__specs strong {
+      font-size: 1.05rem;
+    }
+
     .rooms-card__signals span {
       color: rgba(21, 18, 15, 0.62);
+    }
+
+    .rooms-card__signals strong {
+      color: rgba(21, 18, 15, 0.68);
+      font-size: 0.84rem;
     }
 
     .rooms-card__actions {
@@ -973,6 +1502,11 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
       display: flex;
       flex-wrap: wrap;
       gap: 0.55rem;
+    }
+
+    .rooms-browser.is-list-view .rooms-card__actions {
+      grid-area: actions;
+      justify-self: end;
     }
 
     .rooms-card__open,
@@ -996,6 +1530,30 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
       border: 1px solid rgba(21, 18, 15, 0.16);
       background: rgba(255, 250, 242, 0.42);
       color: #15120f;
+    }
+
+    .rooms-browser__empty {
+      margin-top: 1rem;
+      border-top: 1px solid rgba(21, 18, 15, 0.12);
+      border-bottom: 1px solid rgba(21, 18, 15, 0.12);
+      padding: clamp(1.2rem, 3vw, 2rem) 0;
+    }
+
+    .rooms-browser__empty[hidden] {
+      display: none;
+    }
+
+    .rooms-browser__empty strong {
+      display: block;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      line-height: 1;
+      font-weight: 400;
+    }
+
+    .rooms-browser__empty p {
+      margin-top: 0.65rem;
+      color: rgba(21, 18, 15, 0.64);
+      line-height: 1.65;
     }
 
     .rooms-field,
@@ -1361,6 +1919,25 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
       .rooms-explorer__panel h3 {
         font-size: 3.8rem;
       }
+
+      .rooms-browser.is-list-view .rooms-card__body {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+          "intro"
+          "specs"
+          "signals"
+          "actions";
+        align-items: start;
+      }
+
+      .rooms-browser.is-list-view .rooms-card__actions {
+        justify-self: start;
+      }
+
+      .rooms-browser.is-list-view .rooms-card__specs,
+      .rooms-browser.is-list-view .rooms-card__signals {
+        justify-content: flex-start;
+      }
     }
 
     @media (max-width: 980px) {
@@ -1390,6 +1967,10 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
 
       .rooms-browser__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .rooms-browser__controls {
+        top: 4.4rem;
       }
     }
 
@@ -1445,6 +2026,42 @@ const quickSignalsLabel = t(lang, "Quick signals", "Senales rapidas");
 
       .rooms-card__media {
         aspect-ratio: 16 / 11;
+      }
+
+      .rooms-filter-rail {
+        margin-inline: -0.25rem;
+        padding-inline: 0.25rem;
+      }
+
+      .rooms-view-toggle {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .rooms-browser.is-list-view .rooms-card {
+        grid-template-columns: minmax(7.5rem, 0.42fr) minmax(0, 1fr);
+      }
+
+      .rooms-browser.is-list-view .rooms-card__media {
+        min-height: 100%;
+        aspect-ratio: auto;
+      }
+
+      .rooms-browser.is-list-view .rooms-card__body {
+        gap: 0.72rem;
+        padding: 0.82rem;
+      }
+
+      .rooms-browser.is-list-view .rooms-card h3 {
+        font-size: clamp(1.22rem, 6vw, 1.58rem);
+      }
+
+      .rooms-browser.is-list-view .rooms-card__body p,
+      .rooms-browser.is-list-view .rooms-card__signals {
+        display: none;
+      }
+
+      .rooms-browser.is-list-view .rooms-card__specs span {
+        padding: 0.45rem 0.5rem;
       }
     }
 

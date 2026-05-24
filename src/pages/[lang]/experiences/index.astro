@@ -4,6 +4,7 @@ import { LANGS, type Lang, isLang, t } from "../../../content/languages";
 import { getExperiences, getSettings } from "../../../cms/sheets";
 import { pickLang } from "../../../cms/types";
 import { EXPERIENCE_COVER_BY_SLUG } from "../../../hotel/data/demoAssets";
+import { getSeoCopy } from "../../../hotel/seo/siteSeo";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
@@ -12,6 +13,7 @@ export function getStaticPaths() {
 const langParam = Astro.params.lang ?? "en";
 if (!isLang(langParam)) throw new Error("Invalid lang");
 const lang = langParam as Lang;
+const seo = getSeoCopy("experiences", lang);
 
 const s = await getSettings();
 
@@ -246,7 +248,14 @@ const experiencesAvailableLabel = t(lang, "Experiences available", "Experiencias
 const experienceMomentLabel = t(lang, "Stay moment", "Momento de estancia");
 ---
 
-<BaseLayout lang={lang} title={pageTitle} fullBleed>
+<BaseLayout
+  lang={lang}
+  title={seo.title}
+  description={seo.description}
+  ogImage={heroExperience?.image ?? firstExperience?.image}
+  canonicalPath={`/${lang}/experiences/`}
+  fullBleed
+>
   {firstExperience ? (
     <>
       <section class="experiences-hero" data-dock-section>

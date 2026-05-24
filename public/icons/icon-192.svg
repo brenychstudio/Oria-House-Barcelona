@@ -1,4 +1,4 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="192" height="192" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="64" height="64" rx="18" fill="#15120F"/>
   <circle cx="32" cy="32" r="19" stroke="#FFF7EA" stroke-width="2"/>
   <path d="M22 32C22 25.925 25.925 22 32 22C38.075 22 42 25.925 42 32C42 38.075 38.075 42 32 42C25.925 42 22 38.075 22 32Z" stroke="#C9A77B" stroke-width="2"/>

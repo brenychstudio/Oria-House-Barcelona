@@ -7,6 +7,7 @@ import {
   EXPERIENCE_COVER_BY_SLUG,
   HOTEL_DEMO_ASSETS,
 } from "../../../hotel/data/demoAssets";
+import { getSeoCopy } from "../../../hotel/seo/siteSeo";
 import CinematicInspectGallery from "../../../hotel/ui/CinematicInspectGallery.astro";
 
 export async function getStaticPaths() {
@@ -302,6 +303,9 @@ const resolveExperienceSales = () => {
 const sales = resolveExperienceSales();
 
 const pageTitle = `${hotelName} — ${experienceTitle}`;
+const seo = getSeoCopy("experienceDetail", lang);
+const experienceMetaDescription =
+  experienceDescription || sales.whatToExpect || seo.description;
 
 const backLabel = t(lang, "Back to experiences", "Volver a experiencias");
 const bookDirectLabel = t(lang, "Book direct", "Reservar directo");
@@ -466,7 +470,14 @@ const experienceGuideSignals = (experienceHighlights.length ? experienceHighligh
 ]).slice(0, 4);
 ---
 
-<BaseLayout lang={lang} title={pageTitle} fullBleed>
+<BaseLayout
+  lang={lang}
+  title={pageTitle}
+  description={experienceMetaDescription}
+  ogImage={experienceCover}
+  canonicalPath={`/${lang}/experiences/${experience.slug}/`}
+  fullBleed
+>
   <section class="experience-detail-hero" data-dock-section>
     <img src={experienceCover} alt="" class="experience-detail-hero__image" loading="eager" decoding="async" />
     <div class="experience-detail-hero__veil" aria-hidden="true"></div>
@@ -557,12 +568,6 @@ const experienceGuideSignals = (experienceHighlights.length ? experienceHighligh
         ))}
       </div>
 
-      <div class="experience-guide__actions">
-        {bookingUrl ? (
-          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
-        ) : null}
-        <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
-      </div>
     </div>
 
     {experienceInspectItems.length ? (
@@ -978,34 +983,6 @@ const experienceGuideSignals = (experienceHighlights.length ? experienceHighligh
       color: rgba(21, 18, 15, 0.66);
       font-size: 0.82rem;
       line-height: 1.35;
-    }
-
-    .experience-guide__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .experience-guide__actions a {
-      display: inline-flex;
-      min-height: 2.75rem;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      padding-inline: 1.12rem;
-      font-size: 0.88rem;
-      text-decoration: none;
-    }
-
-    .experience-guide__actions a:first-child {
-      background: #15120f;
-      color: #fffaf2;
-    }
-
-    .experience-guide__actions a:last-child {
-      border: 1px solid rgba(21, 18, 15, 0.16);
-      color: #15120f;
-      background: rgba(255, 250, 242, 0.42);
     }
 
     .experience-guide__gallery {

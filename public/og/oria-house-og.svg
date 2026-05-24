@@ -1,0 +1,15 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#15120F"/>
+  <circle cx="950" cy="160" r="280" fill="#C9A77B" opacity="0.16"/>
+  <circle cx="240" cy="520" r="260" fill="#FFF7EA" opacity="0.08"/>
+  <rect x="80" y="80" width="1040" height="470" rx="28" stroke="#FFF7EA" opacity="0.18"/>
+  <text x="100" y="260" fill="#FFF7EA" font-family="Georgia, serif" font-size="86">
+    Oria House
+  </text>
+  <text x="100" y="348" fill="#FFF7EA" font-family="Georgia, serif" font-size="86">
+    Barcelona
+  </text>
+  <text x="104" y="420" fill="#C9A77B" font-family="Arial, sans-serif" font-size="22" letter-spacing="6">
+    QUIET BOUTIQUE HOTEL STAY
+  </text>
+</svg>

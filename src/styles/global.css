@@ -21,6 +21,10 @@
   --hc-deep: #171410;
   --hc-warm-shadow: rgba(64, 42, 24, 0.12);
   --hc-panel-shadow: 0 28px 90px rgba(64, 42, 24, 0.08);
+  --hc-atmosphere-a: rgba(255, 255, 255, 0.48);
+  --hc-atmosphere-b: rgba(226, 197, 158, 0.12);
+  --hc-atmosphere-c: rgba(64, 42, 24, 0.05);
+  --hc-atmosphere-opacity: 1;
 }
 
 html {
@@ -96,10 +100,14 @@ img {
   content: "";
   position: absolute;
   inset: 0;
+  opacity: var(--hc-atmosphere-opacity);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.48) 0%, rgba(255, 255, 255, 0) 36%),
-    linear-gradient(24deg, rgba(23, 20, 16, 0.04) 0%, rgba(23, 20, 16, 0) 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(64, 42, 24, 0.05));
+    linear-gradient(135deg, var(--hc-atmosphere-a) 0%, rgba(255, 255, 255, 0) 36%),
+    linear-gradient(24deg, var(--hc-atmosphere-b) 0%, rgba(23, 20, 16, 0) 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), var(--hc-atmosphere-c));
+  transition:
+    opacity 900ms cubic-bezier(0.19, 1, 0.22, 1),
+    background 900ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .hc-page-shell {

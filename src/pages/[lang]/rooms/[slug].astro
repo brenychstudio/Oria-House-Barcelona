@@ -4,7 +4,9 @@ import { LANGS, type Lang, isLang, t } from "../../../content/languages";
 import { getRooms, getSettings } from "../../../cms/sheets";
 import { pickLang, splitPipe } from "../../../cms/types";
 import { ROOM_COVER_BY_SLUG, SHARED_ROOM_DETAIL_IMAGES } from "../../../hotel/data/demoAssets";
+import { getSeoCopy } from "../../../hotel/seo/siteSeo";
 import CinematicInspectGallery from "../../../hotel/ui/CinematicInspectGallery.astro";
+import CinematicInspectView from "../../../hotel/ui/CinematicInspectView.astro";
 
 export async function getStaticPaths() {
   const rooms = await getRooms();
@@ -201,6 +203,8 @@ const resolveRoomSales = () => {
 const sales = resolveRoomSales();
 
 const pageTitle = `${hotelName} — ${roomTitle}`;
+const seo = getSeoCopy("roomDetail", lang);
+const roomMetaDescription = roomShort || roomDescription || seo.description;
 
 const backLabel = t(lang, "Back to rooms", "Volver a habitaciones");
 const bookDirectLabel = t(lang, "Book direct", "Reservar directo");
@@ -337,7 +341,14 @@ const formatSize = (value: string) => {
 };
 ---
 
-<BaseLayout lang={lang} title={pageTitle} fullBleed>
+<BaseLayout
+  lang={lang}
+  title={pageTitle}
+  description={roomMetaDescription}
+  ogImage={roomCover}
+  canonicalPath={`/${lang}/rooms/${room.slug}/`}
+  fullBleed
+>
   <section class="room-detail-hero" data-dock-section>
     <img src={roomCover} alt="" class="room-detail-hero__image" loading="eager" decoding="async" />
     <div class="room-detail-hero__veil" aria-hidden="true"></div>
@@ -473,16 +484,20 @@ const formatSize = (value: string) => {
             </div>
           ) : null}
 
-          <div class="room-guide__actions">
-            {bookingUrl ? (
-              <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
-            ) : null}
-            <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
-          </div>
         </div>
 
-        <div class="room-guide__gallery" aria-label={photoSwitcherLabel}>
-          <div class="room-gallery__stage">
+        <div
+          class="room-guide__gallery"
+          aria-label={photoSwitcherLabel}
+          data-room-inspect-id={`room-guide-inspect-${room.slug}`}
+        >
+          <div
+            role="button"
+            tabindex="0"
+            class="room-gallery__stage"
+            data-room-gallery-open
+            aria-label={openGalleryLabel}
+          >
             {roomInspectItems.map((item, index) => (
               <figure
                 class:list={["room-gallery__slide", index === 0 && "is-active"]}
@@ -506,6 +521,7 @@ const formatSize = (value: string) => {
             </div>
 
             <div class="room-gallery__nav">
+              <button type="button" data-room-gallery-open aria-label={openGalleryLabel}>{openImageLabel}</button>
               <button type="button" data-room-gallery-prev aria-label={previousImageLabel}>Prev</button>
               <button type="button" data-room-gallery-next aria-label={nextImageLabel}>Next</button>
             </div>
@@ -528,6 +544,14 @@ const formatSize = (value: string) => {
           </div>
         </div>
       </div>
+
+      <CinematicInspectView
+        id={`room-guide-inspect-${room.slug}`}
+        items={roomInspectItems}
+        returnLabel={t(lang, "Return", "Volver")}
+        previousLabel={t(lang, "Previous image", "Imagen anterior")}
+        nextLabel={t(lang, "Next image", "Siguiente imagen")}
+      />
     </section>
   ) : null}
 
@@ -676,12 +700,27 @@ const formatSize = (value: string) => {
         const thumbs = Array.from(root.querySelectorAll("[data-room-gallery-thumb]"));
         const prev = root.querySelector("[data-room-gallery-prev]");
         const next = root.querySelector("[data-room-gallery-next]");
+        const openButtons = Array.from(root.querySelectorAll("[data-room-gallery-open]"));
         const count = root.querySelector("[data-room-gallery-count]");
         const title = root.querySelector("[data-room-gallery-title]");
+        const inspectId = root.querySelector("[data-room-inspect-id]")?.getAttribute("data-room-inspect-id");
 
         if (!slides.length) return;
 
         let active = 0;
+
+        const openInspect = () => {
+          if (!inspectId) return;
+
+          window.dispatchEvent(
+            new CustomEvent("hotel:cinematic-inspect:open", {
+              detail: {
+                id: inspectId,
+                index: active,
+              },
+            })
+          );
+        };
 
         const setActive = (nextIndex) => {
           active = (nextIndex + slides.length) % slides.length;
@@ -708,6 +747,14 @@ const formatSize = (value: string) => {
 
         prev?.addEventListener("click", () => setActive(active - 1));
         next?.addEventListener("click", () => setActive(active + 1));
+        openButtons.forEach((button) => {
+          button.addEventListener("click", openInspect);
+          button.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            openInspect();
+          });
+        });
 
         thumbs.forEach((thumb, index) => {
           thumb.addEventListener("click", () => setActive(index));
@@ -746,8 +793,8 @@ const formatSize = (value: string) => {
       inset: 0;
       background:
         radial-gradient(circle at 72% 20%, rgba(255, 238, 208, 0.2), transparent 34rem),
-        linear-gradient(90deg, rgba(5, 5, 4, 0.64), rgba(5, 5, 4, 0.14) 48%, rgba(5, 5, 4, 0.58)),
-        linear-gradient(180deg, rgba(5, 5, 4, 0.14), rgba(5, 5, 4, 0.1) 42%, rgba(5, 5, 4, 0.78));
+        linear-gradient(90deg, rgba(5, 5, 4, 0.5), rgba(5, 5, 4, 0.08) 48%, rgba(5, 5, 4, 0.42)),
+        linear-gradient(180deg, rgba(5, 5, 4, 0.1), rgba(5, 5, 4, 0.055) 42%, rgba(5, 5, 4, 0.42));
     }
 
     .room-detail-hero__inner {
@@ -813,8 +860,15 @@ const formatSize = (value: string) => {
     }
 
     .room-detail-hero__panel {
-      border-top: 1px solid rgba(255, 255, 255, 0.24);
-      padding-top: 1.1rem;
+      border: 1px solid rgba(255, 250, 242, 0.3);
+      background:
+        linear-gradient(135deg, rgba(255, 250, 242, 0.16), rgba(255, 250, 242, 0.035)),
+        rgba(255, 250, 242, 0.035);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 24px 78px rgba(0, 0, 0, 0.16);
+      backdrop-filter: blur(30px) saturate(1.2);
+      padding: clamp(1rem, 2vw, 1.35rem);
     }
 
     .room-detail-hero__specs {
@@ -825,9 +879,12 @@ const formatSize = (value: string) => {
     }
 
     .room-detail-hero__specs div {
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: rgba(255, 255, 255, 0.055);
-      padding: 1rem;
+      border: 1px solid rgba(255, 250, 242, 0.28);
+      background: rgba(255, 250, 242, 0.1);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.11),
+        0 10px 34px rgba(0, 0, 0, 0.08);
+      padding: 0.95rem;
     }
 
     .room-detail-hero__specs span {
@@ -843,12 +900,13 @@ const formatSize = (value: string) => {
       display: block;
       font-size: 1.35rem;
       font-weight: 400;
+      color: #fffaf2;
     }
 
     .room-detail-hero__panel p {
       margin-top: 1.2rem;
       max-width: 30rem;
-      color: rgba(255, 250, 242, 0.72);
+      color: rgba(255, 250, 242, 0.82);
       line-height: 1.72;
     }
 
@@ -979,35 +1037,6 @@ const formatSize = (value: string) => {
       padding-top: 1rem;
     }
 
-    .room-guide__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.7rem;
-      margin-top: 0.35rem;
-    }
-
-    .room-guide__actions a {
-      display: inline-flex;
-      min-height: 2.65rem;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      padding-inline: 1.05rem;
-      font-size: 0.88rem;
-      text-decoration: none;
-    }
-
-    .room-guide__actions a:first-child {
-      background: #15120f;
-      color: #fffaf2;
-    }
-
-    .room-guide__actions a:last-child {
-      border: 1px solid rgba(21, 18, 15, 0.16);
-      background: rgba(255, 250, 242, 0.42);
-      color: #15120f;
-    }
-
     .room-guide__gallery {
       min-width: 0;
     }
@@ -1019,6 +1048,12 @@ const formatSize = (value: string) => {
       border: 1px solid rgba(21, 18, 15, 0.1);
       background: #15120f;
       box-shadow: 0 38px 120px rgba(64, 42, 24, 0.12);
+      cursor: zoom-in;
+    }
+
+    .room-gallery__stage:focus-visible {
+      outline: 2px solid rgba(21, 18, 15, 0.72);
+      outline-offset: 3px;
     }
 
     .room-gallery__slide {

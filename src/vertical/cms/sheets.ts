@@ -13,6 +13,7 @@ type CmsData = {
 };
 
 let cachePromise: Promise<CmsData> | null = null;
+const DEMO_BOOKING_URL = "https://oria-house-barcelona-demo.pages.dev/book";
 
 function onlyPublished<T extends { status?: string }>(xs: T[]): T[] {
   return xs.filter((x) => String(x.status || "").toLowerCase() === "published");
@@ -24,6 +25,24 @@ function sortByOrder<T extends { sort_order?: string }>(xs: T[]): T[] {
     const bb = Number(b.sort_order ?? 0);
     return aa - bb;
   });
+}
+
+function normalizeSettings(settings: Settings): Settings {
+  const bookingUrl = String(settings.booking_url || "").trim();
+
+  try {
+    const url = new URL(bookingUrl);
+    if (url.hostname === "example.com" || url.hostname.endsWith(".example.com")) {
+      return {
+        ...settings,
+        booking_url: DEMO_BOOKING_URL,
+      };
+    }
+  } catch {
+    // Keep non-URL values untouched; consumers already handle empty strings.
+  }
+
+  return settings;
 }
 
 let warnedMissingEnv = false;
@@ -80,7 +99,7 @@ async function loadCms(): Promise<CmsData> {
     }
   }
 
-  const settings = settingsRows[0] ?? demoSettings();
+  const settings = normalizeSettings(settingsRows[0] ?? demoSettings());
 
   return {
     settings,

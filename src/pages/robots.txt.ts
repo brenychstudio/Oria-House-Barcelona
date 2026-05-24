@@ -1,14 +1,18 @@
-// src/pages/robots.txt.ts
-import { buildRobotsTxt } from "../core/seo/robots";
-import { getRobotsRules } from "../seo/robots";
+import { SITE_URL } from "../hotel/seo/siteSeo";
 
-export async function GET({ site }: { site?: URL }) {
-  const origin = site?.origin ?? "http://localhost:4321";
-  const rules = await getRobotsRules();
+export const prerender = true;
 
-  const body = buildRobotsTxt(origin, rules, "/sitemap.xml");
+export function GET() {
+  return new Response(
+    `User-agent: *
+Allow: /
 
-  return new Response(body, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
+Sitemap: ${SITE_URL}/sitemap.xml
+`,
+    {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    }
+  );
 }

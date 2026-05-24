@@ -79,9 +79,9 @@ const total = inspectItems.length;
             {returnLabel}
           </button>
 
-          <div class="hc-cinematic-inspect__nav">
-            <button type="button" data-inspect-prev aria-label={previousLabel}>←</button>
-            <button type="button" data-inspect-next aria-label={nextLabel}>→</button>
+          <div class="hc-cinematic-inspect__nav hc-cinematic-inspect__nav--scene">
+            <button type="button" data-inspect-prev aria-label={previousLabel}>&lt;</button>
+            <button type="button" data-inspect-next aria-label={nextLabel}>&gt;</button>
           </div>
 
           <div class="hc-cinematic-inspect__readout">
@@ -119,6 +119,11 @@ const total = inspectItems.length;
               </button>
             ))}
           </div>
+
+          <div class="hc-cinematic-inspect__nav hc-cinematic-inspect__nav--panel">
+            <button type="button" data-inspect-prev aria-label={previousLabel}>&lt;</button>
+            <button type="button" data-inspect-next aria-label={nextLabel}>&gt;</button>
+          </div>
         </aside>
       </div>
     </section>
@@ -154,11 +159,11 @@ const total = inspectItems.length;
         position: relative;
         z-index: 2;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.32fr);
-        gap: clamp(1rem, 3vw, 2rem);
-        width: min(100% - clamp(1rem, 4vw, 4rem), 1500px);
-        height: min(100svh - clamp(2rem, 8vh, 6rem), 920px);
-        margin: clamp(1rem, 4vh, 3rem) auto;
+        grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.3fr);
+        gap: 0;
+        width: min(100% - clamp(1rem, 4vw, 4rem), 1560px);
+        height: min(100svh - clamp(1rem, 5vh, 3.6rem), 940px);
+        margin: clamp(0.5rem, 2.5vh, 1.8rem) auto;
         transform: translate3d(0, 18px, 0) scale(0.975);
         border: 1px solid rgba(255, 250, 242, 0.11);
         background:
@@ -201,7 +206,7 @@ const total = inspectItems.length;
         pointer-events: none;
         background:
           radial-gradient(circle at 74% 18%, rgba(255, 240, 210, 0.12), transparent 30rem),
-          linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.12) 52%, rgba(0, 0, 0, 0.72));
+          linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.08) 52%, rgba(0, 0, 0, 0.44));
       }
 
       .hc-cinematic-inspect__sweep {
@@ -256,6 +261,10 @@ const total = inspectItems.length;
         gap: 0.5rem;
       }
 
+      .hc-cinematic-inspect__nav--panel {
+        display: none;
+      }
+
       .hc-cinematic-inspect__nav button {
         display: grid;
         height: 2.55rem;
@@ -270,16 +279,16 @@ const total = inspectItems.length;
 
       .hc-cinematic-inspect__readout {
         position: absolute;
-        left: clamp(1.2rem, 3vw, 2.2rem);
-        right: clamp(1.2rem, 3vw, 2.2rem);
-        bottom: clamp(1.2rem, 3vw, 2.2rem);
+        left: clamp(1rem, 2vw, 1.6rem);
+        right: clamp(1rem, 2vw, 1.6rem);
+        bottom: clamp(1rem, 2vw, 1.6rem);
         z-index: 4;
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.34fr);
         gap: 1.2rem;
         align-items: end;
-        border-top: 1px solid rgba(255, 250, 242, 0.22);
-        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 250, 242, 0.18);
+        padding-top: 0.8rem;
       }
 
       .hc-cinematic-inspect__readout span,
@@ -293,12 +302,12 @@ const total = inspectItems.length;
       }
 
       .hc-cinematic-inspect__readout strong {
-        margin-top: 0.75rem;
+        margin-top: 0.4rem;
         display: block;
-        max-width: 10ch;
-        font-size: clamp(3rem, 6.8vw, 6.8rem);
-        line-height: 0.86;
-        letter-spacing: -0.075em;
+        max-width: 28rem;
+        font-size: clamp(1.65rem, 2.8vw, 3.4rem);
+        line-height: 0.94;
+        letter-spacing: 0;
         font-weight: 400;
         text-shadow: 0 18px 70px rgba(0, 0, 0, 0.36);
       }
@@ -311,23 +320,26 @@ const total = inspectItems.length;
       }
 
       .hc-cinematic-inspect__panel {
+        position: relative;
         display: grid;
-        grid-template-rows: auto 1fr;
-        gap: 1.5rem;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: clamp(1rem, 2vh, 1.5rem);
+        max-height: 100%;
         min-width: 0;
         border-left: 1px solid rgba(255, 250, 242, 0.1);
-        padding: clamp(1rem, 2vw, 1.4rem);
+        padding: clamp(1rem, 2vw, 1.55rem);
         background:
           linear-gradient(180deg, rgba(255, 250, 242, 0.045), transparent),
           rgba(10, 8, 7, 0.56);
+        overflow: hidden;
       }
 
       .hc-cinematic-inspect__panel h2 {
         margin-top: 0.9rem;
-        max-width: 9ch;
-        font-size: clamp(2.4rem, 4vw, 4.6rem);
-        line-height: 0.9;
-        letter-spacing: -0.075em;
+        max-width: 10ch;
+        font-size: clamp(2.3rem, 3.4vw, 4.5rem);
+        line-height: 0.92;
+        letter-spacing: 0;
         font-weight: 400;
       }
 
@@ -339,9 +351,12 @@ const total = inspectItems.length;
       }
 
       .hc-cinematic-inspect__filmstrip {
-        align-self: end;
         display: grid;
         gap: 0.55rem;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+        overscroll-behavior: contain;
       }
 
       .hc-cinematic-inspect__thumb {
@@ -422,6 +437,7 @@ const total = inspectItems.length;
           grid-template-columns: 1fr;
           height: calc(100svh - 1.4rem);
           margin: 0.7rem auto;
+          overflow-y: auto;
         }
 
         .hc-cinematic-inspect__scene {
@@ -431,6 +447,7 @@ const total = inspectItems.length;
         .hc-cinematic-inspect__panel {
           border-left: 0;
           border-top: 1px solid rgba(255, 250, 242, 0.1);
+          overflow: visible;
         }
 
         .hc-cinematic-inspect__filmstrip {
@@ -451,6 +468,28 @@ const total = inspectItems.length;
           justify-items: start;
           text-align: left;
         }
+
+        .hc-cinematic-inspect__nav--scene {
+          display: none;
+        }
+
+        .hc-cinematic-inspect__nav--panel {
+          position: absolute;
+          display: flex;
+          top: auto;
+          right: clamp(0.7rem, 3vw, 1rem);
+          bottom: clamp(0.75rem, 3vw, 1.05rem);
+          border: 1px solid rgba(255, 250, 242, 0.14);
+          border-radius: 999px;
+          background: rgba(15, 13, 11, 0.34);
+          padding: 0.28rem;
+          backdrop-filter: blur(18px);
+          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.24);
+        }
+
+        .hc-cinematic-inspect__nav button {
+          background: rgba(255, 250, 242, 0.08);
+        }
       }
 
       @media (max-width: 640px) {
@@ -463,7 +502,7 @@ const total = inspectItems.length;
         }
 
         .hc-cinematic-inspect__readout strong {
-          font-size: clamp(2.8rem, 12vw, 5.2rem);
+          font-size: clamp(1.55rem, 7vw, 2.5rem);
         }
 
         .hc-cinematic-inspect__panel h2 {
@@ -496,8 +535,8 @@ const total = inspectItems.length;
         const count = root.querySelector("[data-inspect-count]");
         const panelTitle = root.querySelector("[data-inspect-panel-title]");
         const panelSignal = root.querySelector("[data-inspect-panel-signal]");
-        const prevBtn = root.querySelector("[data-inspect-prev]");
-        const nextBtn = root.querySelector("[data-inspect-next]");
+        const prevButtons = Array.from(root.querySelectorAll("[data-inspect-prev]"));
+        const nextButtons = Array.from(root.querySelectorAll("[data-inspect-next]"));
         const closeButtons = Array.from(root.querySelectorAll("[data-inspect-close]"));
         const thumbs = Array.from(root.querySelectorAll("[data-inspect-thumb]"));
 
@@ -588,7 +627,11 @@ const total = inspectItems.length;
           document.documentElement.setAttribute("data-cinematic-inspect", "open");
           lockScroll();
 
-          window.setTimeout(() => root.focus(), 30);
+          window.setTimeout(() => {
+            if (root instanceof HTMLElement) {
+              root.focus({ preventScroll: true });
+            }
+          }, 30);
         };
 
         const close = () => {
@@ -613,8 +656,8 @@ const total = inspectItems.length;
           button.addEventListener("click", close);
         });
 
-        if (prevBtn) prevBtn.addEventListener("click", () => goDelta(-1));
-        if (nextBtn) nextBtn.addEventListener("click", () => goDelta(1));
+        prevButtons.forEach((button) => button.addEventListener("click", () => goDelta(-1)));
+        nextButtons.forEach((button) => button.addEventListener("click", () => goDelta(1)));
 
         if (scene) {
           scene.addEventListener(
@@ -657,24 +700,41 @@ const total = inspectItems.length;
           });
         });
 
-        root.addEventListener("keydown", (event) => {
+        const handleInspectKeydown = (event) => {
           if (!isOpen) return;
+
+          const target = event.target;
+
+          if (
+            target instanceof HTMLInputElement ||
+            target instanceof HTMLTextAreaElement ||
+            target instanceof HTMLSelectElement
+          ) {
+            return;
+          }
 
           if (event.key === "Escape") {
             event.preventDefault();
+            event.stopPropagation();
             close();
+            return;
           }
 
           if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
             event.preventDefault();
+            event.stopPropagation();
             goDelta(-1);
+            return;
           }
 
           if (event.key === "ArrowRight" || event.key === "ArrowDown") {
             event.preventDefault();
+            event.stopPropagation();
             goDelta(1);
           }
-        });
+        };
+
+        document.addEventListener("keydown", handleInspectKeydown, true);
 
         window.addEventListener("hotel:cinematic-inspect:open", (event) => {
           const detail = event.detail || {};
