@@ -2,6 +2,7 @@
 import type { Settings, Room, Offer, Experience, Review, Page } from "./types";
 import { fetchSheetRows } from "./sheetsFetch";
 import { getEnv, isStrictEnv } from "../../core/cms/env";
+import { localCmsData } from "./localData";
 
 type CmsData = {
   settings: Settings;
@@ -14,6 +15,7 @@ type CmsData = {
 
 let cachePromise: Promise<CmsData> | null = null;
 const DEMO_BOOKING_URL = "https://oria-house-barcelona-demo.pages.dev/book";
+const SHEETS_SOURCE = "sheets";
 
 function onlyPublished<T extends { status?: string }>(xs: T[]): T[] {
   return xs.filter((x) => String(x.status || "").toLowerCase() === "published");
@@ -64,17 +66,26 @@ function urlOrDemo(envKey: string): string | undefined {
   return undefined;
 }
 
-function demoSettings(): Settings {
-  // Мінімальний demo-обʼєкт. Якщо ваш Settings має більше required полів — типізація
-  // не зламається завдяки cast, а сторінки отримають базові значення.
+function shouldLoadSheets(): boolean {
+  return getEnv("ENGINE_CMS_SOURCE") === SHEETS_SOURCE;
+}
+
+function loadLocalCms(): CmsData {
   return {
-    hotel_name_en: "Demo Site",
-    hotel_name_es: "Demo Site",
-    hero_image: "/brand/og-default.jpg",
-  } as unknown as Settings;
+    settings: normalizeSettings(localCmsData.settings),
+    rooms: sortByOrder(onlyPublished(localCmsData.rooms)),
+    offers: sortByOrder(onlyPublished(localCmsData.offers)),
+    experiences: sortByOrder(onlyPublished(localCmsData.experiences)),
+    reviews: sortByOrder(onlyPublished(localCmsData.reviews)),
+    pages: sortByOrder(onlyPublished(localCmsData.pages)),
+  };
 }
 
 async function loadCms(): Promise<CmsData> {
+  if (!shouldLoadSheets()) {
+    return loadLocalCms();
+  }
+
   const settingsUrl = urlOrDemo("SHEETS_SETTINGS_CSV");
   const roomsUrl = urlOrDemo("SHEETS_ROOMS_CSV");
   const offersUrl = urlOrDemo("SHEETS_OFFERS_CSV");
@@ -91,15 +102,14 @@ async function loadCms(): Promise<CmsData> {
     pagesUrl ? fetchSheetRows<Page>(pagesUrl) : Promise.resolve<Page[]>([]),
   ]);
 
-  // Settings: у strict режимі — очікуємо рівно 1 рядок, інакше помилка.
-  // У demo режимі — беремо перший або demo fallback.
+  // Settings: in strict sheets mode we expect exactly one row.
   if (isStrictEnv()) {
     if (settingsRows.length !== 1) {
       throw new Error("settings sheet must contain exactly 1 row.");
     }
   }
 
-  const settings = normalizeSettings(settingsRows[0] ?? demoSettings());
+  const settings = normalizeSettings(settingsRows[0] ?? localCmsData.settings);
 
   return {
     settings,

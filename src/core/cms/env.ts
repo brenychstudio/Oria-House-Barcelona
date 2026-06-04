@@ -1,7 +1,11 @@
 // src/core/cms/env.ts
 const viteEnv: Record<string, unknown> = {
   ENGINE_MODE: import.meta.env.ENGINE_MODE,
+  ENGINE_CMS_SOURCE: import.meta.env.ENGINE_CMS_SOURCE,
   ENGINE_STRICT_ENV: import.meta.env.ENGINE_STRICT_ENV,
+  SITE_URL: import.meta.env.SITE_URL,
+  PUBLIC_SITE_URL: import.meta.env.PUBLIC_SITE_URL,
+  CF_PAGES_URL: import.meta.env.CF_PAGES_URL,
   SHEETS_SETTINGS_CSV: import.meta.env.SHEETS_SETTINGS_CSV,
   SHEETS_ROOMS_CSV: import.meta.env.SHEETS_ROOMS_CSV,
   SHEETS_OFFERS_CSV: import.meta.env.SHEETS_OFFERS_CSV,

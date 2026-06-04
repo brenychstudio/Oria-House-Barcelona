@@ -5,6 +5,7 @@ export const DEFAULT_SITE_URL = "https://oria-house-barcelona-demo.pages.dev";
 export const SITE_URL = (
   import.meta.env.SITE_URL ||
   import.meta.env.PUBLIC_SITE_URL ||
+  import.meta.env.CF_PAGES_URL ||
   DEFAULT_SITE_URL
 ).replace(/\/$/, "");
 
