@@ -7,7 +7,7 @@ This project is prepared as a static Astro site for Cloudflare Pages.
 - Framework preset: `Astro`
 - Build command: `npm run build`
 - Build output directory: `dist`
-- Node.js version: `22`
+- Node.js version variable: `NODE_VERSION=22`
 
 ## Production variables
 
@@ -17,6 +17,7 @@ Set the real production domain before launching on a custom domain:
 SITE_URL=https://your-domain.example
 PUBLIC_SITE_URL=https://your-domain.example
 ENGINE_CMS_SOURCE=local
+NODE_VERSION=22
 ```
 
 `ENGINE_CMS_SOURCE=local` uses the local concept content in
