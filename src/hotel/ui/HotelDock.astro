@@ -130,20 +130,19 @@ const nextSectionLabel = lang === "es" ? "Siguiente sección" : "Next section";
 
   @media (max-width: 760px) {
     :root {
-      --hotel-dock-safe-bottom: calc(5.8rem + env(safe-area-inset-bottom));
+      --hotel-dock-safe-bottom: calc(1rem + env(safe-area-inset-bottom));
     }
 
-    .hotel-global-dock {
-      bottom: calc(0.65rem + env(safe-area-inset-bottom));
-      gap: 0.18rem;
-      padding: 0.22rem;
-      background: rgba(251, 247, 240, 0.52);
-    }
-
-    .hotel-global-dock__button {
-      height: 2.2rem;
-      width: 2.2rem;
-      font-size: 0.78rem;
+    .hotel-global-dock,
+    .hotel-stay-dock,
+    [data-home-stay-dock] {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      transform: translateX(-50%) translateY(1rem) scale(0.96) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
     }
   }
 
@@ -166,6 +165,13 @@ const nextSectionLabel = lang === "es" ? "Siguiente sección" : "Next section";
   (() => {
     const dock = document.querySelector("[data-hotel-global-dock]");
     if (!dock) return;
+
+    const phoneDockDisabled = window.matchMedia("(max-width: 760px)");
+
+    if (phoneDockDisabled.matches) {
+      dock.setAttribute("data-hidden", "true");
+      return;
+    }
 
     const upBtn = dock.querySelector("[data-global-dock-up]");
     const downBtn = dock.querySelector("[data-global-dock-down]");

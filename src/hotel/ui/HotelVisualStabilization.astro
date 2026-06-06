@@ -1266,12 +1266,12 @@
     body .hotel-header__panel,
     body .hc-mobile-menu {
       z-index: 260 !important;
-      background: rgba(251, 247, 240, 0.96) !important;
+      background: #fbf7f0 !important;
       color: #15120f !important;
       border: 1px solid rgba(21, 18, 15, 0.12) !important;
       box-shadow: 0 26px 100px rgba(21, 18, 15, 0.22) !important;
-      backdrop-filter: blur(24px) !important;
-      -webkit-backdrop-filter: blur(24px) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
     }
 
     body [aria-label="Direct booking navigation"] a,
@@ -1284,6 +1284,67 @@
     body .hc-mobile-menu a {
       color: #15120f !important;
       text-decoration: none !important;
+    }
+
+    body .hotel-header__panel a[aria-current="page"],
+    body .hotel-header__panel [data-header-lang-list] a[aria-current="page"],
+    body .hotel-header__panel [data-header-cta],
+    body .hotel-header__panel a[data-header-cta] {
+      background: #171410 !important;
+      color: #fffaf2 !important;
+    }
+
+    body .hotel-header__panel [data-header-lang-list] {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(2.45rem, 1fr)) !important;
+      min-width: 5.4rem !important;
+      overflow: hidden !important;
+    }
+
+    body .hotel-header__panel [data-header-lang-list] a {
+      display: inline-flex !important;
+      min-height: 2rem !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding-inline: 0.55rem !important;
+      color: rgba(23, 20, 16, 0.58) !important;
+    }
+
+    body .hotel-header__panel [data-header-lang-list] a[aria-current="page"],
+    body .hotel-header__panel [data-header-lang-list] a[data-active-lang="true"] {
+      background: #171410 !important;
+      color: #fffaf2 !important;
+    }
+
+    body .hotel-header:has(.hotel-header__mobile[open]),
+    body [data-hotel-header]:has(.hotel-header__mobile[open]) {
+      overflow: visible !important;
+      transform: none !important;
+      z-index: 600 !important;
+    }
+
+    body .hotel-header__mobile[open] {
+      position: relative !important;
+      z-index: 610 !important;
+      will-change: auto !important;
+    }
+
+    body .hotel-header__mobile[open] summary {
+      position: relative !important;
+      z-index: 3 !important;
+    }
+
+    body .hotel-header__panel[data-hotel-mobile-menu] {
+      position: absolute !important;
+      top: calc(100% + 0.75rem) !important;
+      right: 0 !important;
+      left: auto !important;
+      width: min(calc(100vw - 2rem), 360px) !important;
+      max-width: calc(100vw - 1rem) !important;
+      max-height: calc(100svh - 6.75rem - env(safe-area-inset-bottom)) !important;
+      overflow: auto !important;
+      overscroll-behavior: contain !important;
+      transform-origin: top right !important;
     }
 
     /*
@@ -2215,6 +2276,190 @@
     }
 
     /*
+      Browser cards: mobile editorial hierarchy.
+      Keep images intact; reduce the card to price, title, short copy, core specs and CTAs.
+    */
+
+    body .rooms-card__body,
+    body .rooms-browser.is-list-view .rooms-card__body {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      grid-template-areas:
+        "intro intro"
+        "specs actions" !important;
+      gap: 0.85rem 0.9rem !important;
+      align-items: end !important;
+      padding: 1rem !important;
+    }
+
+    body .rooms-card__intro,
+    body .rooms-browser.is-list-view .rooms-card__intro {
+      grid-area: intro !important;
+    }
+
+    body .rooms-card__specs,
+    body .rooms-browser.is-list-view .rooms-card__specs {
+      grid-area: specs !important;
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, max-content)) !important;
+      gap: 0.42rem !important;
+      justify-content: start !important;
+    }
+
+    body .rooms-card__signals,
+    body .rooms-browser.is-list-view .rooms-card__signals,
+    body .rooms-card__specs span:nth-child(n + 4),
+    body .rooms-browser.is-list-view .rooms-card__specs span:nth-child(n + 4) {
+      display: none !important;
+    }
+
+    body .rooms-card__specs span,
+    body .rooms-browser.is-list-view .rooms-card__specs span {
+      min-width: 0 !important;
+      padding: 0.48rem 0.58rem !important;
+      background: rgba(255, 255, 255, 0.38) !important;
+      line-height: 1.1 !important;
+    }
+
+    body .rooms-card__specs span:first-child,
+    body .rooms-browser.is-list-view .rooms-card__specs span:first-child {
+      grid-column: 1 / -1 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    body .rooms-card__specs small,
+    body .rooms-browser.is-list-view .rooms-card__specs small {
+      font-size: 0.52rem !important;
+      letter-spacing: 0.08em !important;
+    }
+
+    body .rooms-card__specs strong,
+    body .rooms-browser.is-list-view .rooms-card__specs strong {
+      margin-top: 0.24rem !important;
+      font-size: 0.86rem !important;
+      line-height: 1.08 !important;
+    }
+
+    body .rooms-card__specs span:first-child strong,
+    body .rooms-browser.is-list-view .rooms-card__specs span:first-child strong {
+      font-size: clamp(1.38rem, 6.4vw, 1.95rem) !important;
+      line-height: 1 !important;
+      color: #15120f !important;
+    }
+
+    body .rooms-card h3,
+    body .rooms-browser.is-list-view .rooms-card h3 {
+      margin-top: 0.28rem !important;
+      font-size: clamp(1.8rem, 8.6vw, 2.55rem) !important;
+      line-height: 0.96 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .rooms-card__body p,
+    body .rooms-browser.is-list-view .rooms-card__body p {
+      display: -webkit-box !important;
+      margin-top: 0.42rem !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      -webkit-box-orient: vertical !important;
+      -webkit-line-clamp: 2 !important;
+      color: rgba(21, 18, 15, 0.62) !important;
+      font-size: 0.86rem !important;
+      line-height: 1.42 !important;
+    }
+
+    body .rooms-card__actions,
+    body .rooms-browser.is-list-view .rooms-card__actions {
+      grid-area: actions !important;
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0.42rem !important;
+      justify-self: end !important;
+      margin-top: 0 !important;
+    }
+
+    body .rooms-card__open,
+    body .rooms-card__book {
+      min-height: 2.18rem !important;
+      padding-inline: 0.8rem !important;
+      font-size: 0.72rem !important;
+      white-space: nowrap !important;
+    }
+
+    body .offer-row__main,
+    body .experience-card__body {
+      gap: 0.72rem !important;
+      padding: 1rem !important;
+    }
+
+    body .offer-row__main h3,
+    body .experience-card h3 {
+      margin-top: 0.28rem !important;
+      font-size: clamp(1.8rem, 8.4vw, 2.55rem) !important;
+      line-height: 0.96 !important;
+      letter-spacing: 0 !important;
+    }
+
+    body .offer-row__main p,
+    body .experience-card__body p {
+      display: -webkit-box !important;
+      margin-top: 0.42rem !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      -webkit-box-orient: vertical !important;
+      -webkit-line-clamp: 2 !important;
+      color: rgba(21, 18, 15, 0.62) !important;
+      font-size: 0.86rem !important;
+      line-height: 1.42 !important;
+    }
+
+    body .offer-row__chips,
+    body .experience-card__meta {
+      gap: 0.42rem !important;
+    }
+
+    body .offer-row__chips span,
+    body .experience-card__meta span {
+      padding: 0.5rem 0.6rem !important;
+      font-size: 0.72rem !important;
+      line-height: 1.25 !important;
+    }
+
+    body .offer-row__chips span:nth-child(n + 3),
+    body .experience-card__meta span:nth-child(n + 2),
+    body .experience-card__signal {
+      display: none !important;
+    }
+
+    body .offer-row__side {
+      display: block !important;
+      border-top: 1px solid rgba(21, 18, 15, 0.1) !important;
+      padding: 0.82rem 1rem 1rem !important;
+    }
+
+    body .offer-row__side > span,
+    body .offer-row__side > strong {
+      display: none !important;
+    }
+
+    body .offer-row__actions,
+    body .experience-card__actions {
+      gap: 0.42rem !important;
+      margin-top: 0 !important;
+    }
+
+    body .offer-row__actions a,
+    body .experience-card__open,
+    body .experience-card__book {
+      min-height: 2.18rem !important;
+      padding-inline: 0.82rem !important;
+      font-size: 0.72rem !important;
+      white-space: nowrap !important;
+    }
+
+    /*
       Index page explorer/theatre modules.
       Convert from desktop split theatre to compact app cards.
     */
@@ -3101,6 +3346,104 @@
     body .offer-detail-hero__top,
     body .experience-detail-hero__top {
       margin-top: clamp(0.8rem, 3vw, 1.05rem) !important;
+    }
+  }
+
+  /*
+    Room detail mobile fit.
+    Let the detail hero grow with its decision panel instead of clipping it inside the first viewport.
+  */
+  @media (max-width: 760px) {
+    body .room-detail-hero {
+      min-height: auto !important;
+      height: auto !important;
+      overflow: visible !important;
+    }
+
+    body .room-detail-hero__image,
+    body .room-detail-hero__veil {
+      min-height: 100% !important;
+    }
+
+    body .room-detail-hero__inner {
+      min-height: auto !important;
+      height: auto !important;
+      justify-content: flex-start !important;
+      gap: 1.15rem !important;
+      padding-top: 5.35rem !important;
+      padding-bottom: calc(1.1rem + env(safe-area-inset-bottom)) !important;
+    }
+
+    body .room-detail-hero__content {
+      justify-content: flex-start !important;
+      gap: 0.95rem !important;
+    }
+
+    body .room-detail-hero h1 {
+      max-width: 10ch !important;
+      font-size: clamp(2.35rem, 9.8vw, 3.45rem) !important;
+    }
+
+    body .room-detail-hero__content > div > p {
+      display: -webkit-box !important;
+      max-width: 100% !important;
+      overflow: hidden !important;
+      -webkit-box-orient: vertical !important;
+      -webkit-line-clamp: 2 !important;
+      font-size: 0.9rem !important;
+      line-height: 1.42 !important;
+    }
+
+    body .room-detail-hero__panel {
+      padding: 0.85rem !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    body .room-detail-hero__specs {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 0.55rem !important;
+      margin-top: 0.8rem !important;
+    }
+
+    body .room-detail-hero__specs div {
+      min-height: 0 !important;
+      padding: 0.7rem 0.75rem !important;
+    }
+
+    body .room-detail-hero__specs div:first-child {
+      grid-column: 1 / -1 !important;
+      padding: 0.85rem 0.9rem !important;
+    }
+
+    body .room-detail-hero__specs span {
+      font-size: 0.58rem !important;
+      letter-spacing: 0.2em !important;
+    }
+
+    body .room-detail-hero__specs strong {
+      margin-top: 0.42rem !important;
+      font-size: clamp(1.42rem, 6.2vw, 2rem) !important;
+      line-height: 1 !important;
+    }
+
+    body .room-detail-hero__specs div:not(:first-child) strong {
+      font-size: clamp(1.28rem, 5.5vw, 1.8rem) !important;
+    }
+
+    body .room-detail-hero__panel p {
+      display: -webkit-box !important;
+      margin-top: 0.75rem !important;
+      overflow: hidden !important;
+      -webkit-box-orient: vertical !important;
+      -webkit-line-clamp: 2 !important;
+      font-size: 0.82rem !important;
+      line-height: 1.42 !important;
+    }
+
+    body .room-detail-hero__actions {
+      margin-top: 0.75rem !important;
     }
   }
 </style>
