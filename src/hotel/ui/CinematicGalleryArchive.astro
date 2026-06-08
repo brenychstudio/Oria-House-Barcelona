@@ -91,7 +91,7 @@ const archiveChapters = archiveSections.map((section) => ({
       <div class="hc-gallery-archive__ambient" aria-hidden="true"></div>
 
       <div class="hc-gallery-archive__console">
-        <div class="hc-gallery-archive__intro">
+        <div class="hc-gallery-archive__intro hc-hero-rise">
           <div class="hc-gallery-archive__eyebrow">{eyebrow}</div>
           <h1>{title}</h1>
           <p>{intro}</p>
@@ -122,6 +122,7 @@ const archiveChapters = archiveSections.map((section) => ({
                 href={bookingHref}
                 target="_blank"
                 rel="noreferrer"
+                data-booking-trigger="true"
                 class="hc-gallery-archive__action hc-gallery-archive__action--solid"
               >
                 {bookingLabel}
@@ -131,7 +132,7 @@ const archiveChapters = archiveSections.map((section) => ({
         </div>
 
         <div
-          class="hc-gallery-archive__stage"
+          class="hc-gallery-archive__stage hc-hero-rise hc-hero-rise--delay-1"
           data-archive-stage
           tabindex="0"
           role="group"

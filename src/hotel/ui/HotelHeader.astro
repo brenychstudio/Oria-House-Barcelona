@@ -105,6 +105,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
         return (
           <a
             href={item.href}
+            data-booking-trigger={item.key === "contact" ? "true" : undefined}
             class:list={[
               "rounded-full px-3.5 py-2 text-xs transition",
               active
@@ -147,6 +148,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
           href={bookingUrl}
           target="_blank"
           rel="noreferrer"
+          data-booking-trigger="true"
           class="inline-flex min-h-10 items-center justify-center rounded-full bg-[#171410] px-5 text-sm text-white shadow-[0_14px_34px_rgba(23,20,16,0.20)] hover:-translate-y-0.5"
           data-header-cta
         >
@@ -155,6 +157,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
       ) : (
         <a
           href={`/${lang}/contact/`}
+          data-booking-trigger="true"
           class="inline-flex min-h-10 items-center justify-center rounded-full bg-[#171410] px-5 text-sm text-white shadow-[0_14px_34px_rgba(23,20,16,0.20)] hover:-translate-y-0.5"
           data-header-cta
         >
@@ -189,6 +192,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
             return (
               <a
                 href={item.href}
+                data-booking-trigger={item.key === "contact" ? "true" : undefined}
                 class:list={[
                   "rounded-2xl px-4 py-3 text-sm",
                   active ? "bg-[#171410] text-white" : "hover:bg-white/75",
@@ -228,6 +232,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
               href={bookingUrl}
               target="_blank"
               rel="noreferrer"
+              data-booking-trigger="true"
               class="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#171410] px-4 text-sm text-white"
               data-header-cta
             >
@@ -236,6 +241,7 @@ const brandSubline = t(lang, "Boutique hotel", "Hotel boutique");
           ) : (
             <a
               href={`/${lang}/contact/`}
+              data-booking-trigger="true"
               class="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#171410] px-4 text-sm text-white"
               data-header-cta
             >

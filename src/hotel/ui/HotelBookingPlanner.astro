@@ -277,7 +277,7 @@ const labels = {
   .hotel-booking-planner {
     position: fixed;
     inset: 0;
-    z-index: 180;
+    z-index: 1200;
     opacity: 0;
     pointer-events: none;
     color: #15120f;
@@ -871,10 +871,15 @@ const labels = {
   labels,
 }}>
   (() => {
+    const win = window;
+
+    if (typeof win.__hotelBookingPlannerCleanup === "function") {
+      win.__hotelBookingPlannerCleanup();
+    }
+
     const root = document.querySelector("[data-hotel-booking-planner]");
     if (!root) return;
 
-    const form = root.querySelector("[data-booking-form]");
     const checkin = root.querySelector("[data-booking-checkin]");
     const checkout = root.querySelector("[data-booking-checkout]");
     const adults = root.querySelector("[data-booking-adults]");
@@ -913,18 +918,6 @@ const labels = {
       slug: "",
       title: labels.noContext,
     };
-
-    const normalize = (url) => {
-      if (!url) return "";
-
-      try {
-        return new URL(url, window.location.origin).href;
-      } catch {
-        return "";
-      }
-    };
-
-    const bookingHref = normalize(baseBookingUrl);
 
     const formatLocalISO = (date) => {
       const year = date.getFullYear();
@@ -1304,6 +1297,20 @@ const labels = {
       }
     };
 
+    const forceClose = () => {
+      const wasOpen =
+        isOpen ||
+        root.dataset.open === "true" ||
+        document.documentElement.getAttribute("data-booking-planner") === "open";
+
+      isOpen = false;
+      currentTriggerContext = null;
+      root.dataset.open = "false";
+      document.documentElement.removeAttribute("data-booking-planner");
+
+      if (wasOpen) unlockScroll();
+    };
+
     const appendParams = (target) => {
       const fallback = new URL(contactUrl, window.location.origin);
 
@@ -1355,27 +1362,21 @@ const labels = {
       window.location.href = href;
     };
 
-    const interceptBookingLinks = () => {
-      const links = Array.from(document.querySelectorAll("a"));
+    const handleBookingClick = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
 
-      links.forEach((link) => {
-        if (!(link instanceof HTMLAnchorElement)) return;
-        if (link.dataset.bookingPlannerBound === "true") return;
+      const link = target.closest("a");
+      if (!(link instanceof HTMLAnchorElement)) return;
 
-        const href = normalize(link.getAttribute("href") || "");
-        const matchesBooking = Boolean(bookingHref && href === bookingHref);
-        const hasExplicitTrigger =
-          link.matches("[data-booking-trigger], [data-booking-context]") ||
-          Boolean(link.closest("[data-booking-trigger], [data-booking-context]"));
+      const hasExplicitTrigger =
+        link.matches("[data-booking-trigger], [data-booking-context]") ||
+        Boolean(link.closest("[data-booking-trigger], [data-booking-context]"));
 
-        if (!matchesBooking && !hasExplicitTrigger) return;
+      if (!hasExplicitTrigger) return;
 
-        link.dataset.bookingPlannerBound = "true";
-        link.addEventListener("click", (event) => {
-          event.preventDefault();
-          open(link);
-        });
-      });
+      event.preventDefault();
+      open(link);
     };
 
     if (checkin) {
@@ -1424,14 +1425,20 @@ const labels = {
       }
     });
 
-    window.addEventListener("hotel:booking-planner:open", (event) => {
+    const handleExternalOpen = (event) => {
       const detail = event.detail || {};
       open(detail.trigger || null, detail.context || null);
-    });
+    };
 
-    interceptBookingLinks();
+    document.addEventListener("click", handleBookingClick, true);
+    document.addEventListener("astro:before-preparation", forceClose);
+    window.addEventListener("hotel:booking-planner:open", handleExternalOpen);
 
-    const observer = new MutationObserver(interceptBookingLinks);
-    observer.observe(document.body, { childList: true, subtree: true });
+    win.__hotelBookingPlannerCleanup = () => {
+      document.removeEventListener("click", handleBookingClick, true);
+      document.removeEventListener("astro:before-preparation", forceClose);
+      window.removeEventListener("hotel:booking-planner:open", handleExternalOpen);
+      forceClose();
+    };
   })();
 </script>

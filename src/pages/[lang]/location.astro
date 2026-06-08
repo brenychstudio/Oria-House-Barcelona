@@ -148,15 +148,15 @@ const nearbyNotes = [
     <div class="location-hero__veil" aria-hidden="true"></div>
 
     <div class="location-hero__inner">
-      <div class="location-hero__top">
+      <div class="location-hero__top hc-hero-rise">
         <span>{heroEyebrow}</span>
         <span>{hotelName}</span>
       </div>
 
       <div class="location-hero__content">
-        <h1>{heroTitle}</h1>
+        <h1 class="hc-hero-rise hc-hero-rise--delay-1">{heroTitle}</h1>
 
-        <aside>
+        <aside class="hc-hero-rise hc-hero-rise--delay-2">
           <p>{heroText}</p>
 
           <div class="location-hero__actions">
@@ -166,7 +166,7 @@ const nearbyNotes = [
         </aside>
       </div>
 
-      <div class="location-hero__rail" aria-hidden="true">
+      <div class="location-hero__rail hc-hero-rise hc-hero-rise--delay-3" aria-hidden="true">
         <span>{t(lang, "Morning route", "Ruta de mañana")}</span>
         <span>{t(lang, "City culture", "Cultura urbana")}</span>
         <span>{t(lang, "Private return", "Regreso privado")}</span>
@@ -215,7 +215,7 @@ const nearbyNotes = [
 
       <div class="location-map__actions">
         {bookingUrl ? (
-          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookLabel}</a>
+          <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">{bookLabel}</a>
         ) : null}
         <a href={`/${lang}/contact/`}>{contactLabel}</a>
       </div>

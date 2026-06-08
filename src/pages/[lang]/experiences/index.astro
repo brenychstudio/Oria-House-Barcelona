@@ -270,15 +270,15 @@ const experienceMomentLabel = t(lang, "Stay moment", "Momento de estancia");
         <div class="experiences-hero__veil" aria-hidden="true"></div>
 
         <div class="experiences-hero__inner">
-          <div class="experiences-hero__top">
+          <div class="experiences-hero__top hc-hero-rise">
             <span>{heroEyebrow}</span>
             <span>{t(lang, "Opening moment", "Momento inicial")} / {heroExperience?.title ?? firstExperience.title}</span>
           </div>
 
           <div class="experiences-hero__content">
-            <h1>{heroTitle}</h1>
+            <h1 class="hc-hero-rise hc-hero-rise--delay-1">{heroTitle}</h1>
 
-            <aside>
+            <aside class="hc-hero-rise hc-hero-rise--delay-2">
               <p>{heroText}</p>
 
               <div class="experiences-hero__actions">
@@ -287,7 +287,7 @@ const experienceMomentLabel = t(lang, "Stay moment", "Momento de estancia");
                 </a>
 
                 {bookingUrl ? (
-                  <a href={bookingUrl} target="_blank" rel="noreferrer">
+                  <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">
                     {bookDirectLabel}
                   </a>
                 ) : null}
@@ -295,7 +295,7 @@ const experienceMomentLabel = t(lang, "Stay moment", "Momento de estancia");
             </aside>
           </div>
 
-          <div class="experiences-hero__rail" aria-hidden="true">
+          <div class="experiences-hero__rail hc-hero-rise hc-hero-rise--delay-3" aria-hidden="true">
             {experienceItems.slice(0, 4).map((experience, index) => (
               <span>{String(index + 1).padStart(2, "0")} / {experience.title}</span>
             ))}
@@ -541,7 +541,7 @@ const experienceMomentLabel = t(lang, "Stay moment", "Momento de estancia");
 
           <div class="experiences-direct__actions">
             {bookingUrl ? (
-              <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+              <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">{bookDirectLabel}</a>
             ) : null}
             <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
           </div>

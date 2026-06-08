@@ -483,19 +483,19 @@ const experienceGuideSignals = (experienceHighlights.length ? experienceHighligh
     <div class="experience-detail-hero__veil" aria-hidden="true"></div>
 
     <div class="experience-detail-hero__inner">
-      <div class="experience-detail-hero__top">
+      <div class="experience-detail-hero__top hc-hero-rise">
         <a href={`/${lang}/experiences/`}>← {backLabel}</a>
         <span>{experienceEyebrow}</span>
       </div>
 
       <div class="experience-detail-hero__content">
-        <div>
+        <div class="hc-hero-rise hc-hero-rise--delay-1">
           <div class="experience-detail-kicker">{sales.mood}</div>
           <h1>{experienceTitle}</h1>
           <p>{experienceDescription}</p>
         </div>
 
-        <aside class="experience-detail-hero__panel">
+        <aside class="experience-detail-hero__panel hc-hero-rise hc-hero-rise--delay-2">
           <div class="experience-detail-kicker">{sequenceLabel}</div>
 
           <h2>{sales.timing}</h2>
@@ -503,7 +503,7 @@ const experienceGuideSignals = (experienceHighlights.length ? experienceHighligh
 
           <div class="experience-detail-hero__actions">
             {bookingUrl ? (
-              <a href={bookingUrl} target="_blank" rel="noreferrer">
+              <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">
                 {bookDirectLabel}
               </a>
             ) : null}
@@ -515,7 +515,7 @@ const experienceGuideSignals = (experienceHighlights.length ? experienceHighligh
         </aside>
       </div>
 
-      <div class="experience-detail-hero__rail" aria-hidden="true">
+      <div class="experience-detail-hero__rail hc-hero-rise hc-hero-rise--delay-3" aria-hidden="true">
         <span>{sales.bestFor}</span>
         <span>{timingLabel}: {sales.timing}</span>
         <span>{categoryLabel}: {experienceCategory}</span>
@@ -735,7 +735,7 @@ const experienceGuideSignals = (experienceHighlights.length ? experienceHighligh
 
       <div class="experience-direct__actions">
         {bookingUrl ? (
-          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+          <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">{bookDirectLabel}</a>
         ) : null}
         <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
       </div>

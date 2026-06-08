@@ -354,19 +354,19 @@ const formatSize = (value: string) => {
     <div class="room-detail-hero__veil" aria-hidden="true"></div>
 
     <div class="room-detail-hero__inner">
-      <div class="room-detail-hero__top">
+      <div class="room-detail-hero__top hc-hero-rise">
         <a href={`/${lang}/rooms/`}>← {backLabel}</a>
         <span>{roomEyebrow}</span>
       </div>
 
       <div class="room-detail-hero__content">
-        <div>
+        <div class="hc-hero-rise hc-hero-rise--delay-1">
           <div class="room-detail-kicker">{sales.mood}</div>
           <h1>{roomTitle}</h1>
           <p>{roomShort}</p>
         </div>
 
-        <aside class="room-detail-hero__panel">
+        <aside class="room-detail-hero__panel hc-hero-rise hc-hero-rise--delay-2">
           <div class="room-detail-kicker">{stayDetailsLabel}</div>
 
           <div class="room-detail-hero__specs">
@@ -396,7 +396,7 @@ const formatSize = (value: string) => {
 
           <div class="room-detail-hero__actions">
             {bookingUrl ? (
-              <a href={bookingUrl} target="_blank" rel="noreferrer">
+              <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">
                 {bookDirectLabel}
               </a>
             ) : null}
@@ -408,7 +408,7 @@ const formatSize = (value: string) => {
         </aside>
       </div>
 
-      <div class="room-detail-hero__rail" aria-hidden="true">
+      <div class="room-detail-hero__rail hc-hero-rise hc-hero-rise--delay-3" aria-hidden="true">
         <span>{sales.bestFor}</span>
         <span>{sales.viewSignal}</span>
         {roomBeds ? <span>{bedsLabel}: {roomBeds}</span> : null}
@@ -686,7 +686,7 @@ const formatSize = (value: string) => {
 
       <div class="room-direct__actions">
         {bookingUrl ? (
-          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+          <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">{bookDirectLabel}</a>
         ) : null}
         <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
       </div>

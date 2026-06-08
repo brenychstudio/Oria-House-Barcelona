@@ -232,15 +232,15 @@ const offerReasonLabel = t(lang, "Reason to book", "Razon para reservar");
         <div class="offers-hero__veil" aria-hidden="true"></div>
 
         <div class="offers-hero__inner">
-          <div class="offers-hero__top">
+          <div class="offers-hero__top hc-hero-rise">
             <span>{heroEyebrow}</span>
             <span>{t(lang, "Opening package", "Paquete inicial")} / {heroOffer?.title ?? firstOffer.title}</span>
           </div>
 
           <div class="offers-hero__content">
-            <h1>{heroTitle}</h1>
+            <h1 class="hc-hero-rise hc-hero-rise--delay-1">{heroTitle}</h1>
 
-            <aside>
+            <aside class="hc-hero-rise hc-hero-rise--delay-2">
               <p>{heroText}</p>
 
               <div class="offers-hero__actions">
@@ -249,7 +249,7 @@ const offerReasonLabel = t(lang, "Reason to book", "Razon para reservar");
                 </a>
 
                 {bookingUrl ? (
-                  <a href={bookingUrl} target="_blank" rel="noreferrer">
+                  <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">
                     {bookDirectLabel}
                   </a>
                 ) : null}
@@ -257,7 +257,7 @@ const offerReasonLabel = t(lang, "Reason to book", "Razon para reservar");
             </aside>
           </div>
 
-          <div class="offers-hero__rail" aria-hidden="true">
+          <div class="offers-hero__rail hc-hero-rise hc-hero-rise--delay-3" aria-hidden="true">
             {offerItems.slice(0, 4).map((offer, index) => (
               <span>{String(index + 1).padStart(2, "0")} / {offer.title}</span>
             ))}
@@ -504,7 +504,7 @@ const offerReasonLabel = t(lang, "Reason to book", "Razon para reservar");
 
           <div class="offers-direct__actions">
             {bookingUrl ? (
-              <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+              <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">{bookDirectLabel}</a>
             ) : null}
             <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
           </div>

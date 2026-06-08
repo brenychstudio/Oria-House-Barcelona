@@ -176,27 +176,27 @@ const arrivalText = t(
     <div class="contact-hero__veil" aria-hidden="true"></div>
 
     <div class="contact-hero__inner">
-      <div class="contact-hero__top">
+      <div class="contact-hero__top hc-hero-rise">
         <span>{heroEyebrow}</span>
         <span>{hotelName}</span>
       </div>
 
       <div class="contact-hero__content">
-        <h1>{heroTitle}</h1>
+        <h1 class="hc-hero-rise hc-hero-rise--delay-1">{heroTitle}</h1>
 
-        <aside>
+        <aside class="hc-hero-rise hc-hero-rise--delay-2">
           <p>{heroText}</p>
 
           <div class="contact-hero__actions">
             {bookingUrl ? (
-              <a href={bookingUrl} target="_blank" rel="noreferrer">{bookLabel}</a>
+              <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">{bookLabel}</a>
             ) : null}
             <a href={`mailto:${email}`}>{emailLabel}</a>
           </div>
         </aside>
       </div>
 
-      <div class="contact-hero__rail" aria-hidden="true">
+      <div class="contact-hero__rail hc-hero-rise hc-hero-rise--delay-3" aria-hidden="true">
         <span>{t(lang, "Room advice", "Asesoramiento de habitación")}</span>
         <span>{t(lang, "Arrival questions", "Preguntas de llegada")}</span>
         <span>{t(lang, "Private requests", "Solicitudes privadas")}</span>
@@ -235,7 +235,7 @@ const arrivalText = t(
 
       <div class="contact-arrival__actions">
         {bookingUrl ? (
-          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookLabel}</a>
+          <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">{bookLabel}</a>
         ) : null}
         <a href={`mailto:${email}`}>{emailLabel}</a>
         <a href={`tel:${phoneHref}`}>{callLabel}</a>

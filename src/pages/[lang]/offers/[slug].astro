@@ -349,19 +349,19 @@ const offerGuideSignals = (offerHighlights.length ? offerHighlights : [
     <div class="offer-detail-hero__veil" aria-hidden="true"></div>
 
     <div class="offer-detail-hero__inner">
-      <div class="offer-detail-hero__top">
+      <div class="offer-detail-hero__top hc-hero-rise">
         <a href={`/${lang}/offers/`}>← {backLabel}</a>
         <span>{offerEyebrow}</span>
       </div>
 
       <div class="offer-detail-hero__content">
-        <div>
+        <div class="hc-hero-rise hc-hero-rise--delay-1">
           <div class="offer-detail-kicker">{sales.mood}</div>
           <h1>{offerTitle}</h1>
           {offerPeriod ? <p>{offerPeriod}</p> : null}
         </div>
 
-        <aside class="offer-detail-hero__panel">
+        <aside class="offer-detail-hero__panel hc-hero-rise hc-hero-rise--delay-2">
           <div class="offer-detail-kicker">{packageSummaryLabel}</div>
 
           <h2>{sales.bookingLogic}</h2>
@@ -369,7 +369,7 @@ const offerGuideSignals = (offerHighlights.length ? offerHighlights : [
 
           <div class="offer-detail-hero__actions">
             {bookingUrl ? (
-              <a href={bookingUrl} target="_blank" rel="noreferrer">
+              <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">
                 {bookDirectLabel}
               </a>
             ) : null}
@@ -381,7 +381,7 @@ const offerGuideSignals = (offerHighlights.length ? offerHighlights : [
         </aside>
       </div>
 
-      <div class="offer-detail-hero__rail" aria-hidden="true">
+      <div class="offer-detail-hero__rail hc-hero-rise hc-hero-rise--delay-3" aria-hidden="true">
         <span>{sales.bestFor}</span>
         {offerPeriod ? <span>{periodLabel}: {offerPeriod}</span> : null}
         {includedItems[0] ? <span>{includedLabel}: {includedItems[0]}</span> : null}
@@ -654,7 +654,7 @@ const offerGuideSignals = (offerHighlights.length ? offerHighlights : [
 
       <div class="offer-direct__actions">
         {bookingUrl ? (
-          <a href={bookingUrl} target="_blank" rel="noreferrer">{bookDirectLabel}</a>
+          <a href={bookingUrl} target="_blank" rel="noreferrer" data-booking-trigger="true">{bookDirectLabel}</a>
         ) : null}
         <a href={`/${lang}/contact/`}>{contactHotelLabel}</a>
       </div>
