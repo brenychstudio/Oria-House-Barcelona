@@ -548,7 +548,7 @@ const experienceMomentLabel = t(lang, "Stay moment", "Momento de estancia");
         </div>
       </section>
 
-      <script is:inline define:vars={{ experiencePayload: experienceItems }}>
+      <script is:inline data-astro-rerun define:vars={{ experiencePayload: experienceItems }}>
         (() => {
           const root = document.querySelector("[data-experience-index-field]");
           if (!root || !Array.isArray(experiencePayload) || experiencePayload.length === 0) return;

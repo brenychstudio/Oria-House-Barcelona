@@ -1078,7 +1078,7 @@ const archiveChapters = archiveSections.map((section) => ({
       }
     </style>
 
-    <script is:inline define:vars={{ archiveId: id, archivePayload: archiveItems, inspectId }}>
+    <script is:inline data-astro-rerun define:vars={{ archiveId: id, archivePayload: archiveItems, inspectId }}>
       (() => {
         const root = document.querySelector(`[data-hc-archive="${archiveId}"]`);
         if (!root || !Array.isArray(archivePayload) || archivePayload.length === 0) return;

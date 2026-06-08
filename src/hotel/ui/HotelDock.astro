@@ -161,7 +161,7 @@ const nextSectionLabel = lang === "es" ? "Siguiente sección" : "Next section";
   }
 </style>
 
-<script is:inline>
+<script is:inline data-astro-rerun>
   (() => {
     const dock = document.querySelector("[data-hotel-global-dock]");
     if (!dock) return;
@@ -230,12 +230,29 @@ const nextSectionLabel = lang === "es" ? "Siguiente sección" : "Next section";
       return bestIndex;
     };
 
+    const navigateRoute = (href) => {
+      if (!href) return;
+
+      try {
+        const url = new URL(href, window.location.origin);
+
+        if (window.__hcNavigate && url.origin === window.location.origin) {
+          window.__hcNavigate(`${url.pathname}${url.search}${url.hash}`);
+          return;
+        }
+      } catch {
+        // Fall through to a hard navigation if URL parsing fails.
+      }
+
+      window.location.href = href;
+    };
+
     const goPage = (direction) => {
       const routes = getPageRoutes();
       const currentIndex = getCurrentRouteIndex();
       const nextIndex = (currentIndex + direction + routes.length) % routes.length;
 
-      window.location.href = routes[nextIndex];
+      navigateRoute(routes[nextIndex]);
     };
 
     const wakeDock = () => {

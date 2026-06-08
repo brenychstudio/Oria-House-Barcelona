@@ -2794,7 +2794,7 @@ const guestSignalText = t(
     }
   </style>
 
-  <script is:inline>
+  <script is:inline data-astro-rerun>
     (() => {
       const closing = document.querySelector(".hotel-closing-section");
       if (!closing) return;
@@ -2869,7 +2869,7 @@ const guestSignalText = t(
     })();
   </script>
 
-  <script is:inline>
+  <script is:inline data-astro-rerun>
     (() => {
       const items = Array.from(document.querySelectorAll("[data-living-path]"));
       if (!items.length) return;
@@ -2988,7 +2988,7 @@ const guestSignalText = t(
     })();
   </script>
 
-  <script is:inline>
+  <script is:inline data-astro-rerun>
     (() => {
       const root = document.querySelector("[data-stay-object-field]");
       if (!root) return;
@@ -3112,7 +3112,7 @@ const guestSignalText = t(
     })();
   </script>
 
-  <script is:inline>
+  <script is:inline data-astro-rerun>
     (() => {
       const dock = document.querySelector("[data-home-stay-dock]");
       const sections = Array.from(document.querySelectorAll("[data-home-section]"));
@@ -3154,13 +3154,30 @@ const guestSignalText = t(
         ];
       };
 
+      const navigateRoute = (href) => {
+        if (!href) return;
+
+        try {
+          const url = new URL(href, window.location.origin);
+
+          if (window.__hcNavigate && url.origin === window.location.origin) {
+            window.__hcNavigate(`${url.pathname}${url.search}${url.hash}`);
+            return;
+          }
+        } catch {
+          // Fall through to a hard navigation if URL parsing fails.
+        }
+
+        window.location.href = href;
+      };
+
       const goPage = (direction) => {
         const routes = getPageRoutes();
         const current = normalizePath(window.location.pathname);
         const currentIndex = Math.max(0, routes.indexOf(current));
         const nextIndex = (currentIndex + direction + routes.length) % routes.length;
 
-        window.location.href = routes[nextIndex];
+        navigateRoute(routes[nextIndex]);
       };
 
       const wakeDock = () => {

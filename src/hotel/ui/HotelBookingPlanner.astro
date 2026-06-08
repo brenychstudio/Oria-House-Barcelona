@@ -861,7 +861,7 @@ const labels = {
   }
 </style>
 
-<script is:inline define:vars={{
+<script is:inline data-astro-rerun define:vars={{
   baseBookingUrl: bookingUrl,
   contactUrl: `/${lang}/contact/`,
   currentLang: lang,
@@ -1337,6 +1337,24 @@ const labels = {
       return url.toString();
     };
 
+    const navigateTo = (target) => {
+      const href = appendParams(target);
+
+      try {
+        const url = new URL(href, window.location.origin);
+
+        if (window.__hcNavigate && url.origin === window.location.origin) {
+          close();
+          window.__hcNavigate(`${url.pathname}${url.search}${url.hash}`);
+          return;
+        }
+      } catch {
+        // Fall through to a hard navigation if URL parsing fails.
+      }
+
+      window.location.href = href;
+    };
+
     const interceptBookingLinks = () => {
       const links = Array.from(document.querySelectorAll("a"));
 
@@ -1387,13 +1405,13 @@ const labels = {
 
     if (submitButton) {
       submitButton.addEventListener("click", () => {
-        window.location.href = appendParams(baseBookingUrl || contactUrl);
+        navigateTo(baseBookingUrl || contactUrl);
       });
     }
 
     if (contactButton) {
       contactButton.addEventListener("click", () => {
-        window.location.href = appendParams(contactUrl);
+        navigateTo(contactUrl);
       });
     }
 

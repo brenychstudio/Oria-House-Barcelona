@@ -147,7 +147,7 @@ const { id, class: className = "" } = Astro.props as Props;
   }
 </style>
 
-<script is:inline define:vars={{ id }}>
+<script is:inline data-astro-rerun define:vars={{ id }}>
   (() => {
     const root = document.querySelector(`[data-hc-lb-root="${id}"]`);
     const overlay = document.querySelector(`[data-hc-lb-overlay="${id}"]`);

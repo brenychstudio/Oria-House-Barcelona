@@ -195,7 +195,7 @@ const inspectId = `detail-inspect-${id}`;
       }
     </style>
 
-    <script is:inline define:vars={{ galleryId: id, inspectId }}>
+    <script is:inline data-astro-rerun define:vars={{ galleryId: id, inspectId }}>
       (() => {
         const root = document.querySelector(`[data-inspect-gallery="${galleryId}"]`);
         if (!root) return;

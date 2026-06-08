@@ -732,7 +732,7 @@ const sizeAtLeastLabel = t(lang, "At least", "Minimo");
         </div>
       </section>
 
-      <script is:inline define:vars={{ roomPayload: roomItems }}>
+      <script is:inline data-astro-rerun define:vars={{ roomPayload: roomItems }}>
         (() => {
           const root = document.querySelector("[data-room-index-field]");
           if (!root || !Array.isArray(roomPayload) || roomPayload.length === 0) return;
@@ -847,7 +847,7 @@ const sizeAtLeastLabel = t(lang, "At least", "Minimo");
         })();
       </script>
 
-      <script is:inline define:vars={{ roomBrowserLabels: { resultsCopy, allResultsCopy } }}>
+      <script is:inline data-astro-rerun define:vars={{ roomBrowserLabels: { resultsCopy, allResultsCopy } }}>
         (() => {
           const root = document.querySelector("[data-room-browser]");
           if (!root) return;

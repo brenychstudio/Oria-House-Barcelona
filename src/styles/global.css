@@ -25,6 +25,8 @@
   --hc-atmosphere-b: rgba(226, 197, 158, 0.12);
   --hc-atmosphere-c: rgba(64, 42, 24, 0.05);
   --hc-atmosphere-opacity: 1;
+  --hc-route-duration: 420ms;
+  --hc-route-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html {
@@ -179,5 +181,61 @@ body {
   html,
   body {
     overflow-x: hidden;
+  }
+}
+
+::view-transition {
+  background: var(--hc-bg-soft);
+}
+
+::view-transition-group(root) {
+  animation-duration: var(--hc-route-duration);
+  animation-timing-function: var(--hc-route-ease);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--hc-route-duration);
+  animation-timing-function: var(--hc-route-ease);
+  backface-visibility: hidden;
+}
+
+::view-transition-old(root) {
+  animation-name: hc-route-old;
+}
+
+::view-transition-new(root) {
+  animation-name: hc-route-new;
+}
+
+html[data-route-transition="running"] {
+  cursor: progress;
+}
+
+@keyframes hc-route-old {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    filter: blur(12px);
+    transform: scale(0.992);
+  }
+}
+
+@keyframes hc-route-new {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+    transform: scale(1.008);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
   }
 }

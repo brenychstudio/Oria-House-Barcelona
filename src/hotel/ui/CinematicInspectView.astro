@@ -536,7 +536,7 @@ const total = inspectItems.length;
       }
     </style>
 
-    <script is:inline define:vars={{ inspectId: id, inspectPayload: inspectItems }}>
+    <script is:inline data-astro-rerun define:vars={{ inspectId: id, inspectPayload: inspectItems }}>
       (() => {
         const root = document.querySelector(`[data-cinematic-inspect="${inspectId}"]`);
         if (!root || !Array.isArray(inspectPayload) || inspectPayload.length === 0) return;

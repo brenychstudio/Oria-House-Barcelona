@@ -602,7 +602,7 @@ const total = archiveItems.length;
       }
     </style>
 
-    <script is:inline define:vars={{ previewId: id, previewPayload: archiveItems }}>
+    <script is:inline data-astro-rerun define:vars={{ previewId: id, previewPayload: archiveItems }}>
       (() => {
         const root = document.querySelector(`[data-hc-gallery-preview="${previewId}"]`);
         if (!root || !Array.isArray(previewPayload) || previewPayload.length === 0) return;

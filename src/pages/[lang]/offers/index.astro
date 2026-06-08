@@ -511,7 +511,7 @@ const offerReasonLabel = t(lang, "Reason to book", "Razon para reservar");
         </div>
       </section>
 
-      <script is:inline define:vars={{ offerPayload: offerItems }}>
+      <script is:inline data-astro-rerun define:vars={{ offerPayload: offerItems }}>
         (() => {
           const root = document.querySelector("[data-offer-index-field]");
           if (!root || !Array.isArray(offerPayload) || offerPayload.length === 0) return;
